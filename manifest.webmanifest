@@ -1,0 +1,9 @@
+{
+  "name": "Solat In Flight",
+  "short_name": "Solat Flight",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b1016",
+  "theme_color": "#0f1720",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

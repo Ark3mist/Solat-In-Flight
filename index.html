@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Solat In Flight</title>
+<meta name="description" content="Prayer times along a flight route, computed offline from the sun's position.">
+<meta name="theme-color" content="#0f1720">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Solat Flight">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#fff; --ink:#111827; --muted:#5b6472; --line:#d9dde3;
+  --accent:#0f766e; --accent-ink:#fff; --warn:#b45309; --err:#b91c1c; --row:#f1f5f4;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0b1016; --panel:#121a23; --ink:#e6e9ee; --muted:#8a95a5; --line:#243142;
+  --accent:#2dd4bf; --accent-ink:#06201d; --warn:#f59e0b; --err:#f87171; --row:#16222c;
+}}
+:root[data-theme="dark"]{
+  --bg:#0b1016; --panel:#121a23; --ink:#e6e9ee; --muted:#8a95a5; --line:#243142;
+  --accent:#2dd4bf; --accent-ink:#06201d; --warn:#f59e0b; --err:#f87171; --row:#16222c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:960px;margin:0 auto;padding:16px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+h1{font-size:20px;margin:0}
+.sub{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px}
+textarea{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px;min-height:200px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+button{font:inherit;font-weight:600;border:0;border-radius:6px;padding:10px 16px;background:var(--accent);color:var(--accent-ink);cursor:pointer;margin-top:12px;width:100%}
+details{margin-top:10px}
+summary{cursor:pointer;color:var(--muted);font-size:13px}
+.chk{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px;color:var(--muted)}
+.chk input{width:auto}
+.errors{color:var(--err);font-size:13px;margin-top:8px;white-space:pre-line}
+.status{font-size:14px;margin:4px 0 12px;padding:10px;border-radius:6px;background:var(--row)}
+.status b{color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600}
+@media (max-width:520px){th,td{padding:7px 4px}td.m{font-size:12px}}
+td.t{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:700;white-space:nowrap}
+td.m{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
+.ev{font-weight:700}
+.small{font-size:12px;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+footer{margin-top:16px;font-size:12px;color:var(--muted)}
+code{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Solat In Flight</h1>
+    <span class="sub" id="offline">Runs fully offline</span>
+  </header>
+
+  <div class="grid">
+    <section>
+      <h2>Flight</h2>
+      <div class="row2">
+        <div><label for="date">Date of first fix (UTC)</label><input id="date" type="date"></div>
+        <div><label for="alt">Cruise altitude (ft)</label><input id="alt" type="number" value="35000" step="1000" min="0"></div>
+      </div>
+      <label for="route">Route: one fix per line: <code>IDENT [LAT LON] [HHMM]</code></label>
+      <textarea id="route" spellcheck="false" autocapitalize="characters"></textarea>
+      <div class="small">Airports from the built-in list need no coordinates. The first and last fix need a UTC time. Fixes without a time are spread out by distance. Times past 0000Z roll to the next day automatically. Lines starting with <code>#</code> are ignored.</div>
+
+      <label for="conv">Convention</label>
+      <select id="conv"></select>
+
+      <details>
+        <summary>Advanced</summary>
+        <div class="row3">
+          <div><label for="fajr">Fajr angle °</label><input id="fajr" type="number" step="0.5"></div>
+          <div><label for="isha">Isha angle °</label><input id="isha" type="number" step="0.5"></div>
+          <div><label for="asr">Asr</label><select id="asr"><option value="1">Shafi'i</option><option value="2">Hanafi</option></select></div>
+        </div>
+        <div class="row3">
+          <div><label for="ihZ">Zuhr +min</label><input id="ihZ" type="number" value="2"></div>
+          <div><label for="ihM">Maghrib +min</label><input id="ihM" type="number" value="1"></div>
+          <div><label for="tz">Local offset</label><input id="tz" placeholder="+08:00"></div>
+        </div>
+        <div class="row2">
+          <div><label for="climb">Climb (min)</label><input id="climb" type="number" value="20"></div>
+          <div><label for="desc">Descent (min)</label><input id="desc" type="number" value="25"></div>
+        </div>
+        <label class="chk"><input id="dipTw" type="checkbox" checked> Apply altitude dip to Fajr &amp; Isha (a juristic choice)</label>
+      </details>
+
+      <button id="go">Calculate</button>
+      <div class="errors" id="errors"></div>
+    </section>
+
+    <section>
+      <h2>Prayer times en route</h2>
+      <div id="summary" class="small">Enter a route and press Calculate.</div>
+      <div id="depStatus"></div>
+      <div class="tablewrap"><table id="tbl" hidden>
+        <thead><tr><th>Event</th><th>UTC</th><th id="thLocal" hidden>Local</th><th>Elapsed</th><th>Position · alt · leg</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <div id="arrStatus"></div>
+    </section>
+  </div>
+
+  <footer>
+    The sun's position is computed directly (NOAA/Meeus), and the aircraft position is interpolated along the great circle between fixes. Start times are rounded up to the minute and Sunrise (the end of Fajr) is rounded down. This is a reference prototype: check it against your authority before relying on it.
+  </footer>
+</main>
+
+<script src="solat.js"></script>
+<script>
+(function(){
+  "use strict";
+  const S = window.Solat, $ = (id) => document.getElementById(id);
+  const SAMPLE = `# Example only. Replace with your OFP fixes.
+KUL 1530
+MAA 1805
+IKA N3524.0 E05109.0
+IST N4058.6 E02848.8 0040
+LHR 0530`;
+  const store = {
+    get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+    set(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+  };
+
+  for (const [k,c] of Object.entries(S.CONVENTIONS)) {
+    const o = document.createElement("option"); o.value = k; o.textContent = c.name; $("conv").appendChild(o);
+  }
+  function applyConv(){ const c = S.CONVENTIONS[$("conv").value]; $("fajr").value = c.fajr; $("isha").value = c.isha; $("asr").value = c.asr; }
+  $("conv").addEventListener("change", applyConv);
+
+  // restore
+  $("route").value = store.get("route") || SAMPLE;
+  $("conv").value = store.get("conv") || "jakim";
+  applyConv();
+  ["alt","tz","dipTw"].forEach((id)=>{ const v = store.get(id); if (v!==null){ if(id==="dipTw") $(id).checked = v==="1"; else $(id).value = v; } });
+  $("date").value = store.get("date") || new Date().toISOString().slice(0,10);
+
+  const pad = (n) => String(n).padStart(2,"0");
+  function fmtUTC(ms, mode){
+    const d = new Date(mode === "floor" ? Math.floor(ms/60000)*60000 : Math.ceil(ms/60000)*60000);
+    return `${pad(d.getUTCDate())}/${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}Z`;
+  }
+  function parseOffset(s){
+    const m = /^([+-])?(\d{1,2})(?::?(\d{2}))?$/.exec((s||"").trim());
+    if (!m) return null;
+    return (m[1]==="-"?-1:1) * (+m[2]*60 + +(m[3]||0));
+  }
+  function fmtLocal(ms, off, mode){
+    const r = mode === "floor" ? Math.floor(ms/60000)*60000 : Math.ceil(ms/60000)*60000;
+    const d = new Date(r + off*60000);
+    return `${pad(d.getUTCDate())}/${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+  }
+  const fmtElapsed = (ms) => { const m = Math.round(ms/60000); return `T+${Math.floor(m/60)}:${pad(m%60)}`; };
+  const LABEL = { Fajr:"Fajr (Subuh)", Sunrise:"Sunrise (Fajr ends)", Zuhr:"Zuhr", Asr:"Asr", Maghrib:"Maghrib", Isha:"Isha" };
+
+  function run(){
+    $("errors").textContent = "";
+    const dateStr = $("date").value;
+    if (!dateStr) { $("errors").textContent = "Set the date."; return; }
+    const depDay = Date.parse(dateStr + "T00:00:00Z");
+    const { wps, errors } = S.parseRoute($("route").value, depDay);
+    if (errors.length) { $("errors").textContent = errors.join("\n"); return; }
+
+    const conv = {
+      fajr: +$("fajr").value, isha: +$("isha").value, asr: +$("asr").value,
+      dipOnTwilight: $("dipTw").checked,
+      ihtiyat: { ...S.DEFAULT_IHTIYAT, Zuhr: +$("ihZ").value || 0, Maghrib: +$("ihM").value || 0 },
+    };
+    const off = parseOffset($("tz").value);
+    let route;
+    try { route = S.makeRoute(wps, +$("alt").value || 0, +$("climb").value || 0, +$("desc").value || 0); }
+    catch(e){ $("errors").textContent = e.message; return; }
+
+    ["alt","tz"].forEach((id)=>store.set(id,$(id).value));
+    store.set("route",$("route").value); store.set("conv",$("conv").value);
+    store.set("date",dateStr); store.set("dipTw",$("dipTw").checked?"1":"0");
+
+    const events = S.findEvents(route, conv);
+    const first = route.wps[0], last = route.wps[route.wps.length-1];
+    const dur = route.end - route.start;
+    $("summary").innerHTML = `${first.name} ${fmtUTC(route.start,"floor")} → ${last.name} ${fmtUTC(route.end,"floor")} · ${Math.round(route.distNm)} nm · ${Math.floor(dur/3600000)}h${pad(Math.round(dur/60000)%60)} · Fajr ${conv.fajr}° Isha ${conv.isha}° ${conv.asr===2?"Hanafi":"Shafi'i"} Asr`;
+
+    const dep = S.periodAt(first.lat, first.lon, route.start, conv);
+    const arr = S.periodAt(last.lat, last.lon, route.end, conv);
+    const periodText = (p, where, t) => {
+      if (!p) return "";
+      const what = p.current === "Sunrise" ? "<b>no prayer period</b> (after sunrise, before Zuhr)" : `<b>${p.current}</b> period (began ${fmtUTC(p.since)} on the ground)`;
+      return `<div class="status">${where} ${fmtUTC(t,"floor")}: ${what}</div>`;
+    };
+    $("depStatus").innerHTML = periodText(dep, "At " + first.name + " airborne", route.start);
+    $("arrStatus").innerHTML = periodText(arr, "At " + last.name + " landing", route.end);
+
+    const tb = $("tbl").querySelector("tbody"); tb.innerHTML = "";
+    $("thLocal").hidden = off === null;
+    if (!events.length) {
+      tb.innerHTML = `<tr><td colspan="5" class="small">No prayer time starts while airborne. Check the departure and landing status.</td></tr>`;
+    }
+    for (const e of events) {
+      const mode = e.name === "Sunrise" ? "floor" : "ceil";
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td class="ev">${LABEL[e.name]}</td><td class="t">${fmtUTC(e.t,mode)}</td>` +
+        (off !== null ? `<td class="t">${fmtLocal(e.t,off,mode)}</td>` : "") +
+        `<td class="m">${fmtElapsed(e.t-route.start)}</td>` +
+        `<td class="m">${S.fmtPos(e.lat,e.lon)}<br><span class="small">${Math.round(e.alt/100)*100} ft · ${e.leg}</span></td>`;
+      tb.appendChild(tr);
+    }
+    $("tbl").hidden = false;
+  }
+  $("go").addEventListener("click", run);
+  run();
+
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  }
+})();
+</script>
+</body>
+</html>
