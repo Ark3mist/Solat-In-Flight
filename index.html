@@ -8,6 +8,7 @@
 <meta name="theme-color" content="#0f1720">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Solat Flight">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -105,6 +106,18 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .nowkv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;font-size:13px;margin:0}
 .nowkv dt{color:var(--muted)} .nowkv dd{margin:0}
 .s{font-size:12px;color:var(--muted)}
+.installbtn{font-weight:600;border:1px solid var(--accent);color:var(--accent);background:var(--panel);padding:6px 12px;border-radius:999px}
+.installbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:10px 12px;margin-bottom:12px;border:1px solid var(--accent);border-radius:10px;background:var(--soft);font-size:14px}
+.installbar .primary{width:auto;padding:8px 14px}
+.installbar[hidden],.installbtn[hidden]{display:none}
+dialog#installDlg{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);padding:16px;max-width:min(520px,calc(100vw - 32px));width:100%}
+dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
+.dlghead{display:flex;justify-content:space-between;align-items:center;margin:0 0 8px}
+.dlghead h3{margin:0;font-size:17px}
+#installBody ol{padding-left:20px;margin:6px 0 10px} #installBody li{margin:6px 0}
+#installBody details{border-top:1px solid var(--line);padding-top:8px;margin-top:8px}
+#installBody summary{cursor:pointer;font-weight:600}
+.ico{display:inline-block;vertical-align:-3px;width:18px;height:18px}
 .ver{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:12px;color:var(--muted)}
 .ver .warn{color:var(--warn);font-weight:600} .ver .bad{color:var(--err);font-weight:600}
 @media (max-width:860px){
@@ -160,8 +173,20 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 <main>
   <header>
     <h1>Solat In Flight</h1>
-    <div class="ver" id="verBox"><span id="verTxt"></span><span id="verMag"></span><button class="link" id="updBtn" type="button">Check for update</button><span id="updMsg"></span><button class="link" id="installBtn" type="button" hidden>⤓ Install app</button></div>
+    <div class="ver" id="verBox"><span id="verTxt"></span><span id="verMag"></span><button class="link" id="updBtn" type="button">Check for update</button><span id="updMsg"></span></div>
+    <button type="button" id="installBtn" class="installbtn" hidden>⤓ Install app</button>
   </header>
+
+  <div class="installbar" id="installBar" hidden>
+    <span>Install <b>Solat In Flight</b> on this device: it opens full screen and works with no connection.</span>
+    <button type="button" id="installBarGo" class="primary">Install</button>
+    <button type="button" id="installBarX" class="x" aria-label="Not now">✕</button>
+  </div>
+
+  <dialog id="installDlg" aria-labelledby="installTitle">
+    <form method="dialog" class="dlghead"><h3 id="installTitle">Install the app</h3><button class="x" aria-label="Close">✕</button></form>
+    <div id="installBody"></div>
+  </dialog>
 
   <div class="grid">
     <!-- ========== INPUTS ========== -->
@@ -1082,7 +1107,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   run();
 
   // ---------- version, data validity, update ----------
-  const APP_VERSION = "2026.11.06b", APP_DATE = Date.UTC(2026, 10, 6);
+  const APP_VERSION = "2026.11.06c", APP_DATE = Date.UTC(2026, 10, 6);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){
@@ -1113,10 +1138,57 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   showVersion(); setTimeout(() => checkUpdate(false), 1500);
 
   // Chrome/Android: offer a real install (opens full screen, no address bar) instead of a bookmark shortcut.
+  // ---------- install: Android/desktop Chrome can install directly; iPhone/iPad need Safari's Share menu ----------
   let installEvt = null;
-  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEvt = e; $("installBtn").hidden = false; });
-  window.addEventListener("appinstalled", () => { $("installBtn").hidden = true; installEvt = null; });
-  $("installBtn").addEventListener("click", async () => { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice; installEvt = null; $("installBtn").hidden = true; });
+  const UA = navigator.userAgent;
+  const isStandalone = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  const isIOS = /iPad|iPhone|iPod/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 0);   // iPadOS reports as a Mac
+  const isIPad = /iPad/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 0);
+  const isAndroid = /Android/.test(UA);
+  const inApp = /FBAN|FBAV|Instagram|Line\/|WhatsApp|GitHub|; wv\)/i.test(UA);
+  const iosBrowser = /CriOS/.test(UA) ? "Chrome" : /FxiOS/.test(UA) ? "Firefox" : /EdgiOS/.test(UA) ? "Edge" : "Safari";
+  const andBrowser = /SamsungBrowser/.test(UA) ? "Samsung" : /Firefox/.test(UA) ? "Firefox" : /EdgA/.test(UA) ? "Edge" : "Chrome";
+  const SHARE = `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Share"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>`;
+  const ADD = `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-label="Add"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>`;
+  const URL_NOW = location.origin + location.pathname.replace(/index\.html$/, "");
+  const steps = {
+    ios: `<ol><li>Open this page in <b>Safari</b>.</li><li>Tap ${SHARE} <b>Share</b> (bottom of the screen; on newer iOS it may sit under <b>⋯</b>).</li><li>Scroll down, tap ${ADD} <b>Add to Home Screen</b>, then <b>Add</b>.</li><li>Open it from the new icon once while online, so it saves itself for offline use.</li></ol>`,
+    ipad: `<ol><li>Open this page in <b>Safari</b>.</li><li>Tap ${SHARE} <b>Share</b> (top right, next to the address bar).</li><li>Tap ${ADD} <b>Add to Home Screen</b>, then <b>Add</b>.</li><li>Open it from the new icon once while online, so it saves itself for offline use.</li></ol>`,
+    android: `<ol><li>Open this page in <b>Chrome</b>.</li><li>Tap <b>⋮</b> (top right), then <b>Install app</b>, or <b>Add to home screen → Install</b>. Choose <b>Install</b>, not <i>Create shortcut</i>.</li><li>Open it from the new icon once while online.</li></ol><div class="s">Samsung Internet: ☰ → <b>Add page to</b> → <b>Home screen</b>. Firefox: ⋮ → <b>Install</b>.</div>`,
+    desktop: `<ol><li><b>Chrome / Edge:</b> click the install icon at the right of the address bar, or ⋮ → <b>Cast, save and share → Install page as app</b> (Edge: ⋯ → <b>Apps → Install this site as an app</b>).</li><li><b>Safari on Mac</b> (macOS 14+): <b>File → Add to Dock</b>.</li></ol>`,
+  };
+  function installHelp(){
+    let first, why = "";
+    if (isStandalone()) first = `<p>✓ This is already the installed app.</p>`;
+    else if (inApp) first = `<p><b>You are inside another app's browser</b>, which cannot install. Copy this address and open it in ${isIOS ? "Safari" : "Chrome"}:</p><p class="mono" style="word-break:break-all">${esc(URL_NOW)}</p><button type="button" id="copyUrl">Copy address</button>`;
+    else if (isIOS && iosBrowser !== "Safari") first = `<p>On ${isIPad ? "iPad" : "iPhone"}, <b>${iosBrowser}</b> may not offer "Add to Home Screen". Use <b>Safari</b> for the most reliable install:</p>` + (isIPad ? steps.ipad : steps.ios);
+    else if (isIOS) first = `<p>Apple lets you install web apps only from Safari's Share menu (a page cannot do it for you):</p>` + (isIPad ? steps.ipad : steps.ios);
+    else if (isAndroid) first = steps.android + (andBrowser === "Chrome" && !installEvt ? `<div class="s">If Chrome only offers a shortcut, scroll to the bottom of the app and open <b>App install check</b>.</div>` : "");
+    else first = steps.desktop;
+    const others = [["iPhone", steps.ios], ["iPad", steps.ipad], ["Android", steps.android], ["Computer", steps.desktop]]
+      .map(([n, h]) => `<details><summary>${n}</summary>${h}</details>`).join("");
+    $("installBody").innerHTML = first + `<div class="s" style="margin-top:10px">Other devices:</div>` + others +
+      `<p class="s">Saved routes stay on each device: use <b>Export backup</b> in Route to move them.</p>`;
+    const c = $("copyUrl"); if (c) c.addEventListener("click", async () => { try { await navigator.clipboard.writeText(URL_NOW); c.textContent = "Copied"; } catch (e) { c.textContent = "Copy failed: select the address"; } });
+    if ($("installDlg").showModal) $("installDlg").showModal(); else $("installDlg").setAttribute("open", "");
+  }
+  async function install(){
+    if (installEvt) { installEvt.prompt(); const ch = await installEvt.userChoice; installEvt = null; if (ch && ch.outcome === "accepted") return hideInstall(); }
+    installHelp();
+  }
+  function hideInstall(){ $("installBtn").hidden = true; $("installBar").hidden = true; }
+  function showInstall(){
+    if (isStandalone()) return hideInstall();
+    $("installBtn").hidden = false;
+    // one-time nudge on phones and tablets
+    if ((isIOS || isAndroid) && !store.get("solat.installBarDismissed")) $("installBar").hidden = false;
+  }
+  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEvt = e; showInstall(); });
+  window.addEventListener("appinstalled", () => { installEvt = null; hideInstall(); });
+  $("installBtn").addEventListener("click", install);
+  $("installBarGo").addEventListener("click", install);
+  $("installBarX").addEventListener("click", () => { store.set("solat.installBarDismissed", true); $("installBar").hidden = true; });
+  showInstall();
   let swErr = "";
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
     navigator.serviceWorker.register("sw.js").catch((e) => { swErr = e && e.message || String(e); });
@@ -1145,7 +1217,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       out.push(reg && reg.active ? `✓ service worker: active` : `✗ service worker: ${swErr || (reg ? "installing" : "not registered")}`);
     }
     try { const k = await caches.keys(); const n = k.length ? (await (await caches.open(k[0])).keys()).length : 0; out.push(`${ok(n >= 10)} offline files: ${n} (${k[0] || "no cache"})`); } catch (e) { out.push("✗ offline cache: " + e.message); }
-    out.push(standalone ? "✓ already installed" : installEvt ? "✓ Chrome offers install: tap ⤓ Install app at the top" : "✗ Chrome has not offered install on this page (yet)");
+    out.push(standalone ? "✓ already installed" : installEvt ? "✓ Chrome offers install: tap ⤓ Install app at the top" : isIOS ? "· iPhone/iPad: install from Safari's Share → Add to Home Screen" : "✗ Chrome has not offered install on this page (yet)");
     $("appCheckList").innerHTML = out.map((l) => `<li>${esc(l)}</li>`).join("");
   }
   $("appCheck").addEventListener("toggle", () => { if ($("appCheck").open) appCheck(); });

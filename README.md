@@ -7,7 +7,10 @@ This tool computes Islamic prayer times along a flight route, from the sun's pos
 Open `index.html` in any browser. It needs no server and no connection.
 
 - **Laptop:** download the repo ZIP, unzip it, and double-click `index.html`.
-- **iPad/iPhone/Android:** open the GitHub Pages URL once while online, then use *Share → Add to Home Screen*. After that it opens offline.
+- **Phone or tablet:** open https://ark3mist.github.io/Solat-In-Flight/ once while online and tap **⤓ Install app** (top right, or the banner).
+  - **Android (Chrome):** installs directly.
+  - **iPhone / iPad:** Apple allows installing only from Safari's **Share → Add to Home Screen**; the button shows those steps for your device.
+  - Then open it from the icon once while online. After that it works offline.
 
 What it does:
 
