@@ -10,7 +10,8 @@
 <meta name="apple-mobile-web-app-title" content="Solat Flight">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
 <style>
 :root{
   --bg:#f5f6f8; --panel:#fff; --ink:#111827; --muted:#5b6472; --line:#dde1e6; --field:#f8f9fb;
@@ -144,7 +145,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 <main>
   <header>
     <h1>Solat In Flight</h1>
-    <span class="sub">Offline · sun computed directly (NOAA/Meeus)</span>
+    <span class="sub">Offline · sun computed directly (NOAA/Meeus) <button class="link" id="installBtn" type="button" hidden>⤓ Install app</button></span>
   </header>
 
   <div class="grid">
@@ -1030,7 +1031,12 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   $("go").addEventListener("click", run);
   run();
 
-  if ("serviceWorker" in navigator && location.protocol === "https:") {
+  // Chrome/Android: offer a real install (opens full screen, no address bar) instead of a bookmark shortcut.
+  let installEvt = null;
+  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEvt = e; $("installBtn").hidden = false; });
+  window.addEventListener("appinstalled", () => { $("installBtn").hidden = true; installEvt = null; });
+  $("installBtn").addEventListener("click", async () => { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice; installEvt = null; $("installBtn").hidden = true; });
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   }
 })();
