@@ -300,6 +300,11 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 
   <footer>
     Qibla is given as a clock position from the aircraft's nose (12 o'clock = straight ahead, 3 = right, 9 = left), from the great-circle bearing to the Kaaba and the planned track. Drift is not included: with a crosswind the nose points a few degrees off the track. QDM and track are magnetic (World Magnetic Model 2025). Prayer-window opening times are rounded up to the minute and closing times are rounded down. This is a reference prototype: check it against your authority before relying on it.
+    <details id="appCheck" style="margin-top:10px"><summary>App install check</summary>
+      <div class="hint">If your phone only offers a shortcut, this shows which requirement is failing. Copy it and send it if you need help.</div>
+      <ul id="appCheckList" class="mono" style="font-size:12px;padding-left:18px;margin:6px 0"></ul>
+      <button type="button" id="appCheckRun">Run again</button>
+    </details>
   </footer>
 </main>
 
@@ -1036,9 +1041,39 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEvt = e; $("installBtn").hidden = false; });
   window.addEventListener("appinstalled", () => { $("installBtn").hidden = true; installEvt = null; });
   $("installBtn").addEventListener("click", async () => { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice; installEvt = null; $("installBtn").hidden = true; });
+  let swErr = "";
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
+    navigator.serviceWorker.register("sw.js").catch((e) => { swErr = e && e.message || String(e); });
   }
+  // Installability self-check (shown in the footer).
+  async function appCheck(){
+    const out = [], ok = (b) => b ? "✓" : "✗";
+    const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+    out.push(`${ok(location.protocol === "https:")} address: ${location.href.split("#")[0]}`);
+    out.push(`${standalone ? "✓" : "·"} opened as: ${standalone ? "installed app" : "browser tab"}`);
+    const ua = navigator.userAgent;
+    if (/; wv\)|FBAN|FBAV|Instagram|Line\/|GitHub/i.test(ua)) out.push("✗ opened inside another app's browser: open the page in Chrome itself");
+    else if (/SamsungBrowser|Firefox|EdgA|OPR\//.test(ua)) out.push("✗ not Chrome: use Chrome to install");
+    try {
+      const href = document.querySelector('link[rel=manifest]').href;
+      const m = await (await fetch(href, { cache: "no-store" })).json();
+      out.push(`✓ manifest: ${m.name}, display ${m.display}, ${m.icons.length} icons`);
+      for (const ic of m.icons.filter((i) => /png/.test(i.type))) {
+        const res = await fetch(new URL(ic.src, href), { cache: "no-store" });
+        out.push(`${ok(res.ok)} icon ${ic.src} (${ic.sizes}): ${res.status}`);
+      }
+    } catch (e) { out.push(`✗ manifest: ${e.message}`); }
+    if (!("serviceWorker" in navigator)) out.push("✗ service worker: not supported here");
+    else {
+      const reg = await navigator.serviceWorker.getRegistration();
+      out.push(reg && reg.active ? `✓ service worker: active` : `✗ service worker: ${swErr || (reg ? "installing" : "not registered")}`);
+    }
+    try { const k = await caches.keys(); const n = k.length ? (await (await caches.open(k[0])).keys()).length : 0; out.push(`${ok(n >= 10)} offline files: ${n} (${k[0] || "no cache"})`); } catch (e) { out.push("✗ offline cache: " + e.message); }
+    out.push(standalone ? "✓ already installed" : installEvt ? "✓ Chrome offers install: tap ⤓ Install app at the top" : "✗ Chrome has not offered install on this page (yet)");
+    $("appCheckList").innerHTML = out.map((l) => `<li>${esc(l)}</li>`).join("");
+  }
+  $("appCheck").addEventListener("toggle", () => { if ($("appCheck").open) appCheck(); });
+  $("appCheckRun").addEventListener("click", appCheck);
 })();
 </script>
 </body>

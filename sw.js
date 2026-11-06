@@ -1,9 +1,12 @@
 // Caches the app so it opens with no connection (after one online visit).
-const CACHE = "solat-flight-v13";
+const CACHE = "solat-flight-v14";
 const FILES = ["./", "index.html", "solat.js", "world.js", "globe.js", "world50.js", "ofp.js", "wmm.js", "vendor/pdfjs/pdf.min.js", "vendor/pdfjs/pdf.worker.min.js", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
+  // cache each file on its own, so one missing file cannot stop the app installing
+  e.waitUntil(caches.open(CACHE)
+    .then((c) => Promise.allSettled(FILES.map((f) => c.add(new Request(f, { cache: "reload" })))))
+    .then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", (e) => {
   e.waitUntil(caches.keys()
