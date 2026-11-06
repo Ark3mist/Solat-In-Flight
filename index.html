@@ -104,7 +104,11 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
         <div class="r3">
           <div><label for="date">Date (UTC)</label><input id="date" type="date"></div>
           <div><label for="dep">Airborne UTC</label><input id="dep" class="mono" inputmode="numeric" placeholder="1530" maxlength="5"></div>
-          <div><label for="arr">Landing UTC</label><input id="arr" class="mono" inputmode="numeric" placeholder="0530" maxlength="5"></div>
+          <div><label for="arr">Landing UTC</label><input id="arr" class="mono" inputmode="numeric" placeholder="auto" maxlength="5"></div>
+        </div>
+        <div class="r3">
+          <div><label for="gs">Avg GS kt</label><input id="gs" class="mono" inputmode="numeric" value="430"></div>
+          <div style="grid-column:span 2"><div class="hint" style="margin-top:26px">Leave Landing blank to estimate it from great-circle distance ÷ GS.</div></div>
         </div>
         <label for="conv">Convention</label>
         <select id="conv"></select>
@@ -182,6 +186,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       <section>
         <h2>Prayer windows</h2>
         <div class="summary" id="summary">Enter the flight and press Calculate.</div>
+        <div class="errors" id="gsWarn" style="margin:0 0 8px"></div>
         <div class="tablewrap"><table id="winTbl" class="cards" hidden>
           <thead><tr><th>Prayer</th><th>Opens</th><th>Closes</th><th>Airborne time available</th><th>Qibla at opening</th></tr></thead>
           <tbody></tbody>
@@ -218,7 +223,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 
   // ---------- form state ----------
   const DEFAULT = {
-    date: new Date().toISOString().slice(0,10), dep: "1530", arr: "0530", conv: "jakim",
+    date: new Date().toISOString().slice(0,10), dep: "1530", arr: "", gs: "430", conv: "jakim",
     wps: [ { id:"KUL", lat:"N0244.6", lon:"E10141.9", eto:"" },
            { id:"LHR", lat:"N5128.7", lon:"W00027.7", eto:"" } ],
     fl: "350", elevO: "70", elevD: "83", climb: "1500", stepRate: "1000", descent: "1500",
@@ -245,7 +250,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
         `<input class="mono" list="stations" value="${esc(w.id)}" data-k="id" aria-label="Ident">` +
         `<input class="mono" value="${esc(w.lat)}" data-k="lat" aria-label="Latitude" placeholder="N0000.0">` +
         `<input class="mono" value="${esc(w.lon)}" data-k="lon" aria-label="Longitude" placeholder="E00000.0">` +
-        `<input class="mono" value="${first ? esc(state.dep) : last ? esc(state.arr) : esc(w.eto)}" data-k="eto" ${first||last ? "disabled title='Set in Flight'" : ""} aria-label="ETO" placeholder="${first||last ? "" : "auto"}" inputmode="numeric" maxlength="5">` +
+        `<input class="mono" value="${first ? esc(state.dep) : last ? esc(state.arr) : esc(w.eto)}" data-k="eto" ${first||last ? "disabled title='Set in Flight'" : ""} aria-label="ETO" placeholder="${first ? "" : "auto"}" inputmode="numeric" maxlength="5">` +
         (first || last ? "<span></span>" : `<button class="x" type="button" aria-label="Remove waypoint">✕</button>`);
       row.querySelectorAll("input").forEach((inp) => inp.addEventListener("change", () => {
         const k = inp.dataset.k; w[k] = inp.value.trim().toUpperCase();
@@ -273,7 +278,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       box.appendChild(row);
     });
   }
-  const SIMPLE = ["date","dep","arr","conv","fl","elevO","elevD","climb","stepRate","descent","tz","ihZ","ihM"];
+  const SIMPLE = ["date","dep","arr","gs","conv","fl","elevO","elevD","climb","stepRate","descent","tz","ihZ","ihM"];
   function readSimple(){ SIMPLE.forEach((k) => state[k] = $(k).value.trim()); state.dipTw = $("dipTw").checked; }
   function save(){ readSimple(); store.set("solat.v2", state); }
 
@@ -311,7 +316,9 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     if (!isFinite(day)) errs.push("Set the date.");
     const dep = hhmm(state.dep), arr = hhmm(state.arr);
     if (dep === null) errs.push("Airborne time must be HHMM.");
-    if (arr === null) errs.push("Landing time must be HHMM.");
+    if (state.arr && arr === null) errs.push("Landing time must be HHMM (or blank to estimate).");
+    const gs = +state.gs;
+    if (!state.arr && !(gs >= 100 && gs <= 1200)) errs.push("Average ground speed must be 100–1200 kt.");
     const wps = [];
     let last = null;
     state.wps.forEach((w, i) => {
@@ -336,6 +343,14 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     if (initialFt === null) errs.push("Initial FL is invalid.");
     if (errs.length) throw new Error(errs.join("\n"));
 
+    // Landing left blank: estimate from the last timed fix, distance / GS.
+    let estimated = false;
+    if (wps[wps.length-1].eto == null) {
+      let k = wps.length - 1; while (k > 0 && wps[k].eto == null) k--;
+      let nm = 0; for (let i = k + 1; i < wps.length; i++) nm += S.gcNm(wps[i-1], wps[i]);
+      wps[wps.length-1].eto = Math.round((wps[k].eto + nm / gs * HOUR) / MIN) * MIN;
+      estimated = true;
+    }
     const start = wps[0].eto, end = wps[wps.length-1].eto;
     const steps = [];
     state.steps.forEach((s, i) => {
@@ -351,7 +366,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     const conv = { fajr: +$("fajr").value, isha: +$("isha").value, asr: +$("asr").value,
       dipOnTwilight: state.dipTw,
       ihtiyat: Object.assign({}, S.DEFAULT_IHTIYAT, { Zuhr: +state.ihZ || 0, Maghrib: +state.ihM || 0 }) };
-    return { route, conv };
+    return { route, conv, estimated };
   }
 
   // ---------- formatting ----------
@@ -375,13 +390,17 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     let b;
     try { b = build(); } catch(e){ $("errors").textContent = e.message; return; }
     save();
-    const { route, conv } = b;
+    const { route, conv, estimated } = b;
     const pw = S.prayerWindows(route, conv);
     result = { route, conv, ...pw };
     const first = route.wps[0], last = route.wps[route.wps.length-1], prof = route.profile;
+    const avgGs = route.distNm / ((route.end - route.start) / HOUR);
     $("summary").textContent = `${first.name} ${fmtZ(route.start, floorMin)} → ${last.name} ${fmtZ(route.end, floorMin)} · ` +
-      `${Math.round(route.distNm)} nm · ${fmtDur(route.end - route.start)} · max ${fmtFL(prof.maxFt)} · ` +
+      `${Math.round(route.distNm)} nm · ${fmtDur(route.end - route.start)}${estimated ? " (estimated)" : ""} · avg GS ${Math.round(avgGs)} kt · max ${fmtFL(prof.maxFt)} · ` +
       `Fajr ${conv.fajr}° Isha ${conv.isha}° ${conv.asr === 2 ? "Hanafi" : "Shafi'i"} Asr`;
+    $("gsWarn").innerHTML = (avgGs > 650 || avgGs < 250)
+      ? `<span class="pill warn">check times</span> ${fmtDur(route.end - route.start)} for ${Math.round(route.distNm)} nm means an average ground speed of <b>${Math.round(avgGs)} kt</b>, which is not realistic. Prayer times follow from the times you enter, so check the airborne and landing times, or leave Landing blank to estimate it.`
+      : "";
 
     // windows
     const wb = $("winTbl").querySelector("tbody"); wb.innerHTML = "";
