@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 @dataclass
 class Convention:
     name: str = "Workbook-equivalent (Fajr 18, Isha 18, Shafi'i Asr)"
-    fajr_angle: float = 18.0        # JAKIM uses 20.0
+    fajr_angle: float = 18.0        # JAKIM e-Solat timetables fit 18 (their Imsak sits at ~20)
     isha_angle: float = 18.0
     asr_factor: float = 1.0         # 1 = Shafi'i/Maliki/Hanbali, 2 = Hanafi
     # Precautionary minutes (ihtiyat) added after computing the astronomical
@@ -44,8 +44,9 @@ class Convention:
 
 CONVENTIONS = {
     "workbook": Convention(),
-    "jakim": Convention(name="JAKIM (Fajr 20, Isha 18, Shafi'i Asr)",
-                        fajr_angle=20.0),
+    "jakim": Convention(name="JAKIM e-Solat (Fajr 18, Isha 18, ihtiyat 1-2 min)",
+                        ihtiyat_min={"Fajr": 1, "Sunrise": 0, "Zuhr": 2, "Asr": 1, "Maghrib": 1, "Isha": 1}),
+    "fajr20": Convention(name="Fajr 20, Isha 18 (older setting)", fajr_angle=20.0),
     "mwl": Convention(name="MWL (Fajr 18, Isha 17)", isha_angle=17.0),
 }
 

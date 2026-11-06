@@ -232,10 +232,16 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
             <div><label for="asr">Asr</label><select id="asr"><option value="1">Shafi'i</option><option value="2">Hanafi</option></select></div>
           </div>
           <div class="r3">
+            <div><label for="ihF">Fajr +min</label><input id="ihF" type="number" value="1"></div>
             <div><label for="ihZ">Zuhr +min</label><input id="ihZ" type="number" value="2"></div>
+            <div><label for="ihA">Asr +min</label><input id="ihA" type="number" value="1"></div>
+          </div>
+          <div class="r3">
             <div><label for="ihM">Maghrib +min</label><input id="ihM" type="number" value="1"></div>
+            <div><label for="ihI">Isha +min</label><input id="ihI" type="number" value="1"></div>
             <div><label for="tz">Local offset</label><input id="tz" class="mono" placeholder="+08:00"></div>
           </div>
+          <div class="hint">Ihtiyat (safety minutes) set by the convention. JAKIM's values reproduce the e-Solat timetable within 1 min on about 91% of days.</div>
           <label class="chk"><input id="dipTw" type="checkbox" checked> Apply altitude dip to Fajr &amp; Isha (a juristic choice)</label>
         </details>
         <button class="primary" id="go" type="button" style="margin-top:12px">Calculate</button>
@@ -323,7 +329,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     wps: [ { id:"KUL", lat:"N0244.6", lon:"E10141.9", eto:"" },
            { id:"LHR", lat:"N5128.7", lon:"W00027.7", eto:"" } ],
     fl: "350", elevO: "70", elevD: "83", climb: "1500", stepRate: "1000", descent: "1500",
-    steps: [], tz: "", dipTw: true, ihZ: "2", ihM: "1",
+    steps: [], tz: "", dipTw: true, ihF: "1", ihZ: "2", ihA: "1", ihM: "1", ihI: "1",
   };
   let state = Object.assign({}, DEFAULT, store.get("solat.v2") || {});
 
@@ -366,7 +372,11 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     $("routeLoad").disabled = $("routeDel").disabled = !keys.length;
   }
 
-  function applyConv(){ const c = S.CONVENTIONS[$("conv").value]; $("fajr").value = c.fajr; $("isha").value = c.isha; $("asr").value = c.asr; }
+  function applyConv(){
+    const c = S.CONVENTIONS[$("conv").value] || S.CONVENTIONS.jakim, ih = Object.assign({}, S.DEFAULT_IHTIYAT, c.ihtiyat || {});
+    $("fajr").value = c.fajr; $("isha").value = c.isha; $("asr").value = c.asr;
+    [["ihF","Fajr"],["ihZ","Zuhr"],["ihA","Asr"],["ihM","Maghrib"],["ihI","Isha"]].forEach(([id, n]) => $(id).value = ih[n]);
+  }
 
   // HHMM arithmetic for propagating a revised time down the route.
   const toMin = (x) => { const v = hhmm(x); return v === null ? null : v / MIN; };
@@ -427,7 +437,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       box.appendChild(row);
     });
   }
-  const SIMPLE = ["date","offb","taxi","dep","arr","gs","conv","tz","ihZ","ihM"];   // levels and rates live in state (route FLs / OFP)
+  const SIMPLE = ["date","offb","taxi","dep","arr","gs","conv","tz","ihF","ihZ","ihA","ihM","ihI"];   // levels and rates live in state (route FLs / OFP)
   function readSimple(){ SIMPLE.forEach((k) => state[k] = $(k).value.trim()); state.dipTw = $("dipTw").checked; }
   function save(){ readSimple(); store.set("solat.v2", state); }
 
@@ -632,7 +642,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     const route = S.makeRoute(wps, profile);
     const conv = { fajr: +$("fajr").value, isha: +$("isha").value, asr: +$("asr").value,
       dipOnTwilight: state.dipTw,
-      ihtiyat: Object.assign({}, S.DEFAULT_IHTIYAT, { Zuhr: +state.ihZ || 0, Maghrib: +state.ihM || 0 }) };
+      ihtiyat: Object.assign({}, S.DEFAULT_IHTIYAT, { Fajr: +state.ihF || 0, Zuhr: +state.ihZ || 0, Asr: +state.ihA || 0, Maghrib: +state.ihM || 0, Isha: +state.ihI || 0 }) };
     return { route, conv, estimated };
   }
 
@@ -1072,7 +1082,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   run();
 
   // ---------- version, data validity, update ----------
-  const APP_VERSION = "2026.11.06", APP_DATE = Date.UTC(2026, 10, 6);
+  const APP_VERSION = "2026.11.06b", APP_DATE = Date.UTC(2026, 10, 6);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){

@@ -13,7 +13,7 @@
 
 The calculation chain: table lookup, then linear interpolation by date and latitude, then a longitude correction, then an altitude correction, then the along-track event. The along-track event is found with a circular reference (`X2`↔`X4`), so it only works with Excel's iterative calculation turned on, plus manual "Adjust dist" passes.
 
-I back-solved the tables against a solar model to find the convention they use: **Fajr 18°, Isha 18°, Shafi'i Asr, Zuhr = transit + about 2–3 min, Maghrib = sunset + about 1 min**. The "Fajr 15°" row is an alternative. Note: this is **not JAKIM** (JAKIM uses Fajr 20°). Check that this is the authority you intend to follow.
+I back-solved the tables against a solar model to find the convention they use: **Fajr 18°, Isha 18°, Shafi'i Asr, Zuhr = transit + about 2–3 min, Maghrib = sunset + about 1 min**. The "Fajr 15°" row is an alternative. Note: the angles match JAKIM e-Solat (validated against the 2026 timetables: Fajr and Isha at 18°, see [`jakim-validation.md`](jakim-validation.md)); JAKIM adds about 1 min of ihtiyat to Fajr, Asr and Isha as well.
 
 ## Findings, ranked by impact
 

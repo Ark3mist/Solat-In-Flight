@@ -7,9 +7,14 @@
   const KAABA = { lat: 21.4225, lon: 39.8262 };
 
   const CONVENTIONS = {
-    jakim:    { name: "JAKIM (Fajr 20°, Isha 18°)", fajr: 20, isha: 18, asr: 1 },
+    // JAKIM: fitted to the published e-Solat 2026 timetables (5 zones, 1,825 zone-days): Fajr and Isha
+    // at 18° with whole-minute ihtiyat reproduce them within 1 min on ~91% of days, never more than 2 min.
+    // (JAKIM's Imsak, 10 min before Fajr, falls at about 20°.)
+    jakim:    { name: "JAKIM e-Solat (Fajr 18°, Isha 18°, ihtiyat)", fajr: 18, isha: 18, asr: 1,
+                ihtiyat: { Fajr: 1, Sunrise: 0, Zuhr: 2, Asr: 1, Maghrib: 1, Isha: 1 } },
     workbook: { name: "Excel v3.7 (Fajr 18°, Isha 18°)", fajr: 18, isha: 18, asr: 1 },
     mwl:      { name: "MWL (Fajr 18°, Isha 17°)", fajr: 18, isha: 17, asr: 1 },
+    fajr20:   { name: "Fajr 20°, Isha 18° (older setting)", fajr: 20, isha: 18, asr: 1 },
   };
   const DEFAULT_IHTIYAT = { Fajr: 0, Sunrise: 0, Zuhr: 2, Asr: 0, Maghrib: 1, Isha: 0 };
 
