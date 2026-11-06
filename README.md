@@ -30,6 +30,13 @@ What it does:
    - **▶** plays the flight, and the slider also drives the Now panel.
    Land outlines are Natural Earth 1:110m (public domain), via world-atlas (ISC).
 
+9. **Import OFP:** load the briefing package as a PDF, or paste its text.
+   - It reads the COORDINATES INFORMATION list, the nav log (ELTM and FL per fix) and the header (date, STD, taxi, flight time). The reclearance log is skipped.
+   - From these it sets the airborne and landing times, every waypoint with its ETO, the initial FL and step climbs, and the climb and descent rates (from T-O-C and T-O-D).
+   - The file is read **on the device**. Nothing is uploaded, and it works offline.
+   - PDF reading uses [pdf.js](https://github.com/mozilla/pdf.js) 3.11.174 (Apache-2.0, bundled in `vendor/pdfjs`), loaded only when you choose a PDF.
+   - The parser has been tested against one Lido-style OFP layout. Other layouts may need parser changes.
+
 Windows already open at take-off, or still open at landing, are completed using the aircraft on the ground at the origin or destination. If a closing angle is never reached on the track (a high-latitude summer night), the window is flagged.
 
 ## Python (command line)

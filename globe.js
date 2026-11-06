@@ -269,8 +269,11 @@
       route.wps.forEach((w, i) => {
         const q = proj(w.lat, w.lon); if (q.z < 0.05) return;
         g.save(); g.fillStyle = colors.halo; g.strokeStyle = colors.ink; g.lineWidth = 1.5 * lw;
-        g.beginPath(); g.arc(q.x, q.y, (i === 0 || i === route.wps.length - 1 ? 4.5 : 3.2) * lw, 0, 2 * Math.PI); g.fill(); g.stroke(); g.restore();
-        label(w.name, q.x + 7 * lw, q.y - 9 * lw, colors.ink, { size: 11, weight: 700, pri: 2 });
+        g.beginPath(); g.arc(q.x, q.y, (i === 0 || i === route.wps.length - 1 ? 4.5 : route.wps.length > 20 ? 2.2 : 3.2) * lw, 0, 2 * Math.PI); g.fill(); g.stroke(); g.restore();
+        // long OFP routes: label ends plus ~10 evenly spaced fixes
+        const ends = i === 0 || i === route.wps.length - 1;
+        const every = Math.max(1, Math.ceil(route.wps.length / 12));
+        if (ends || i % every === 0) label(w.name, q.x + 7 * lw, q.y - 9 * lw, colors.ink, { size: ends ? 11 : 10, weight: ends ? 700 : 600, pri: ends ? 2 : -1 });
       });
 
       // prayer events on the route

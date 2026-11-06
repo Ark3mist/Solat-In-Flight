@@ -99,6 +99,11 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .legend button{display:inline-flex;gap:6px;align-items:center;font-size:12px;padding:4px 8px}
 .legend button[aria-pressed=false]{opacity:.4}
 .legend i{display:inline-block;width:16px;height:3px;border-radius:2px}
+.ofp{border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px;background:var(--field)}
+.ofp textarea{width:100%;font:13px ui-monospace,Menlo,monospace;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px;margin-top:8px}
+.ofp dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;font-size:13px;margin:8px 0}
+.ofp dt{color:var(--muted)} .ofp dd{margin:0;font-family:ui-monospace,Menlo,monospace}
+.ofp .warn{color:var(--warn);font-size:12px}
 .avail{font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:16px}
 @media (max-width:560px){
   .wp{grid-template-columns:30px minmax(0,1fr) 70px 30px;grid-template-areas:"tag id eto x" ". lat lon lon";row-gap:4px;padding-bottom:6px;border-bottom:1px solid var(--line)}
@@ -140,7 +145,22 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       </section>
 
       <section>
-        <h2>Route <button class="link" id="addWp" type="button">+ Add waypoint</button></h2>
+        <h2>Route <span><button class="link" id="ofpOpen" type="button">Import OFP</button> &nbsp; <button class="link" id="addWp" type="button">+ Add waypoint</button></span></h2>
+        <div id="ofpBox" class="ofp" hidden>
+          <div class="hint" style="margin-top:0">Load the briefing package (PDF) or paste its text. It is read <b>on this device only</b>: nothing is uploaded, and it works offline. The app reads the coordinates list, the nav log (ELTM and FL) and the header times.</div>
+          <div class="btnrow">
+            <button type="button" id="ofpPick">Choose PDF…</button>
+            <input type="file" id="ofpFile" accept="application/pdf,.pdf,text/plain,.txt" hidden>
+            <button type="button" id="ofpPasteBtn">Paste text instead</button>
+            <button type="button" id="ofpClose">Close</button>
+          </div>
+          <div id="ofpPaste" hidden>
+            <textarea id="ofpText" rows="6" placeholder="Paste the whole OFP text here" spellcheck="false"></textarea>
+            <button type="button" id="ofpParse" style="margin-top:6px">Read text</button>
+          </div>
+          <div class="ok" id="ofpMsg"></div>
+          <div id="ofpPreview"></div>
+        </div>
         <div class="wp wphead"><span></span><span>Ident</span><span>Lat</span><span>Lon</span><span>ETO</span><span></span></div>
         <div id="wps"></div>
         <div class="hint">Lat/Lon as <span class="mono">N0244.6</span> / <span class="mono">E10141.9</span> or decimal. Airports from the built-in list fill in automatically. ETO (HHMM UTC) is optional on waypoints; without it the time is spread by distance. Times roll past 0000Z automatically.</div>
@@ -283,6 +303,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 <script src="solat.js"></script>
 <script src="world.js"></script>
 <script src="globe.js"></script>
+<script src="ofp.js"></script>
 <script>
 (function(){
   "use strict";
@@ -515,7 +536,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
         if (v === null) errs.push(`${name}: ETO must be HHMM.`);
         else if (isFinite(day)) {
           eto = day + v;
-          while (last !== null && eto <= last) eto += DAY;
+          while (last !== null && eto < last) eto += DAY;   // equal times allowed (same-minute fixes)
           last = eto;
         }
       }
@@ -792,6 +813,118 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     $("globeSec").hidden = false;
     drawGlobe();
   }
+
+  // ---------- OFP import ----------
+  let ofpData = null;
+  const loadScript = (src) => new Promise((ok, bad) => {
+    const el = document.createElement("script"); el.src = src; el.onload = ok;
+    el.onerror = () => bad(new Error("Could not load " + src)); document.head.appendChild(el);
+  });
+  async function pdfToText(file){
+    if (!window.pdfjsLib) {
+      // worker code runs on the main thread: works from file:// and offline
+      await loadScript("vendor/pdfjs/pdf.worker.min.js");
+      await loadScript("vendor/pdfjs/pdf.min.js");
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = "vendor/pdfjs/pdf.worker.min.js";
+    }
+    const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
+    const all = [];
+    for (let n = 1; n <= pdf.numPages; n++) {
+      const tc = await (await pdf.getPage(n)).getTextContent();
+      all.push(tc.items.filter((it) => it.str && it.str.trim() !== ""));
+    }
+    // rebuild text lines from positioned glyph runs (OFPs use fixed-width fonts),
+    // measuring columns from the document's left margin
+    const flat = all.flat();
+    const widths = flat.map((it) => it.width / it.str.length).filter((w) => w > 0).sort((a, b) => a - b);
+    const cw = widths.length ? widths[Math.floor(widths.length / 2)] : 6;
+    const x0 = flat.reduce((m, it) => Math.min(m, it.transform[4]), Infinity);
+    const pages = [];
+    for (const items of all) {
+      const rows = new Map();
+      for (const it of items) {
+        const y = Math.round(it.transform[5]);
+        let key = [...rows.keys()].find((k) => Math.abs(k - y) <= 2);
+        if (key === undefined) { key = y; rows.set(key, []); }
+        rows.get(key).push(it);
+      }
+      const lines = [...rows.entries()].sort((a, b) => b[0] - a[0]).map(([, its]) => {
+        its.sort((a, b) => a.transform[4] - b.transform[4]);
+        let line = "";
+        for (const it of its) {
+          const col = Math.round((it.transform[4] - x0) / cw);
+          line += line.length < col ? " ".repeat(col - line.length) : (line && !line.endsWith(" ") ? " " : "");
+          line += it.str;
+        }
+        return line;
+      });
+      pages.push(lines.join("\n"));
+    }
+    return pages.join("\n\n");
+  }
+  const hhmmOf = (t) => { const d = new Date(t); return pad(d.getUTCHours()) + pad(d.getUTCMinutes()); };
+  const elOf = (min) => `${Math.floor(min / 60)}:${pad(min % 60)}`;
+  function showOfp(o){
+    ofpData = o;
+    const real = o.points.filter((p) => !p.pseudo);
+    const ok = real.length >= 2 && o.airborne;
+    let h = "";
+    if (o.points.length) {
+      h += `<dl>
+        <dt>Flight</dt><dd>${esc(o.flight || "")} ${esc(o.depIcao || "?")} → ${esc(o.destIcao || "?")}</dd>
+        <dt>Airborne</dt><dd>${o.airborne ? fmtZ(o.airborne, floorMin) : "?"} <span class="s">(STD ${esc(o.std || "?")} + taxi ${o.taxiMin ?? "?"} min)</span></dd>
+        <dt>Landing</dt><dd>${o.landing ? fmtZ(o.landing, floorMin) : "?"} <span class="s">(flight time ${o.fltMin != null ? elOf(o.fltMin) : "?"})</span></dd>
+        <dt>Waypoints</dt><dd>${real.length} fixes <span class="s">+ ${o.points.length - real.length} SETP/ETP/T-O-C/T-O-D points</span></dd>
+        <dt>Levels</dt><dd>${o.initialFL ? "FL" + o.initialFL : "?"}${(o.steps || []).map((s) => ` → FL${s.fl} from ${esc(s.at)} (T+${elOf(s.eltm)})`).join("")}</dd>
+        <dt>Climb / descent</dt><dd>${o.climbFpm || "?"} / ${o.descentFpm || "?"} fpm <span class="s">(from T-O-C / T-O-D)</span></dd>
+      </dl>`;
+      h += `<label class="chk" style="margin-top:0"><input type="checkbox" id="ofpPseudo"> Also add SETP / ETP / T-O-C / T-O-D points to the route</label>`;
+    }
+    if (o.warnings.length) h += o.warnings.map((w) => `<div class="warn">⚠ ${esc(w)}</div>`).join("");
+    if (ok) h += `<div class="btnrow"><button type="button" class="primary" id="ofpApply" style="width:auto">Use this route</button></div>`;
+    else h += `<div class="warn">Not enough data to build a route${o.points.length ? "" : ": no waypoint coordinates were found"}.</div>`;
+    $("ofpPreview").innerHTML = h;
+    if (ok) $("ofpApply").addEventListener("click", applyOfp);
+  }
+  function applyOfp(){
+    const o = ofpData; if (!o) return;
+    const withPseudo = $("ofpPseudo") && $("ofpPseudo").checked;
+    const pts = o.points.filter((p, i) => withPseudo || !p.pseudo || i === 0 || i === o.points.length - 1);
+    state.date = new Date(o.airborne).toISOString().slice(0, 10);
+    state.dep = hhmmOf(o.airborne);
+    state.arr = o.landing ? hhmmOf(o.landing) : "";
+    state.wps = pts.map((p, i) => ({ id: p.name, lat: S.fmtLat(p.lat), lon: S.fmtLon(p.lon),
+      eto: i > 0 && i < pts.length - 1 && p.eto ? hhmmOf(p.eto) : "" }));
+    if (o.initialFL) state.fl = String(o.initialFL);
+    state.steps = (o.steps || []).map((s) => ({ at: elOf(s.eltm), fl: String(s.fl) }));
+    if (o.climbFpm) state.climb = String(o.climbFpm);
+    if (o.descentFpm) state.descent = String(o.descentFpm);
+    SIMPLE.forEach((k) => { if (state[k] != null) $(k).value = state[k]; });
+    renderWps(); renderSteps(); store.set("solat.v2", state);
+    const dd = new Date(o.airborne);
+    $("routeName").value = `${o.depIcao || ""}-${o.destIcao || ""} ${o.flight || ""} ${pad(dd.getUTCDate())}${["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"][dd.getUTCMonth()]}`.replace(/\s+/g, " ").trim();
+    $("ofpBox").hidden = true;
+    flash("routeMsg", `Imported ${pts.length} points with nav-log times. Press "Save route" to keep it.`);
+    run();
+  }
+  async function handleText(text){
+    try { showOfp(window.SolatOFP.parse(text)); $("ofpMsg").textContent = ""; }
+    catch (e) { $("ofpMsg").textContent = "Could not read it: " + e.message; }
+  }
+  $("ofpOpen").addEventListener("click", () => { $("ofpBox").hidden = false; });
+  $("ofpClose").addEventListener("click", () => { $("ofpBox").hidden = true; });
+  $("ofpPick").addEventListener("click", () => $("ofpFile").click());
+  $("ofpPasteBtn").addEventListener("click", () => { $("ofpPaste").hidden = false; $("ofpText").focus(); });
+  $("ofpParse").addEventListener("click", () => handleText($("ofpText").value));
+  $("ofpFile").addEventListener("change", async () => {
+    const f = $("ofpFile").files[0]; if (!f) return;
+    $("ofpPreview").innerHTML = ""; $("ofpMsg").textContent = "Reading " + f.name + "…";
+    try {
+      const text = /\.pdf$/i.test(f.name) || f.type === "application/pdf" ? await pdfToText(f) : await f.text();
+      await handleText(text);
+    } catch (e) { $("ofpMsg").textContent = "Could not read the file: " + e.message; }
+    $("ofpFile").value = "";
+  });
 
   $("go").addEventListener("click", run);
   run();
