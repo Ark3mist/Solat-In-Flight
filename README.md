@@ -23,6 +23,13 @@ What it does:
    - **Export backup / Import:** move your library between devices. It is stored in the browser, so each device keeps its own copy.
 7. **Prayer time available** is measured from opening (or take-off) until the next prayer, along the moving route. It is compared with someone staying at the position where the window opened: flying east shortens a window and flying west lengthens it.
 
+8. **Globe with a time slider:**
+   - shows the route as entered (flown part solid, rest dashed) with the aircraft moving along it;
+   - day, twilight and night shading from the sun's true position;
+   - **prayer lines** for Fajr, Sunrise, Zuhr, Asr, Maghrib and Isha: the places where each prayer is starting at the slider time, so you can watch the aircraft cross them;
+   - **▶** plays the flight, and the slider also drives the Now panel.
+   Land outlines are Natural Earth 1:110m (public domain), via world-atlas (ISC).
+
 Windows already open at take-off, or still open at landing, are completed using the aircraft on the ground at the origin or destination. If a closing angle is never reached on the track (a high-latitude summer night), the window is flagged.
 
 ## Python (command line)
