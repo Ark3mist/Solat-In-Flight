@@ -32,7 +32,23 @@
     PER: "S3156.4 E11558.0", DWC: "N2455.1 E05510.5", BOM: "N1905.5 E07252.0",
     KCH: "N0129.1 E11020.7", HAN: "N2113.3 E10548.3", NRT: "N3545.9 E14023.1",
     CAN: "N2323.6 E11318.5", AMS: "N5218.5 E00445.9",
+    CDG: "N4900.6 E00232.9", IST: "N4116.5 E02845.1", FRA: "N5002.0 E00834.2", MCT: "N2335.6 E05817.1",
+    CMB: "N0710.8 E07953.0", MLE: "N0411.5 E07331.7",
   };
+  // ICAO -> IATA, and each airport's time zone (IANA; the browser applies daylight saving).
+  const ICAO = { WMKK: "KUL", EGLL: "LHR", OMDB: "DXB", YMML: "MEL", YBBN: "BNE", OEMA: "MED", WADD: "DPS", WIII: "CGK",
+    VGHS: "DAC", VOMM: "MAA", RJBB: "KIX", VTBS: "BKK", OEJN: "JED", VHHH: "HKG", WSSS: "SIN", ZSPD: "PVG", VIDP: "DEL",
+    NZAA: "AKL", YSSY: "SYD", RPLL: "MNL", RCTP: "TPE", YPAD: "ADL", ZBAA: "PEK", OTHH: "DOH", WBKK: "BKI", RKSI: "ICN",
+    WMKP: "PEN", YPPH: "PER", OMDW: "DWC", VABB: "BOM", WBGG: "KCH", VVNB: "HAN", RJAA: "NRT", ZGGG: "CAN", EHAM: "AMS",
+    LFPG: "CDG", LTFM: "IST", EDDF: "FRA", OOMS: "MCT", VCBI: "CMB", VRMM: "MLE" };
+  const TZ = { MEL: "Australia/Melbourne", KUL: "Asia/Kuala_Lumpur", LHR: "Europe/London", DXB: "Asia/Dubai", BNE: "Australia/Brisbane",
+    MED: "Asia/Riyadh", DPS: "Asia/Makassar", CGK: "Asia/Jakarta", DAC: "Asia/Dhaka", MAA: "Asia/Kolkata", KIX: "Asia/Tokyo",
+    BKK: "Asia/Bangkok", JED: "Asia/Riyadh", HKG: "Asia/Hong_Kong", SIN: "Asia/Singapore", PVG: "Asia/Shanghai", DEL: "Asia/Kolkata",
+    AKL: "Pacific/Auckland", SYD: "Australia/Sydney", MNL: "Asia/Manila", TPE: "Asia/Taipei", ADL: "Australia/Adelaide",
+    PEK: "Asia/Shanghai", DOH: "Asia/Qatar", BKI: "Asia/Kuching", ICN: "Asia/Seoul", PEN: "Asia/Kuala_Lumpur", PER: "Australia/Perth",
+    DWC: "Asia/Dubai", BOM: "Asia/Kolkata", KCH: "Asia/Kuching", HAN: "Asia/Bangkok", NRT: "Asia/Tokyo", CAN: "Asia/Shanghai",
+    AMS: "Europe/Amsterdam", CDG: "Europe/Paris", IST: "Europe/Istanbul", FRA: "Europe/Berlin", MCT: "Asia/Muscat",
+    CMB: "Asia/Colombo", MLE: "Indian/Maldives" };
 
   // ---- coordinates ---------------------------------------------------------
   function parseLat(s) {
@@ -52,10 +68,11 @@
     return null;
   }
   function station(code) {
-    const s = STATIONS[String(code || "").trim().toUpperCase()];
+    let c = String(code || "").trim().toUpperCase(); if (ICAO[c]) c = ICAO[c];
+    const s = STATIONS[c];
     if (!s) return null;
     const [a, b] = s.split(" ");
-    return { lat: parseLat(a), lon: parseLon(b) };
+    return { lat: parseLat(a), lon: parseLon(b), code: c, tz: TZ[c] || null };
   }
   function fmtLat(v) { return fmtDM(v, 2, "N", "S"); }
   function fmtLon(v) { return fmtDM(v, 3, "E", "W"); }
@@ -386,7 +403,7 @@
     return `${fix} ${near ? "−" : "+"}${nm} nm`;
   }
 
-  root.Solat = { fixRef, CONVENTIONS, DEFAULT_IHTIYAT, STATIONS, EVENTS, KAABA, MIN, HOUR, DAY,
+  root.Solat = { fixRef, ICAO, TZ, CONVENTIONS, DEFAULT_IHTIYAT, STATIONS, EVENTS, KAABA, MIN, HOUR, DAY,
     parseLat, parseLon, station, fmtLat, fmtLon, fmtPos, sunPosition, sunAltHa, dipDeg, moonPosition, moonAlt, prevNewMoon, sunAzimuth,
     gcNm, gcInterp, bearing, qiblaBearing, relBearing, clockCode,
     makeProfile, makeRoute, findEvents, prayerWindows, situationAt };

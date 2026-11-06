@@ -109,6 +109,16 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .nowpray .big{font-size:22px;font-weight:700;color:var(--accent)}
 .nowkv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;font-size:13px;margin:0}
 .nowkv dt{color:var(--muted)} .nowkv dd{margin:0}
+.cmpin{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) minmax(0,1.2fr);gap:8px;align-items:end}
+.cmpin button{padding:7px 9px}
+.cmpout table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
+.cmpout th,.cmpout td{padding:6px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.cmpout th{font-size:12px;color:var(--muted);font-weight:600}
+.cmpout td b{font-family:ui-monospace,Menlo,monospace;font-size:15px}
+.cmpout .utc{display:block;font-size:11px;color:var(--muted);font-family:ui-monospace,Menlo,monospace}
+.cmpout tr.cur td{background:var(--soft)}
+.cmpout .diff{font-family:ui-monospace,Menlo,monospace;font-size:13px}
+@media (max-width:560px){.cmpin{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)} .cmpin>div:last-child{grid-column:1/-1}}
 .ground{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
 .ground h4{margin:0 0 6px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 .gtimes{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
@@ -136,7 +146,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   .grid{display:flex;flex-direction:column;align-items:stretch}
   .grid>.col>section{width:100%}
   .col{display:contents}
-  #flightSec{order:1} #nowSec{order:2} #routeSec{order:3} #calcSec{order:4} #globeSec{order:5} #winSec{order:6} #tlSec{order:7}
+  #flightSec{order:1} #nowSec{order:2} #routeSec{order:3} #calcSec{order:4} #globeSec{order:5} #winSec{order:6} #tlSec{order:7} #cmpSec{order:8}
 }
 .globewrap{position:relative;max-width:min(100%,480px);margin:0 auto}
 #globe{width:100%;aspect-ratio:1/1;display:block;touch-action:none;cursor:grab}
@@ -324,6 +334,18 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
         </table></div>
       </section>
 
+      <section id="cmpSec">
+        <h2>Compare airports</h2>
+        <div class="cmpin">
+          <div><label for="cmpA">Airport A</label><input id="cmpA" class="mono" list="stations" placeholder="KUL / WMKK"></div>
+          <button type="button" id="cmpSwap" aria-label="Swap airports" title="Swap">⇄</button>
+          <div><label for="cmpB">Airport B</label><input id="cmpB" class="mono" list="stations" placeholder="LHR / EGLL"></div>
+          <div><label for="cmpDate">Date</label><input id="cmpDate" type="date"></div>
+        </div>
+        <div id="cmpOut" class="cmpout"></div>
+        <div class="hint">Ground times at each airport for that local date, same convention as above. IATA or ICAO codes from the built-in list, your saved waypoints, or coordinates like <span class="mono">N0244.6 E10141.9</span> (UTC only, no local time). Local time follows each airport's time zone, including daylight saving.</div>
+      </section>
+
       <section id="tlSec">
         <h2>Timeline</h2>
         <div class="tablewrap"><table id="evTbl" class="cards" hidden>
@@ -381,7 +403,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   document.body.appendChild(dl);
   function refreshDatalist(){
     dl.innerHTML = "";
-    const names = new Set([...Object.keys(S.STATIONS), ...Object.keys(fixes)]);
+    const names = new Set([...Object.keys(S.STATIONS), ...Object.keys(S.ICAO), ...Object.keys(fixes)]);
     [...names].sort().forEach((k) => { const o = document.createElement("option"); o.value = k; dl.appendChild(o); });
   }
   // User waypoints first, then built-in airports.
@@ -678,10 +700,12 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     const profile = S.makeProfile({ start, end, origElev: +state.elevO || 0, destElev: +state.elevD || 0,
       initialFt: fromFixes ? fromFixes.initialFt : initialFt, steps, climbFpm: +state.climb, stepFpm: +state.stepRate, descentFpm: +state.descent });
     const route = S.makeRoute(wps, profile);
-    const conv = { fajr: +$("fajr").value, isha: +$("isha").value, asr: +$("asr").value,
-      dipOnTwilight: state.dipTw,
+    return { route, conv: currentConv(), estimated };
+  }
+
+  function currentConv(){
+    return { fajr: +$("fajr").value, isha: +$("isha").value, asr: +$("asr").value, dipOnTwilight: state.dipTw,
       ihtiyat: Object.assign({}, S.DEFAULT_IHTIYAT, { Fajr: +state.ihF || 0, Zuhr: +state.ihZ || 0, Asr: +state.ihA || 0, Maghrib: +state.ihM || 0, Isha: +state.ihI || 0 }) };
-    return { route, conv, estimated };
   }
 
   // ---------- formatting ----------
@@ -820,6 +844,68 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
       if (up) for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; rays += `<line x1="${(x + Math.cos(a) * 7).toFixed(1)}" y1="${(y + Math.sin(a) * 7).toFixed(1)}" x2="${(x + Math.cos(a) * 9).toFixed(1)}" y2="${(y + Math.sin(a) * 9).toFixed(1)}" stroke="#f59e0b" stroke-width="1.4" stroke-linecap="round"/>`; }
       return `<g aria-label="Sun ${up ? "above" : "below"} the horizon">${rays}<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="${up ? "#fbbf24" : "none"}" stroke="#f59e0b" stroke-width="1.6" ${up ? "" : 'stroke-dasharray="2 1.6"'}/></g>`;
     }
+  }
+
+  // ---------- Compare airports ----------
+  function tzOffset(tz, t){                       // minutes east of UTC in time zone tz at instant t
+    try {
+      const p = {}; new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric" })
+        .formatToParts(new Date(t)).forEach((x) => p[x.type] = x.value);
+      return Math.round((Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute) - Math.floor(t / MIN) * MIN) / MIN);
+    } catch (e) { return null; }
+  }
+  function place(txt){
+    const v = String(txt || "").trim().toUpperCase(); if (!v) return null;
+    const st = S.station(v); if (st) return { name: st.code === v ? v : `${v} (${st.code})`, lat: st.lat, lon: st.lon, tz: st.tz };
+    const f = lookup(v); if (f) return { name: v, lat: f.lat, lon: f.lon, tz: null };
+    const m = v.split(/[\s,\/]+/); if (m.length === 2) { const lat = S.parseLat(m[0]), lon = S.parseLon(m[1]); if (lat !== null && lon !== null) return { name: S.fmtPos(lat, lon), lat, lon, tz: null }; }
+    return { error: `"${v}" not found` };
+  }
+  function dayTimes(p, dateStr, conv){
+    const [y, mo, d] = dateStr.split("-").map(Number); let d0 = Date.UTC(y, mo - 1, d), off = 0;
+    if (p.tz) { off = tzOffset(p.tz, d0) || 0; d0 -= off * MIN; const o2 = tzOffset(p.tz, d0); if (o2 !== null && o2 !== off) { d0 += (off - o2) * MIN; off = o2; } }
+    else d0 -= Math.round(p.lon / 15 * 60) * MIN;   // no zone: mean solar day
+    const r = S.makeRoute([{ name: "A", lat: p.lat, lon: p.lon, eto: d0 }, { name: "A", lat: p.lat, lon: p.lon, eto: d0 + DAY }],
+      S.makeProfile({ start: d0, end: d0 + DAY, initialFt: 0 }));
+    const ev = {}; for (const e of S.findEvents(r, conv)) if (!(e.name in ev)) ev[e.name] = e.t;
+    return { ev, d0 };
+  }
+  function cmpCalc(){
+    const A = place($("cmpA").value), B = place($("cmpB").value), date = $("cmpDate").value;
+    store.set("solat.cmp", { a: $("cmpA").value, b: $("cmpB").value, d: date });
+    if (!A || !B || !date) { $("cmpOut").innerHTML = `<p class="s">Enter two airports and a date.</p>`; return; }
+    if (A.error || B.error) { $("cmpOut").innerHTML = `<p class="errors">${esc(A.error || B.error)}</p>`; return; }
+    const conv = currentConv(), a = dayTimes(A, date, conv), b = dayTimes(B, date, conv);
+    const order = [["Fajr", "Fajr"], ["Sunrise", "Syuruk"], ["Zuhr", "Zuhr"], ["Asr", "Asr"], ["Maghrib", "Maghrib"], ["Isha", "Isha"]];
+    const rnd = (n, t) => (n === "Sunrise" ? floorMin(t) : ceilMin(t));
+    const hm = (t) => { const d = new Date(t); return pad(d.getUTCHours()) + ":" + pad(d.getUTCMinutes()); };
+    const cell = (P, t, n) => {
+      if (t == null) return `<td>—</td>`;
+      const tt = rnd(n, t), off = P.tz ? tzOffset(P.tz, tt) : null;
+      return `<td>${off !== null ? `<b>${hm(tt + off * MIN)}</b><span class="utc">${hm(tt).replace(":", "")}Z</span>` : `<b>${hm(tt).replace(":", "")}Z</b>`}</td>`;
+    };
+    const dur = (ms) => { const m = Math.round(Math.abs(ms) / MIN); return `${ms < 0 ? "−" : "+"}${Math.floor(m / 60)}h ${pad(m % 60)}m`; };
+    // which prayer is in force now at each place (only meaningful when the date is today there)
+    const now = Date.now();
+    const curAt = (x) => { let c = null; for (const [n] of order) if (x.ev[n] != null && x.ev[n] <= now) c = n; return now >= x.d0 && now < x.d0 + DAY ? (c || "Isha") : null; };
+    const ca = curAt(a), cb = curAt(b);
+    const zone = (P, t) => { if (!P.tz) return "UTC (no time zone)"; const o = tzOffset(P.tz, t); return `local, UTC${o >= 0 ? "+" : "−"}${Math.floor(Math.abs(o) / 60)}${Math.abs(o) % 60 ? ":" + pad(Math.abs(o) % 60) : ""}`; };
+    let rows = order.map(([n, lbl]) => `<tr class="${n === ca || n === cb ? "cur" : ""}"><td>${lbl}${n === ca ? " <span class='pill'>now at A</span>" : ""}${n === cb ? " <span class='pill'>now at B</span>" : ""}</td>${cell(A, a.ev[n], n)}${cell(B, b.ev[n], n)}<td class="diff">${a.ev[n] != null && b.ev[n] != null ? dur(rnd(n, b.ev[n]) - rnd(n, a.ev[n])) : "—"}</td></tr>`).join("");
+    const dayLen = (x) => x.ev.Sunrise != null && x.ev.Maghrib != null ? fmtDur(x.ev.Maghrib - x.ev.Sunrise) : "—";
+    const qA = S.qiblaBearing(A), qB = S.qiblaBearing(B), dist = Math.round(S.gcNm(A, B));
+    rows += `<tr><td>Daylight</td><td>${dayLen(a)}</td><td>${dayLen(b)}</td><td></td></tr>`;
+    rows += `<tr><td>Qibla</td><td class="mono">${fmtDeg(qA)}T</td><td class="mono">${fmtDeg(qB)}T</td><td></td></tr>`;
+    $("cmpOut").innerHTML = `<table><thead><tr><th></th><th>A · ${esc(A.name)}<span class="utc">${zone(A, a.d0 + DAY / 2)}</span></th><th>B · ${esc(B.name)}<span class="utc">${zone(B, b.d0 + DAY / 2)}</span></th><th>B vs A<span class="utc">real time</span></th></tr></thead><tbody>${rows}</tbody></table>
+      <p class="s">${dist.toLocaleString("en")} nm apart. "B vs A" is the gap in real time (UTC): + means the prayer starts later at B.</p>`;
+  }
+  {
+    const c = store.get("solat.cmp") || {};
+    $("cmpA").value = c.a || (state.wps[0] && state.wps[0].id) || "KUL";
+    $("cmpB").value = c.b || (state.wps[state.wps.length - 1] && state.wps[state.wps.length - 1].id) || "LHR";
+    $("cmpDate").value = c.d || new Date().toISOString().slice(0, 10);
+    ["cmpA", "cmpB", "cmpDate"].forEach((k) => $(k).addEventListener("change", cmpCalc));
+    $("cmpSwap").addEventListener("click", () => { const t = $("cmpA").value; $("cmpA").value = $("cmpB").value; $("cmpB").value = t; cmpCalc(); });
+    cmpCalc();
   }
 
   // ---------- Now ----------
@@ -1162,7 +1248,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   run();
 
   // ---------- version, data validity, update ----------
-  const APP_VERSION = "2026.11.06e", APP_DATE = Date.UTC(2026, 10, 6);
+  const APP_VERSION = "2026.11.06f", APP_DATE = Date.UTC(2026, 10, 6);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){

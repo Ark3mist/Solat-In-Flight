@@ -65,6 +65,8 @@ You can pick the convention with `--convention workbook|jakim|mwl`.
 
 For a review of the original Excel workbook (v3.7) and the reasons for this design, see [`docs/excel-analysis.md`](docs/excel-analysis.md).
 
+**Compare airports:** two airports (IATA or ICAO from the built-in list, saved waypoints, or coordinates) and a date. Shows each prayer in local time (with daylight saving) and UTC, the real-time gap between them, which prayer is in force now at each, daylight length and qibla. The built-in list now includes ICAO codes and time zones, plus CDG, IST, FRA, MCT, CMB and MLE.
+
 **Version and updates:** the header shows the version date, when you last checked for an update, and when the magnetic data (WMM2025) expires (31 Dec 2029). *Check for update* compares with `version.json` online; the sun and moon formulas do not expire.
 
 **Phone layout:** Flight, Now, Route, Globe, Prayer windows, Timeline. Route, Prayer windows and Timeline always open minimised.
