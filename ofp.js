@@ -110,6 +110,7 @@
 
     // ---- vertical profile ----
     const toc = byName["T-O-C"], tod = byName["T-O-D"];
+    out.tocEltm = toc ? toc.eltm : null; out.todEltm = tod ? tod.eltm : null;
     // cruise levels only: from top of climb to top of descent
     const numeric = log.filter((e) => /^\d+$/.test(e.fl) && (!toc || e.eltm >= toc.eltm) && (!tod || e.eltm <= tod.eltm));
     if (numeric.length) {

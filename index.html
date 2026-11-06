@@ -1221,7 +1221,9 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     state.arr = flt != null ? hhmmOf(air + flt * MIN) : "";
     let lastFl = "";
     state.wps = pts.map((p, i) => {
-      const fl = i > 0 && i < pts.length - 1 && /^\d{2,3}$/.test(p.fl || "") && p.fl !== lastFl ? p.fl : "";
+      // cruise levels only (top of climb to top of descent): levels shown on climb points such as SETP are not cruise levels
+      const cruise = p.eltm != null && (o.tocEltm == null || p.eltm >= o.tocEltm) && (o.todEltm == null || p.eltm <= o.todEltm);
+      const fl = i > 0 && i < pts.length - 1 && cruise && /^\d{2,3}$/.test(p.fl || "") && p.fl !== lastFl ? p.fl : "";
       if (fl) lastFl = fl;
       return { id: p.name, lat: S.fmtLat(p.lat), lon: S.fmtLon(p.lon), fl,
         eto: i > 0 && i < pts.length - 1 && p.eltm != null ? hhmmOf(air + p.eltm * MIN) : "" };
@@ -1266,7 +1268,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   run();
 
   // ---------- version, data validity, update ----------
-  const APP_VERSION = "2026.11.06g", APP_DATE = Date.UTC(2026, 10, 6);
+  const APP_VERSION = "2026.11.06h", APP_DATE = Date.UTC(2026, 10, 6);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){
@@ -1287,7 +1289,15 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
         $("updMsg").innerHTML = `<b>New version ${esc(j.date || j.version)}</b> <button class="link" type="button" id="updNow">Update now</button>`;
         $("updNow").addEventListener("click", async () => {
           $("updMsg").textContent = "Updating…";
-          try { const reg = await navigator.serviceWorker.getRegistration(); if (reg) await reg.update(); } catch (e) {}
+          // let the new offline worker take over (it re-checks every file with the server), then reload
+          try {
+            const reg = await navigator.serviceWorker.getRegistration();
+            if (reg) {
+              const took = new Promise((ok) => { navigator.serviceWorker.addEventListener("controllerchange", ok, { once: true }); setTimeout(ok, 6000); });
+              await reg.update();
+              if (reg.installing || reg.waiting) await took;
+            }
+          } catch (e) {}
           location.reload();
         });
       } else if (manual) $("updMsg").textContent = "You have the latest version.";
