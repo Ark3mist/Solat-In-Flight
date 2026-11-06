@@ -6,7 +6,7 @@
  *   - COORDINATES INFORMATION: waypoint names with lat/long
  *   - nav log (WPT | FL | ... | TIME ELTM): flight level + elapsed time per point
  *     (the RECLEARANCE FLIGHT LOG is skipped)
- * and turns it into: airborne/landing time, waypoints with ETOs, initial FL,
+ * and turns it into: airborne/landing time, waypoints with ETAs, initial FL,
  * step climbs, and climb/descent rates from T-O-C / T-O-D. */
 (function (root) {
   "use strict";

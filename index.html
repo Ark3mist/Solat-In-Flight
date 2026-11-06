@@ -38,6 +38,10 @@ h1{font-size:20px;margin:0}
 @media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
 .col{display:grid;gap:16px;min-width:0}
 section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
+h2 .minbtn{order:9;flex:none;width:26px;height:26px;padding:0;border-radius:6px;font-size:15px;line-height:1;color:var(--muted)}
+h2>:not(.minbtn),h2>.minbtn:first-child{margin-left:auto}
+section.min>:not(h2){display:none!important}
+section.min>h2{margin-bottom:0}
 h2{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
 input,select{width:100%;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:7px 8px;min-width:0}
@@ -99,7 +103,8 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .evchips i{display:inline-block;width:9px;height:9px;border-radius:50%}
 .gctl{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;margin-top:8px}
 .gctl input[type=range]{padding:0;accent-color:var(--accent);height:28px;background:none;border:0}
-.gtime{font-family:ui-monospace,Menlo,monospace;font-size:13px;margin-top:6px;min-height:2.6em}
+.gtime{font-family:ui-monospace,Menlo,monospace;font-size:13px;margin-top:6px;min-height:3.9em}
+.gtime .sub{font-size:12px}
 .gtime b{color:var(--accent)}
 .legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .legend button{display:inline-flex;gap:6px;align-items:center;font-size:12px;padding:4px 8px}
@@ -167,9 +172,9 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
           <div class="ok" id="ofpMsg"></div>
           <div id="ofpPreview"></div>
         </div>
-        <div class="wp wphead"><span></span><span>Ident</span><span>Lat</span><span>Lon</span><span>ETO</span><span></span></div>
+        <div class="wp wphead"><span></span><span>Ident</span><span>Lat</span><span>Lon</span><span>ETA</span><span></span></div>
         <div id="wps"></div>
-        <div class="hint">Lat/Lon as <span class="mono">N0244.6</span> / <span class="mono">E10141.9</span> or decimal. Airports from the built-in list fill in automatically. ETO (HHMM UTC) is optional on waypoints; without it the time is spread by distance. Times roll past 0000Z automatically.</div>
+        <div class="hint">Lat/Lon as <span class="mono">N0244.6</span> / <span class="mono">E10141.9</span> or decimal. Airports from the built-in list fill in automatically. ETA (HHMM UTC) is optional on waypoints; without it the time is spread by distance. Times roll past 0000Z automatically.</div>
         <div class="lib">
           <label for="routeSel">Saved routes</label>
           <div class="librow">
@@ -281,7 +286,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
         <div class="gtime" id="gTime"></div>
         <div class="evchips" id="gEvents"></div>
         <div class="legend" id="gLegend"></div>
-        <div class="hint">Coloured lines show where each prayer is <b>starting</b> at the slider time, at the aircraft's current altitude. As the slider moves, watch the aircraft cross them. Shading: day, then twilight (to 18°), then night. Drag to rotate; pinch, scroll or double-tap to zoom. Tap a prayer above to jump to the moment the aircraft crosses its line: the crossing is where the line meets the <b>aircraft</b>, not where it meets the route at other times.</div>
+        <div class="hint">Coloured lines show where the sun is at each prayer's angle at the slider time, for the aircraft's current altitude (ihtiyat is added to the time, not drawn). As the slider moves, watch the aircraft cross them. Shading: day, then twilight (to 18°), then night. The sun and moon sit over the point where each is overhead; the moon is drawn in its current phase, lit side towards the sun. An arrow on the edge means it is out of view in that direction. Drag to rotate; pinch, scroll or double-tap to zoom. Tap a prayer above to jump to the moment the aircraft crosses its line: the crossing is where the line meets the <b>aircraft</b>, not where it meets the route at other times.</div>
       </section>
 
       <section>
@@ -398,7 +403,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
         `<input class="mono" list="stations" value="${esc(w.id)}" data-k="id" aria-label="Ident">` +
         `<input class="mono" value="${esc(w.lat)}" data-k="lat" aria-label="Latitude" placeholder="N0000.0">` +
         `<input class="mono" value="${esc(w.lon)}" data-k="lon" aria-label="Longitude" placeholder="E00000.0">` +
-        `<input class="mono" value="${first ? esc(state.dep) : last ? esc(state.arr) : esc(w.eto)}" data-k="eto" ${first||last ? "disabled title='Set in Flight'" : ""} aria-label="ETO" placeholder="${first ? "" : "auto"}" inputmode="numeric" maxlength="5">` +
+        `<input class="mono" value="${first ? esc(state.dep) : last ? esc(state.arr) : esc(w.eto)}" data-k="eto" ${first||last ? "disabled title='Set in Flight'" : ""} aria-label="ETA" placeholder="${first ? "" : "auto"}" inputmode="numeric" maxlength="5">` +
         (first || last ? "<span></span>" : `<button class="x" type="button" aria-label="Remove waypoint">✕</button>`);
       row.querySelectorAll("input").forEach((inp) => inp.addEventListener("change", () => {
         const k = inp.dataset.k; w[k] = inp.value.trim().toUpperCase();
@@ -453,7 +458,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   $("routeLoad").addEventListener("click", () => {
     const r = routes[$("routeSel").value]; if (!r) return;
     state.wps = r.wps.map((w) => ({ id: w.id, lat: w.lat, lon: w.lon, eto: "" }));
-    renderWps(); save(); flash("routeMsg", `Loaded "${$("routeSel").value}". Waypoint ETOs cleared; times come from airborne/landing.`);
+    renderWps(); save(); flash("routeMsg", `Loaded "${$("routeSel").value}". Waypoint ETAs cleared; times come from airborne/landing.`);
   });
   $("routeDel").addEventListener("click", () => {
     const k = $("routeSel").value; if (!routes[k]) return;
@@ -504,6 +509,29 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   });
   refreshDatalist(); renderFixes(); renderRoutes();
 
+  // ---------- minimise / restore any box (remembered per device) ----------
+  const minState = store.get("solat.min") || {};
+  document.querySelectorAll("main section").forEach((sec) => {
+    const h = sec.querySelector(":scope > h2"); if (!h) return;
+    const key = sec.id || h.firstChild.textContent.trim();
+    const name = key.replace(/Sec$/, "");
+    const b = document.createElement("button"); b.type = "button"; b.className = "minbtn";
+    const set = (m) => {
+      sec.classList.toggle("min", m);
+      b.textContent = m ? "+" : "−";
+      b.setAttribute("aria-expanded", String(!m));
+      b.setAttribute("aria-label", (m ? "Restore " : "Minimise ") + h.firstChild.textContent.trim());
+      b.title = m ? "Restore" : "Minimise";
+    };
+    set(!!minState[key]);
+    b.addEventListener("click", () => {
+      const m = !sec.classList.contains("min"); set(m);
+      minState[key] = m; store.set("solat.min", minState);
+      if (!m) window.dispatchEvent(new Event("resize"));     // the globe redraws at its new size
+    });
+    h.appendChild(b);
+  });
+
   // ---------- parsing ----------
   function hhmm(s){
     const m = /^(\d{1,2}):?(\d{2})$/.exec(String(s||"").trim());
@@ -542,7 +570,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       const raw = i === 0 ? state.dep : i === state.wps.length-1 ? state.arr : w.eto;
       if (raw) {
         const v = hhmm(raw);
-        if (v === null) errs.push(`${name}: ETO must be HHMM.`);
+        if (v === null) errs.push(`${name}: ETA must be HHMM.`);
         else if (isFinite(day)) {
           eto = day + v;
           while (last !== null && eto < last) eto += DAY;   // equal times allowed (same-minute fixes)
@@ -759,7 +787,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   $("gZin").addEventListener("click", () => globe.zoomBy(2));
   $("gZout").addEventListener("click", () => globe.zoomBy(0.5));
   $("gZreset").addEventListener("click", () => globe.reset());
-  let exactT = null;   // set when jumping to an event, cleared when the slider moves
+  let exactT = null, exactEv = null;   // set when jumping to an event, cleared when the slider moves
   const hiddenLines = store.get("solat.hiddenLines") || {};
   const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
   window.SolatGlobe.LINES.forEach((L) => {
@@ -772,6 +800,16 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     });
     $("gLegend").appendChild(b);
   });
+  [["Sun", "#fbbf24"], ["Moon", "#cbd5e1"]].forEach(([name, col]) => {
+    const b = document.createElement("button"); b.type = "button";
+    b.setAttribute("aria-pressed", hiddenLines[name] ? "false" : "true");
+    b.innerHTML = `<i style="background:${col};width:10px;height:10px;border-radius:50%"></i>${name}`;
+    b.addEventListener("click", () => {
+      hiddenLines[name] = !hiddenLines[name]; b.setAttribute("aria-pressed", hiddenLines[name] ? "false" : "true");
+      store.set("solat.hiddenLines", hiddenLines); drawGlobe();
+    });
+    $("gLegend").appendChild(b);
+  });
   let gRaf = 0;
   function sliderTime(){ return result ? (exactT !== null ? exactT : result.route.start + (+$("gSlider").value) * MIN) : null; }
   function drawGlobe(){
@@ -779,14 +817,22 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     cancelAnimationFrame(gRaf);
     gRaf = requestAnimationFrame(() => {
       const t = sliderTime(), { route, conv, events, windows } = result;
-      globe.draw({ route, t, conv, events, hidden: hiddenLines,
+      // lines show the sun angle itself (no ihtiyat), so a line meets the aircraft at the physical crossing
+      globe.draw({ route, t, conv: { ...conv, ihtiyat: {} }, events, hidden: hiddenLines,
         fmtTime: (x, name) => { const d = new Date(name === "Sunrise" ? floorMin(x) : ceilMin(x)); return pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + "Z"; },
         colors: { ocean: css("--ocean"), land: css("--land"), coast: css("--coast"), night: css("--night"), muted: css("--muted"),
           grid: css("--grid"), halo: css("--halo"), route: css("--route"), accent: css("--accent"), ink: css("--ink") } });
       const s = S.situationAt(route, windows, t);
       const pr = s.current ? `<b>${s.current.name}</b> open, ${fmtDur(s.current.end - t)} left` : "no prayer window open";
       const nx = s.next ? ` · next <b>${s.next.name}</b> in ${fmtDur(s.next.start - t)}` : "";
-      $("gTime").innerHTML = `${fmtZ(t, exactT !== null ? ceilMin : floorMin)} · ${fmtT(t - route.start)} · ${fmtFL(s.alt)} · ${S.fmtPos(s.lat, s.lon)} · ${esc(S.fixRef(s))}<br>${pr}${nx}`;
+      const mp = S.moonPosition(t), sunAlt = S.sunAltHa(t, s.lat, s.lon).alt, moonAlt = S.moonAlt(t, s.lat, s.lon, mp);
+      const dip = S.dipDeg(s.alt), vis = (a, sd) => a > -(dip + sd) ? "above horizon" : "below horizon";
+      const age = (t - S.prevNewMoon(t)) / DAY;
+      const sky = `Sun ${sunAlt.toFixed(1)}° (${vis(sunAlt, 0.833)}) · Moon ${moonAlt.toFixed(1)}° (${vis(moonAlt, 0.833)}), ${mp.phase.toLowerCase()} ${Math.round(mp.illum * 100)}% lit, ${age.toFixed(1)} d after new moon`;
+      const ev = exactEv && exactT === exactEv.raw ? exactEv : null;
+      const hms = (x) => { const d = new Date(Math.round(x / 1000) * 1000); return `${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}Z`; };
+      const evLine = ev ? `<b>${ev.name}</b> line crossed ${hms(ev.raw)} at ${esc(S.fixRef(ev))} · prayer time <b>${fmtZ(ev.t, ev.name === "Sunrise" ? floorMin : ceilMin).slice(3)}</b>${ev.t > ev.raw ? ` (incl. +${Math.round((ev.t - ev.raw) / MIN)} min ihtiyat)` : ""}<br>` : "";
+      $("gTime").innerHTML = evLine + `${fmtZ(t, floorMin)} · ${fmtT(t - route.start)} · ${fmtFL(s.alt)} · ${S.fmtPos(s.lat, s.lon)} · ${esc(S.fixRef(s))}<br>${pr}${nx}<br><span class="sub">${sky}</span>`;
     });
   }
   // The slider also drives the Now panel.
@@ -833,8 +879,8 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       const b = document.createElement("button"); b.type = "button";
       b.innerHTML = `<i style="background:${L ? L.color : "var(--ink)"}"></i><b>${e.name}</b> ${fmtZ(e.t, e.name === "Sunrise" ? floorMin : ceilMin)} · ${esc(S.fixRef(e))}`;
       b.addEventListener("click", () => {
-        stop(); exactT = e.t;
-        $("gSlider").value = Math.round((e.t - result.route.start) / MIN);
+        stop(); exactT = e.raw; exactEv = e;
+        $("gSlider").value = Math.round((e.raw - result.route.start) / MIN);
         globe.setFollow(true); $("gFollow").checked = true; globe.setZoom(14);
         drawGlobe(); syncNow();
       });

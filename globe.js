@@ -5,7 +5,8 @@
  * Draws: land (vector, so it stays sharp at any zoom), day/twilight/night
  * shading from the sun's true position, prayer lines (where each prayer is
  * starting at the chosen instant), the route through every fix, prayer events
- * labelled relative to the nearest fix, the Kaaba, the aircraft and a scale bar.
+ * labelled relative to the nearest fix, the sun and moon (with its phase) over
+ * the points where they are overhead, the Kaaba, the aircraft and a scale bar.
  * Drag to rotate; wheel / pinch / double-tap / buttons to zoom. */
 (function (root) {
   "use strict";
@@ -314,6 +315,61 @@
         if (best) label(L.name, best.x + 6 * lw, best.y, L.color, { size: 12, weight: 700, pri: 1 });
       }
 
+      // ---- sun and moon over their sub-points (edge marker when out of view) ----
+      const mp = S.moonPosition(t);
+      const flat = (V) => ({ X: dot(V, E), Y: dot(V, Nn), Z: dot(V, C) });
+      const sS = flat(SV), mS = flat(vec(mp.sublat, mp.sublon));
+      function place(B) {
+        const x = cx + B.X * R, y = cy - B.Y * R, m = 22 * lw;
+        if (B.Z > 0 && x > m && y > m && x < N - m && y < N - m) return { x, y, edge: false };
+        // off the visible disc: pin to the canvas edge in the body's direction
+        let dx = B.X, dy = -B.Y; const h = Math.hypot(dx, dy);
+        if (h < 1e-6) { dx = 0; dy = -1; } else { dx /= h; dy /= h; }
+        const sx = dx ? (N / 2 - m) / Math.abs(dx) : Infinity, sy = dy ? (N / 2 - m) / Math.abs(dy) : Infinity;
+        const s2 = Math.min(sx, sy, B.Z > 0 ? Math.hypot(x - cx, y - cy) : Infinity);
+        return { x: cx + dx * s2, y: cy + dy * s2, edge: true };
+      }
+      const bodies = [];
+      if (!(p.hidden && p.hidden.Sun)) {
+        const q = place(sS), r = 9 * lw;
+        g.save(); g.globalAlpha = q.edge ? 0.7 : 1; g.translate(q.x, q.y);
+        g.strokeStyle = "#f59e0b"; g.lineWidth = 2 * lw; g.lineCap = "round";
+        for (let k2 = 0; k2 < 8; k2++) { const a2 = k2 * Math.PI / 4; g.beginPath(); g.moveTo(Math.cos(a2) * r * 1.35, Math.sin(a2) * r * 1.35); g.lineTo(Math.cos(a2) * r * 1.85, Math.sin(a2) * r * 1.85); g.stroke(); }
+        g.beginPath(); g.arc(0, 0, r, 0, 2 * Math.PI); g.fillStyle = "#fbbf24"; g.fill();
+        g.lineWidth = 1.5 * lw; g.strokeStyle = colors.halo; g.stroke(); g.restore();
+        bodies.push([q.x - r * 1.9, q.y - r * 1.9, q.x + r * 1.9, q.y + r * 1.9]);
+        side(q.edge ? "Sun " + arrow(q) : "Sun", q, 20 * lw, "#d97706");
+      }
+      if (!(p.hidden && p.hidden.Moon)) {
+        const q = place(mS), r = 13 * lw;
+        // lit limb faces the sun, seen along the globe surface
+        const MV = vec(mp.sublat, mp.sublon), sm = dot(SV, MV);
+        const Tg = [SV[0] - sm * MV[0], SV[1] - sm * MV[1], SV[2] - sm * MV[2]];   // great-circle direction moon -> sun
+        const tx = dot(Tg, E), ty = dot(Tg, Nn);
+        const ang = Math.hypot(tx, ty) < 1e-9 ? 0 : Math.atan2(-ty, tx);
+        g.save(); g.globalAlpha = q.edge ? 0.75 : 1; g.translate(q.x, q.y); g.rotate(ang);
+        g.beginPath(); g.arc(0, 0, r, 0, 2 * Math.PI); g.fillStyle = "#3b4252"; g.fill();
+        // lit part: sun-side half disc plus/minus the terminator ellipse
+        const kx = r * Math.abs(2 * mp.illum - 1);
+        g.beginPath(); g.arc(0, 0, r, -Math.PI / 2, Math.PI / 2, false);
+        if (mp.illum >= 0.5) g.ellipse(0, 0, kx, r, 0, Math.PI / 2, -Math.PI / 2, false);   // gibbous: bulge into dark half
+        else g.ellipse(0, 0, kx, r, 0, Math.PI / 2, -Math.PI / 2, true);                     // crescent: cut back
+        g.closePath(); g.fillStyle = "#f1f5f9"; g.fill();
+        g.beginPath(); g.arc(0, 0, r + 0.75 * lw, 0, 2 * Math.PI); g.lineWidth = 1.5 * lw; g.strokeStyle = colors.halo; g.stroke();
+        g.beginPath(); g.arc(0, 0, r, 0, 2 * Math.PI); g.lineWidth = 0.8 * lw; g.strokeStyle = "#94a3b8"; g.stroke();
+        g.restore();
+        bodies.push([q.x - r - 3 * lw, q.y - r - 3 * lw, q.x + r + 3 * lw, q.y + r + 3 * lw]);
+        side(`Moon ${Math.round(mp.illum * 100)}%${q.edge ? " " + arrow(q) : ""}`, q, 18 * lw, colors.ink);
+      }
+      function side(text, q, off, col) {     // label on the side facing the centre
+        const right = q.x < N * 0.7;
+        label(text, q.x + (right ? off : -off), q.y, col, { size: 11, weight: 700, pri: 1.2, align: right ? "left" : "right" });
+      }
+      function arrow(q) {
+        const a3 = Math.atan2(q.y - cy, q.x - cx), k3 = Math.round(((a3 * R2D + 360 + 22.5) % 360) / 45) % 8;
+        return ["→", "↘", "↓", "↙", "←", "↖", "↑", "↗"][k3];
+      }
+
       // ---- Kaaba ----
       const kb = proj(S.KAABA.lat, S.KAABA.lon);
       if (kb.z > 0) {
@@ -380,7 +436,7 @@
         g.lineWidth = 3; g.strokeStyle = colors.halo; g.stroke(); g.fillStyle = colors.ink; g.fill();
         g.restore();
       }
-      flushLabels(a.z > 0 ? [[a.x - 16 * lw, a.y - 16 * lw, a.x + 16 * lw, a.y + 16 * lw]] : []);
+      flushLabels((a.z > 0 ? [[a.x - 16 * lw, a.y - 16 * lw, a.x + 16 * lw, a.y + 16 * lw]] : []).concat(bodies));
 
       // ---- rim + scale bar ----
       g.save(); g.beginPath(); g.arc(cx, cy, R, 0, 2 * Math.PI); g.strokeStyle = colors.grid; g.lineWidth = 1.5 * lw; g.stroke(); g.restore();

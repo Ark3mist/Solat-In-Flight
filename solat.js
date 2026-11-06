@@ -89,6 +89,57 @@
     const alt = Math.asin(Math.sin(la) * Math.sin(dec) + Math.cos(la) * Math.cos(dec) * Math.cos(ha * D2R));
     return { alt: alt * R2D, ha, dec: dec * R2D };
   }
+  // ---- moon: Meeus ch. 47, main periodic terms (about 0.1° in position) ------
+  const PHASES = ["New moon", "Waxing crescent", "First quarter", "Waxing gibbous", "Full moon", "Waning gibbous", "Last quarter", "Waning crescent"];
+  const n360 = (x) => ((x % 360) + 360) % 360;
+  function moonPosition(t) {
+    const jd = t / DAY + 2440587.5, T = (jd - 2451545.0) / 36525;
+    const Lp = 218.3164477 + 481267.88123421 * T, D = (297.8501921 + 445267.1114034 * T) * D2R;
+    const M = (357.5291092 + 35999.0502909 * T) * D2R, Mp = (134.9633964 + 477198.8675055 * T) * D2R;
+    const F = (93.2720950 + 483202.0175233 * T) * D2R, s = Math.sin, c = Math.cos;
+    const lam = n360(Lp + 6.288774 * s(Mp) + 1.274027 * s(2 * D - Mp) + 0.658314 * s(2 * D) + 0.213618 * s(2 * Mp)
+      - 0.185116 * s(M) - 0.114332 * s(2 * F) + 0.058793 * s(2 * D - 2 * Mp) + 0.057066 * s(2 * D - M - Mp)
+      + 0.053322 * s(2 * D + Mp) + 0.045758 * s(2 * D - M) - 0.040923 * s(M - Mp) - 0.034720 * s(D)
+      - 0.030383 * s(M + Mp) + 0.015327 * s(2 * D - 2 * F) - 0.012528 * s(Mp + 2 * F) + 0.010980 * s(Mp - 2 * F)
+      + 0.010675 * s(4 * D - Mp) + 0.010034 * s(3 * Mp) + 0.008548 * s(4 * D - 2 * Mp));
+    const bet = 5.128122 * s(F) + 0.280602 * s(Mp + F) + 0.277693 * s(Mp - F) + 0.173237 * s(2 * D - F)
+      + 0.055413 * s(2 * D - F + Mp) + 0.046271 * s(2 * D - F - Mp) + 0.032573 * s(2 * D + F) + 0.017198 * s(2 * Mp + F);
+    const km = 385000.56 - 20905.355 * c(Mp) - 3699.111 * c(2 * D - Mp) - 2955.968 * c(2 * D) - 569.925 * c(2 * Mp);
+    const eps = (23.439291 - 0.0130042 * T) * D2R, l = lam * D2R, b = bet * D2R;
+    const ra = Math.atan2(s(l) * c(eps) - Math.tan(b) * s(eps), c(l));
+    const dec = Math.asin(s(b) * c(eps) + c(b) * s(eps) * s(l));
+    // sun's apparent longitude, for the phase
+    const L0 = 280.46646 + 36000.76983 * T, Ms = (357.52911 + 35999.05029 * T) * D2R;
+    const sunLon = n360(L0 + 1.914602 * s(Ms) + 0.019993 * s(2 * Ms) - 0.00569 - 0.00478 * s((125.04 - 1934.136 * T) * D2R));
+    const elong = n360(lam - sunLon);                         // 0 new, 180 full
+    const psi = Math.acos(c(b) * c((lam - sunLon) * D2R));    // true elongation
+    const i = Math.atan2(149.6e6 * s(psi), km - 149.6e6 * c(psi));   // phase angle
+    const gmst = n360(280.46061837 + 360.98564736629 * (jd - 2451545.0));
+    return {
+      ra: ra * R2D, dec: dec * R2D, km,
+      sublat: dec * R2D, sublon: n360(ra * R2D - gmst + 180) - 180,
+      illum: (1 + Math.cos(i)) / 2, waxing: elong < 180, elong,
+      phase: PHASES[Math.floor(n360(elong + 22.5) / 45) % 8],
+    };
+  }
+  // Time of the new moon before t (conjunction in ecliptic longitude), ±few minutes.
+  function prevNewMoon(t) {
+    let x = t - moonPosition(t).elong / 360 * 29.530589 * DAY;
+    for (let k = 0; k < 5; k++) {
+      const e = moonPosition(x).elong, d = e > 180 ? e - 360 : e;    // signed, degrees from conjunction
+      x -= d / 12.19 * DAY;
+      if (Math.abs(d) < 1e-4) break;
+    }
+    return x;
+  }
+  // Moon altitude seen from (lat, lon), with parallax (topocentric), degrees.
+  function moonAlt(t, lat, lon, mp = moonPosition(t)) {
+    const H = (lon - mp.sublon) * D2R, la = lat * D2R, d = mp.dec * D2R;
+    const geo = Math.asin(Math.sin(la) * Math.sin(d) + Math.cos(la) * Math.cos(d) * Math.cos(H));
+    const par = Math.asin(6378.14 / mp.km);
+    return (geo - par * Math.cos(geo)) * R2D;
+  }
+
   // Apparent horizon depression from height (incl. standard refraction).
   const dipDeg = (ft) => 0.0347 * Math.sqrt(Math.max(ft, 0) * 0.3048);
 
@@ -324,7 +375,7 @@
   }
 
   root.Solat = { fixRef, CONVENTIONS, DEFAULT_IHTIYAT, STATIONS, EVENTS, KAABA, MIN, HOUR, DAY,
-    parseLat, parseLon, station, fmtLat, fmtLon, fmtPos, sunPosition, sunAltHa, dipDeg,
+    parseLat, parseLon, station, fmtLat, fmtLon, fmtPos, sunPosition, sunAltHa, dipDeg, moonPosition, moonAlt, prevNewMoon,
     gcNm, gcInterp, bearing, qiblaBearing, relBearing, clockCode,
     makeProfile, makeRoute, findEvents, prayerWindows, situationAt };
 })(typeof window !== "undefined" ? window : globalThis);
