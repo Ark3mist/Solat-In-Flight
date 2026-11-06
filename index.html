@@ -135,6 +135,14 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .installbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:10px 12px;margin-bottom:12px;border:1px solid var(--accent);border-radius:10px;background:var(--soft);font-size:14px}
 .installbar .primary{width:auto;padding:8px 14px}
 .installbar[hidden],.installbtn[hidden]{display:none}
+dialog.askdlg{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);padding:18px;width:min(420px,calc(100vw - 32px))}
+dialog.askdlg::backdrop{background:rgba(0,0,0,.55)}
+.askbrand{font-size:17px;font-weight:700;margin-bottom:10px}
+.askmsg{font-size:15px;line-height:1.45;white-space:pre-line}
+.askmsg b{font-weight:700}
+.askbtns{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.askbtns button{width:auto;padding:9px 16px}
+.askbtns .danger{background:var(--err);color:#fff;border:0}
 dialog#installDlg{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);padding:16px;max-width:min(520px,calc(100vw - 32px));width:100%}
 dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
 .dlghead{display:flex;justify-content:space-between;align-items:center;margin:0 0 8px}
@@ -208,6 +216,12 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     <button type="button" id="installBarGo" class="primary">Install</button>
     <button type="button" id="installBarX" class="x" aria-label="Not now">✕</button>
   </div>
+
+  <dialog id="askDlg" class="askdlg" aria-labelledby="askTitle">
+    <div class="askbrand" id="askTitle">LipasTerbang</div>
+    <div id="askMsg" class="askmsg"></div>
+    <div class="askbtns"><button type="button" id="askNo">Cancel</button><button type="button" id="askYes" class="primary">OK</button></div>
+  </dialog>
 
   <dialog id="installDlg" aria-labelledby="installTitle">
     <form method="dialog" class="dlghead"><h3 id="installTitle">Install the app</h3><button class="x" aria-label="Close">✕</button></form>
@@ -540,9 +554,22 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   $("llToggle").addEventListener("click", () => { setLL(!state.showLL); save(); });
   $("addWp").addEventListener("click", () => { setLL(true); state.wps.splice(state.wps.length - 1, 0, { id:"", lat:"", lon:"", eto:"" }); renderWps(); save(); });
 
-  $("clearRoute").addEventListener("click", () => {
+  // In-app confirmation (the browser's own confirm() always shows the website address as its title).
+  function ask(html, okText = "OK", danger = false){
+    const d = $("askDlg");
+    if (!d.showModal) return Promise.resolve(confirm(html.replace(/<[^>]+>/g, "")));
+    $("askMsg").innerHTML = html; $("askYes").textContent = okText;
+    $("askYes").className = danger ? "danger" : "primary";
+    return new Promise((done) => {
+      const end = (v) => { d.close(); $("askYes").onclick = $("askNo").onclick = d.oncancel = null; done(v); };
+      $("askYes").onclick = () => end(true); $("askNo").onclick = () => end(false);
+      d.oncancel = (e) => { e.preventDefault(); end(false); };
+      d.showModal(); $("askNo").focus();
+    });
+  }
+  $("clearRoute").addEventListener("click", async () => {
     const W = state.wps, n = W.length - 2;
-    if (!confirm(`Clear the route?\n\nThis removes ${n > 0 ? `all ${n} waypoint${n === 1 ? "" : "s"} with their FLs and ETAs` : "the waypoints"}, and keeps only DEP (${W[0].id || "—"}) and ARR (${W[W.length - 1].id || "—"}).\nSaved routes are not affected.`)) return;
+    if (!(await ask(`<b>Clear the route?</b>\n\nThis removes ${n > 0 ? `all ${n} waypoint${n === 1 ? "" : "s"} with their FLs and ETAs` : "the waypoints"}, and keeps only DEP (${esc(W[0].id || "—")}) and ARR (${esc(W[W.length - 1].id || "—")}).\nSaved routes are not affected.`, "Clear", true))) return;
     const keep = (w) => ({ id: w.id, lat: w.lat, lon: w.lon, eto: "", fl: "" });
     state.wps = [keep(W[0]), keep(W[W.length - 1])];
     state.steps = []; $("routeName").value = "";
@@ -566,9 +593,9 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     state.wps = r.wps.map((w) => ({ id: w.id, lat: w.lat, lon: w.lon, eto: "" }));
     renderWps(); save(); flash("routeMsg", `Loaded "${$("routeSel").value}". Waypoint ETAs cleared; times come from airborne/landing.`);
   });
-  $("routeDel").addEventListener("click", () => {
+  $("routeDel").addEventListener("click", async () => {
     const k = $("routeSel").value; if (!routes[k]) return;
-    if (!confirm(`Delete saved route "${k}"?`)) return;
+    if (!(await ask(`<b>Delete saved route "${esc(k)}"?</b>\n\nThis cannot be undone.`, "Delete", true))) return;
     delete routes[k]; store.set("solat.routes", routes); renderRoutes(); flash("routeMsg", `Deleted "${k}".`);
   });
 
@@ -1269,7 +1296,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   run();
 
   // ---------- version, data validity, update ----------
-  const APP_VERSION = "2026.11.06i", APP_DATE = Date.UTC(2026, 10, 6);
+  const APP_VERSION = "2026.11.06j", APP_DATE = Date.UTC(2026, 10, 6);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){
