@@ -1,9 +1,10 @@
-/* Solat In Flight — solver. No dependencies, works offline.
- * Port of solat_route.py. Times are epoch milliseconds (UTC). */
+/* Solat In Flight — solver (v2). No dependencies, works offline.
+ * All times are epoch milliseconds UTC. Angles in degrees unless noted. */
 (function (root) {
   "use strict";
   const D2R = Math.PI / 180, R2D = 180 / Math.PI;
-  const MIN = 60000, DAY = 86400000;
+  const MIN = 60000, HOUR = 3600000, DAY = 86400000;
+  const KAABA = { lat: 21.4225, lon: 39.8262 };
 
   const CONVENTIONS = {
     jakim:    { name: "JAKIM (Fajr 20°, Isha 18°)", fajr: 20, isha: 18, asr: 1 },
@@ -12,7 +13,7 @@
   };
   const DEFAULT_IHTIYAT = { Fajr: 0, Sunrise: 0, Zuhr: 2, Asr: 0, Maghrib: 1, Isha: 0 };
 
-  // Airport coordinates (from the workbook STN sheet).
+  // Airport reference points (from the workbook STN sheet).
   const STATIONS = {
     MEL: "S3740.4 E14450.6", KUL: "N0244.6 E10141.9", LHR: "N5128.7 W00027.7",
     DXB: "N2515.2 E05521.9", BNE: "S2723.1 E15307.1", MED: "N2433.0 E03942.4",
@@ -28,30 +29,42 @@
     CAN: "N2323.6 E11318.5", AMS: "N5218.5 E00445.9",
   };
 
-  // ---- coordinates -------------------------------------------------------
+  // ---- coordinates ---------------------------------------------------------
   function parseLat(s) {
-    let m = /^([NS])(\d{2})(\d{2}(?:\.\d+)?)$/i.exec(s);
-    if (m) { const v = +m[2] + +m[3] / 60; return m[1].toUpperCase() === "S" ? -v : v; }
-    if (/^[-+]?\d+(\.\d+)?$/.test(s) && Math.abs(+s) <= 90) return +s;
+    s = String(s || "").trim().toUpperCase().replace(/\s+/g, "");
+    let m = /^([NS])(\d{2})(\d{2}(?:\.\d+)?)$/.exec(s);
+    if (m) { const v = +m[2] + +m[3] / 60; return m[1] === "S" ? -v : v; }
+    m = /^([NS])?([-+]?\d+(?:\.\d+)?)$/.exec(s);
+    if (m && Math.abs(+m[2]) <= 90) return m[1] === "S" ? -Math.abs(+m[2]) : +m[2];
     return null;
   }
   function parseLon(s) {
-    let m = /^([EW])(\d{3})(\d{2}(?:\.\d+)?)$/i.exec(s);
-    if (m) { const v = +m[2] + +m[3] / 60; return m[1].toUpperCase() === "W" ? -v : v; }
-    if (/^[-+]?\d+(\.\d+)?$/.test(s) && Math.abs(+s) <= 180) return +s;
+    s = String(s || "").trim().toUpperCase().replace(/\s+/g, "");
+    let m = /^([EW])(\d{3})(\d{2}(?:\.\d+)?)$/.exec(s);
+    if (m) { const v = +m[2] + +m[3] / 60; return m[1] === "W" ? -v : v; }
+    m = /^([EW])?([-+]?\d+(?:\.\d+)?)$/.exec(s);
+    if (m && Math.abs(+m[2]) <= 180) return m[1] === "W" ? -Math.abs(+m[2]) : +m[2];
     return null;
   }
-  function fmtPos(lat, lon) {
-    const dm = (v, w) => { const a = Math.abs(v); let d = Math.floor(a); let m = (a - d) * 60;
-      if (m >= 59.95) { d += 1; m = 0; }
-      return String(d).padStart(w, "0") + m.toFixed(1).padStart(4, "0"); };
-    return (lat >= 0 ? "N" : "S") + dm(lat, 2) + " " + (lon >= 0 ? "E" : "W") + dm(lon, 3);
+  function station(code) {
+    const s = STATIONS[String(code || "").trim().toUpperCase()];
+    if (!s) return null;
+    const [a, b] = s.split(" ");
+    return { lat: parseLat(a), lon: parseLon(b) };
   }
+  function fmtLat(v) { return fmtDM(v, 2, "N", "S"); }
+  function fmtLon(v) { return fmtDM(v, 3, "E", "W"); }
+  function fmtDM(v, w, pos, neg) {
+    const a = Math.abs(v); let d = Math.floor(a); let m = (a - d) * 60;
+    if (m >= 59.95) { d += 1; m = 0; }
+    return (v >= 0 ? pos : neg) + String(d).padStart(w, "0") + m.toFixed(1).padStart(4, "0");
+  }
+  const fmtPos = (lat, lon) => fmtLat(lat) + " " + fmtLon(lon);
 
-  // ---- sun (NOAA / Meeus) --------------------------------------------------
+  // ---- sun: NOAA / Meeus ---------------------------------------------------
   function sunPosition(t) {
     const jc = (t / DAY + 2440587.5 - 2451545.0) / 36525;
-    const l0 = (((280.46646 + jc * (36000.76983 + jc * 0.0003032)) % 360) + 360) % 360 * D2R;
+    const l0 = ((((280.46646 + jc * (36000.76983 + jc * 0.0003032)) % 360) + 360) % 360) * D2R;
     const m = (357.52911 + jc * (35999.05029 - 0.0001537 * jc)) * D2R;
     const e = 0.016708634 - jc * (0.000042037 + 0.0000001267 * jc);
     const c = Math.sin(m) * (1.914602 - jc * (0.004817 + 0.000014 * jc))
@@ -71,14 +84,15 @@
     const { dec, eot } = sunPosition(t);
     const minutes = (((t % DAY) + DAY) % DAY) / MIN;
     let ha = (minutes + eot + 4 * lon) / 4 - 180;
-    ha = ((ha + 180) % 360 + 360) % 360 - 180;
+    ha = (((ha + 180) % 360) + 360) % 360 - 180;
     const la = lat * D2R;
     const alt = Math.asin(Math.sin(la) * Math.sin(dec) + Math.cos(la) * Math.cos(dec) * Math.cos(ha * D2R));
     return { alt: alt * R2D, ha, dec: dec * R2D };
   }
+  // Apparent horizon depression from height (incl. standard refraction).
   const dipDeg = (ft) => 0.0347 * Math.sqrt(Math.max(ft, 0) * 0.3048);
 
-  // ---- great circle -------------------------------------------------------
+  // ---- great circle --------------------------------------------------------
   function gcAngle(a, b) {
     const la1 = a.lat * D2R, la2 = b.lat * D2R, dlo = (b.lon - a.lon) * D2R;
     const h = Math.sin((la2 - la1) / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dlo / 2) ** 2;
@@ -95,42 +109,107 @@
     const z = A * Math.sin(la1) + B * Math.sin(la2);
     return { lat: Math.atan2(z, Math.hypot(x, y)) * R2D, lon: Math.atan2(y, x) * R2D };
   }
+  // Initial great-circle bearing a -> b, degrees true 0..360.
+  function bearing(a, b) {
+    const la1 = a.lat * D2R, la2 = b.lat * D2R, dlo = (b.lon - a.lon) * D2R;
+    const y = Math.sin(dlo) * Math.cos(la2);
+    const x = Math.cos(la1) * Math.sin(la2) - Math.sin(la1) * Math.cos(la2) * Math.cos(dlo);
+    return ((Math.atan2(y, x) * R2D) + 360) % 360;
+  }
+  const qiblaBearing = (p) => bearing(p, KAABA);
+  // Relative bearing, -180..180 (negative = left).
+  const relBearing = (target, heading) => ((((target - heading) % 360) + 540) % 360) - 180;
+  function clockCode(rel) { const c = Math.round((((rel % 360) + 360) % 360) / 30) % 12; return c === 0 ? 12 : c; }
 
-  // ---- route --------------------------------------------------------------
+  // ---- vertical profile ----------------------------------------------------
+  // Integrates altitude minute by minute:
+  //   climb from origin elevation to the initial level at climbFpm,
+  //   step climbs/descents to new levels from their elapsed times at stepFpm,
+  //   then caps by a descent line ending at destination elevation (descentFpm).
+  function makeProfile(o) {
+    const { start, end } = o;
+    const origElev = +o.origElev || 0, destElev = +o.destElev || 0;
+    const initial = +o.initialFt || 0;
+    const climbFpm = Math.max(+o.climbFpm || 1500, 100);
+    const stepFpm = Math.max(+o.stepFpm || 1000, 100);
+    const descentFpm = Math.max(+o.descentFpm || 1500, 100);
+    const steps = (o.steps || []).filter((s) => s && isFinite(s.t) && isFinite(s.ft))
+      .map((s) => ({ t: s.t, ft: +s.ft })).sort((a, b) => a.t - b.t);
+    const n = Math.max(1, Math.ceil((end - start) / MIN));
+    const alt = new Float64Array(n + 1);
+    const marks = [];
+    alt[0] = origElev;
+    let toc = null, tod = null, cur = origElev, lastTarget = initial;
+    for (let k = 0; k < n; k++) {
+      const t = start + k * MIN;
+      let target = initial, inStep = false;
+      for (const s of steps) if (s.t <= t) { target = s.ft; inStep = true; }
+      if (target !== lastTarget) { marks.push({ t, kind: target > lastTarget ? "Step climb" : "Step descent", ft: target }); lastTarget = target; }
+      const dtMin = Math.min(MIN, end - t) / MIN;
+      let a = cur;
+      if (a < target) a = Math.min(target, a + (inStep ? stepFpm : climbFpm) * dtMin);
+      else if (a > target) a = Math.max(target, a - stepFpm * dtMin);
+      if (toc === null && a >= initial) { toc = t + MIN * dtMin; marks.push({ t: toc, kind: "Top of climb", ft: initial }); }
+      const tNext = t + MIN * dtMin;
+      const cap = destElev + descentFpm * (end - tNext) / MIN;
+      if (a > cap) {
+        if (tod === null) { tod = t; marks.push({ t: tod, kind: "Top of descent", ft: cur }); }
+        a = cap;
+      }
+      cur = a; alt[k + 1] = a;
+    }
+    function altitude(t) {
+      if (t <= start) return origElev;
+      if (t >= end) return destElev;
+      const x = (t - start) / MIN, k = Math.floor(x), f = x - k;
+      return alt[k] + (alt[Math.min(k + 1, n)] - alt[k]) * f;
+    }
+    const maxFt = alt.reduce((m, v) => Math.max(m, v), 0);
+    return { altitude, marks: marks.sort((a, b) => a.t - b.t), toc, tod, maxFt, origElev, destElev };
+  }
+
+  // ---- route ---------------------------------------------------------------
   // wps: [{name, lat, lon, eto|null}], first and last must have eto.
-  function makeRoute(wps, cruiseFt, climbMin = 20, descentMin = 25, groundFt = 0) {
+  function makeRoute(wps, profile) {
     wps = wps.map((w) => ({ ...w }));
     const cum = [0];
     for (let i = 1; i < wps.length; i++) cum.push(cum[i - 1] + gcNm(wps[i - 1], wps[i]));
     const known = wps.map((w, i) => (w.eto != null ? i : -1)).filter((i) => i >= 0);
     if (known[0] !== 0 || known[known.length - 1] !== wps.length - 1)
-      throw new Error("First and last fix need a time.");
+      throw new Error("Departure and arrival need a time.");
     for (let k = 0; k + 1 < known.length; k++) {
       const i0 = known[k], i1 = known[k + 1], span = cum[i1] - cum[i0];
+      if (wps[i1].eto < wps[i0].eto) throw new Error(`Time at ${wps[i1].name} is earlier than at ${wps[i0].name}.`);
       for (let i = i0 + 1; i < i1; i++)
         wps[i].eto = wps[i0].eto + (wps[i1].eto - wps[i0].eto) * (span ? (cum[i] - cum[i0]) / span : 0);
     }
     const start = wps[0].eto, end = wps[wps.length - 1].eto;
+    if (!(end > start)) throw new Error("Arrival must be after departure.");
+    if (!profile) profile = makeProfile({ start, end, initialFt: 0 });
     function state(t) {
-      let i = 0, f = 0;
-      if (t <= start) { i = 0; f = 0; }
+      let i = 0, f;
+      if (t <= start) f = 0;
       else if (t >= end) { i = wps.length - 2; f = 1; }
       else {
         while (i < wps.length - 2 && wps[i + 1].eto <= t) i++;
         const dt = wps[i + 1].eto - wps[i].eto;
         f = dt > 0 ? (t - wps[i].eto) / dt : 1;
       }
-      const p = gcInterp(wps[i], wps[i + 1], f);
-      const fromDep = (t - start) / MIN, toArr = (end - t) / MIN;
-      const frac = Math.max(0, Math.min(1, climbMin ? fromDep / climbMin : 1, descentMin ? toArr / descentMin : 1));
-      p.alt = groundFt + (cruiseFt - groundFt) * frac;
-      p.leg = wps[i].name + "–" + wps[i + 1].name;
+      const a = wps[i], b = wps[i + 1];
+      const p = gcInterp(a, b, f);
+      p.alt = profile.altitude(t);
+      p.leg = a.name + "–" + b.name;
+      p.airborne = t > start && t < end;
+      // course to the next fix; near the fix, use the course just before it
+      p.track = f < 0.999 ? bearing(p, b) : bearing(gcInterp(a, b, 0.99), b);
+      const leg = cum[i + 1] - cum[i];
+      p.distFlown = cum[i] + leg * f;
       return p;
     }
-    return { wps, cum, start, end, state, distNm: cum[cum.length - 1] };
+    return { wps, cum, start, end, state, profile, distNm: cum[cum.length - 1] };
   }
 
-  // ---- event solver -------------------------------------------------------
+  // ---- events: zero crossings along the time axis --------------------------
   const EVENTS = ["Fajr", "Sunrise", "Zuhr", "Asr", "Maghrib", "Isha"];
   function eventFunctions(conv, route) {
     const twDip = (h) => (conv.dipOnTwilight ? dipDeg(h) : 0);
@@ -158,11 +237,12 @@
       let tp = t0, gp = g(tp);
       for (let t = t0 + stepMs; ; t += stepMs) {
         const tc = Math.min(t, t1), gv = g(tc);
+        // upward crossing; the |jump| test rejects the +-180 deg hour-angle wrap
         if (gp < 0 && gv >= 0 && Math.abs(gv - gp) < 90) {
           let lo = tp, hi = tc;
           for (let k = 0; k < 30; k++) { const mid = (lo + hi) / 2; if (g(mid) < 0) lo = mid; else hi = mid; }
           const s = route.state(hi);
-          out.push({ name, t: hi + (ihtiyat[name] || 0) * MIN, lat: s.lat, lon: s.lon, alt: s.alt, leg: s.leg });
+          out.push({ name, t: hi + (ihtiyat[name] || 0) * MIN, raw: hi, ...s, qibla: qiblaBearing(s) });
         }
         tp = tc; gp = gv;
         if (tc >= t1) break;
@@ -171,66 +251,50 @@
     return out.sort((a, b) => a.t - b.t);
   }
 
-  // Which prayer period is current at a fixed point (on the ground) at time t.
-  function periodAt(lat, lon, t, conv) {
-    const r = makeRoute([{ name: "", lat, lon, eto: t - 30 * 3600000 }, { name: "", lat, lon, eto: t }], 0, 0, 0);
-    const ev = findEvents(r, conv);
-    const last = ev[ev.length - 1];
-    if (!last) return null;
-    const next = { Fajr: "Sunrise", Sunrise: "Zuhr", Zuhr: "Asr", Asr: "Maghrib", Maghrib: "Isha", Isha: "Fajr" };
-    return { current: last.name, since: last.t, next: next[last.name] };
-  }
-
-  // ---- route text parser --------------------------------------------------
-  // One fix per line:  IDENT [LAT LON] [HHMM]      lines starting with # ignored
-  //   KUL 1530              (airport from built-in list)
-  //   OBMOG N1406.0 E08500.0
-  //   LHR 0530
-  function parseRoute(text, depDateMs) {
-    const wps = [], errors = [];
-    let lastT = null;
-    text.split(/\r?\n/).forEach((raw, idx) => {
-      const line = raw.replace(/#.*/, "").trim();
-      if (!line) return;
-      const tok = line.split(/[\s,]+/);
-      const name = tok.shift().toUpperCase();
-      let lat = null, lon = null, eto = null;
-      const rest = [];
-      for (const t of tok) {
-        const ts = /^(\d{2})(\d{2})Z?$/i.exec(t);
-        if (ts && lat !== null && lon !== null) { eto = ts; continue; }
-        if (lat === null && parseLat(t) !== null && /[NS]|\./i.test(t)) { lat = parseLat(t); continue; }
-        if (lat !== null && lon === null && parseLon(t) !== null) { lon = parseLon(t); continue; }
-        if (ts) { eto = ts; continue; }
-        rest.push(t);
-      }
-      if (lat === null || lon === null) {
-        const st = STATIONS[name];
-        if (!st) { errors.push(`Line ${idx + 1}: no position for "${name}" (add LAT LON).`); return; }
-        const [a, b] = st.split(" "); lat = parseLat(a); lon = parseLon(b);
-      }
-      if (rest.length) errors.push(`Line ${idx + 1}: did not understand "${rest.join(" ")}".`);
-      let t = null;
-      if (eto) {
-        const hh = +eto[1], mm = +eto[2];
-        if (hh > 23 || mm > 59) { errors.push(`Line ${idx + 1}: bad time ${eto[0]}.`); }
-        else {
-          t = depDateMs + (hh * 60 + mm) * MIN;
-          if (lastT === null && wps.length === 0) { /* first fix sets the day */ }
-          while (lastT !== null && t < lastT) t += DAY;   // rolls past 0000Z
-          lastT = t;
-        }
-      }
-      wps.push({ name, lat, lon, eto: t });
+  // ---- prayer windows -------------------------------------------------------
+  // Window = from a prayer's start to the event that ends it. Searched over a
+  // margin either side of the flight (aircraft parked at origin / destination),
+  // so windows already open at take-off or still open at landing are complete.
+  const ENDS = { Fajr: "Sunrise", Zuhr: "Asr", Asr: "Maghrib", Maghrib: "Isha", Isha: "Fajr" };
+  function prayerWindows(route, conv, marginH = 30) {
+    const ev = findEvents(route, conv, route.start - marginH * HOUR, route.end + marginH * HOUR);
+    const wins = [];
+    ev.forEach((e, i) => {
+      if (!ENDS[e.name]) return;
+      // Normally the closing event is the very next one. If another event comes
+      // first, the closing angle was never reached on this track (high
+      // latitude, short summer night): close at that event and flag it.
+      const endEv = ev[i + 1] || null, problem = endEv && endEv.name !== ENDS[e.name]
+        ? `${ENDS[e.name]} angle not reached on this track (next event is ${endEv.name}): apply a high-latitude rule`
+        : null;
+      if (!endEv) return; // runs past search margin
+      const wEnd = endEv.t;
+      if (wEnd <= route.start || e.t >= route.end) return;
+      const inStart = Math.max(e.t, route.start);
+      const inEnd = Math.min(wEnd, route.end);
+      wins.push({
+        name: e.name, start: e.t, end: wEnd, endEvent: endEv, startEvent: e, problem,
+        openAtDeparture: e.t < route.start, openAtArrival: wEnd > route.end,
+        airborneMs: Math.max(0, inEnd - inStart),
+      });
     });
-    if (wps.length < 2) errors.push("Need at least two fixes.");
-    else {
-      if (wps[0].eto == null) errors.push("First fix needs a time (HHMM UTC).");
-      if (wps[wps.length - 1].eto == null) errors.push("Last fix needs a time (HHMM UTC).");
-    }
-    return { wps, errors };
+    return { windows: wins, events: ev.filter((e) => e.t >= route.start && e.t <= route.end) };
   }
 
-  root.Solat = { CONVENTIONS, DEFAULT_IHTIYAT, STATIONS, EVENTS, parseLat, parseLon, fmtPos,
-    sunAltHa, dipDeg, gcNm, gcInterp, makeRoute, findEvents, periodAt, parseRoute };
+  // Situation at a given instant (for the live panel).
+  function situationAt(route, wins, t, headingTrue) {
+    const s = route.state(t);
+    const q = qiblaBearing(s);
+    const hdg = isFinite(headingTrue) ? headingTrue : s.track;
+    const rel = relBearing(q, hdg);
+    const current = wins.find((w) => w.start <= t && (w.end === null || t < w.end)) || null;
+    const next = wins.filter((w) => w.start > t).sort((a, b) => a.start - b.start)[0] || null;
+    return { ...s, t, qibla: q, heading: hdg, headingSource: isFinite(headingTrue) ? "HDG" : "TRK",
+      rel, clock: clockCode(rel), current, next };
+  }
+
+  root.Solat = { CONVENTIONS, DEFAULT_IHTIYAT, STATIONS, EVENTS, KAABA, MIN, HOUR, DAY,
+    parseLat, parseLon, station, fmtLat, fmtLon, fmtPos, sunPosition, sunAltHa, dipDeg,
+    gcNm, gcInterp, bearing, qiblaBearing, relBearing, clockCode,
+    makeProfile, makeRoute, findEvents, prayerWindows, situationAt };
 })(typeof window !== "undefined" ? window : globalThis);

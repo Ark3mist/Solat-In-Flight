@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Solat In Flight</title>
-<meta name="description" content="Prayer times along a flight route, computed offline from the sun's position.">
+<meta name="description" content="Prayer times, prayer windows and qibla along a flight route, computed offline from the sun's position.">
 <meta name="theme-color" content="#0f1720">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Solat Flight">
@@ -13,111 +13,193 @@
 <link rel="apple-touch-icon" href="icon.svg">
 <style>
 :root{
-  --bg:#f6f7f9; --panel:#fff; --ink:#111827; --muted:#5b6472; --line:#d9dde3;
-  --accent:#0f766e; --accent-ink:#fff; --warn:#b45309; --err:#b91c1c; --row:#f1f5f4;
+  --bg:#f5f6f8; --panel:#fff; --ink:#111827; --muted:#5b6472; --line:#dde1e6; --field:#f8f9fb;
+  --accent:#0f766e; --accent-ink:#fff; --soft:#e7f3f1; --warn:#b45309; --err:#b91c1c; --qibla:#0f766e; --plane:#111827;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --bg:#0b1016; --panel:#121a23; --ink:#e6e9ee; --muted:#8a95a5; --line:#243142;
-  --accent:#2dd4bf; --accent-ink:#06201d; --warn:#f59e0b; --err:#f87171; --row:#16222c;
+  --bg:#0b1016; --panel:#121a23; --ink:#e6e9ee; --muted:#8c97a7; --line:#243142; --field:#0e151d;
+  --accent:#2dd4bf; --accent-ink:#06201d; --soft:#123330; --warn:#f59e0b; --err:#f87171; --qibla:#2dd4bf; --plane:#e6e9ee;
 }}
 :root[data-theme="dark"]{
-  --bg:#0b1016; --panel:#121a23; --ink:#e6e9ee; --muted:#8a95a5; --line:#243142;
-  --accent:#2dd4bf; --accent-ink:#06201d; --warn:#f59e0b; --err:#f87171; --row:#16222c;
+  --bg:#0b1016; --panel:#121a23; --ink:#e6e9ee; --muted:#8c97a7; --line:#243142; --field:#0e151d;
+  --accent:#2dd4bf; --accent-ink:#06201d; --soft:#123330; --warn:#f59e0b; --err:#f87171; --qibla:#2dd4bf; --plane:#e6e9ee;
 }
 *{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-main{max-width:960px;margin:0 auto;padding:16px}
+main{max-width:1180px;margin:0 auto;padding:16px}
 header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 h1{font-size:20px;margin:0}
 .sub{color:var(--muted);font-size:13px}
-.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
-@media (max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
-section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
-h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px}
-label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
-input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px}
-textarea{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px;min-height:200px;resize:vertical}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-button{font:inherit;font-weight:600;border:0;border-radius:6px;padding:10px 16px;background:var(--accent);color:var(--accent-ink);cursor:pointer;margin-top:12px;width:100%}
-details{margin-top:10px}
+.grid{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.col{display:grid;gap:16px;min-width:0}
+section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
+input,select{width:100%;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:7px 8px;min-width:0}
+input.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;text-transform:uppercase}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.r3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+button{font:inherit;border:1px solid var(--line);border-radius:6px;padding:7px 10px;background:var(--field);color:var(--ink);cursor:pointer}
+button.primary{font-weight:600;border:0;padding:11px 16px;background:var(--accent);color:var(--accent-ink);width:100%}
+button.link{border:0;background:none;color:var(--accent);padding:4px 0;font-size:13px;font-weight:600}
+button.x{padding:4px 8px;color:var(--muted)}
+.wp{display:grid;grid-template-columns:22px 70px minmax(0,1fr) minmax(0,1fr) 62px 30px;gap:6px;align-items:center;margin-bottom:6px}
+.wp .tag{font-size:11px;color:var(--muted);text-align:center}
+.wphead{font-size:11px;color:var(--muted);margin-bottom:4px}
+.step{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 30px;gap:6px;align-items:center;margin-bottom:6px}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
+details{margin-top:4px}
 summary{cursor:pointer;color:var(--muted);font-size:13px}
 .chk{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px;color:var(--muted)}
 .chk input{width:auto}
 .errors{color:var(--err);font-size:13px;margin-top:8px;white-space:pre-line}
-.status{font-size:14px;margin:4px 0 12px;padding:10px;border-radius:6px;background:var(--row)}
-.status b{color:var(--accent)}
 table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
-th{font-size:12px;color:var(--muted);font-weight:600}
-@media (max-width:520px){th,td{padding:7px 4px}td.m{font-size:12px}}
-td.t{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:700;white-space:nowrap}
-td.m{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
-.ev{font-weight:700}
-.small{font-size:12px;color:var(--muted)}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.mono,td.t{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+td.t{font-weight:700;white-space:nowrap}
+td.s{font-size:12px;color:var(--muted)}
 .tablewrap{overflow-x:auto}
+tr.mark td{color:var(--muted);font-size:13px}
+.pill{display:inline-block;font-size:11px;padding:1px 6px;border-radius:999px;background:var(--soft);color:var(--accent);font-weight:600;white-space:nowrap}
+.pill.warn{background:transparent;color:var(--warn);border:1px solid var(--warn)}
+.live{display:grid;grid-template-columns:150px minmax(0,1fr);gap:14px;align-items:center}
+@media (max-width:420px){.live{grid-template-columns:minmax(0,1fr)} .dial{max-width:180px;margin:0 auto}}
+.dial svg{width:100%;height:auto;display:block}
+.big{font-size:26px;font-weight:700;line-height:1.1}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;font-size:13px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-family:ui-monospace,Menlo,monospace}
+.now{padding:10px;border-radius:8px;background:var(--soft);margin-top:10px}
+.now b{color:var(--accent)}
+.summary{font-size:13px;color:var(--muted);margin-bottom:8px}
 footer{margin-top:16px;font-size:12px;color:var(--muted)}
-code{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+@media (max-width:560px){
+  .wp{grid-template-columns:30px minmax(0,1fr) 70px 30px;grid-template-areas:"tag id eto x" ". lat lon lon";row-gap:4px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  .wp>:nth-child(1){grid-area:tag}.wp>:nth-child(2){grid-area:id}.wp>:nth-child(3){grid-area:lat}
+  .wp>:nth-child(4){grid-area:lon}.wp>:nth-child(5){grid-area:eto}.wp>:nth-child(6){grid-area:x}
+  .wp.wphead{display:none}
+  table.cards thead{display:none}
+  table.cards tr{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;padding:8px 0;border-bottom:1px solid var(--line)}
+  table.cards td{border:0;padding:0}
+  table.cards td::before{content:attr(data-l);display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-family:system-ui,sans-serif;font-weight:400}
+  table.cards td:first-child{grid-column:1/-1}
+  table.cards td:first-child::before{display:none}
+}
 </style>
 </head>
 <body>
 <main>
   <header>
     <h1>Solat In Flight</h1>
-    <span class="sub" id="offline">Runs fully offline</span>
+    <span class="sub">Offline · sun computed directly (NOAA/Meeus)</span>
   </header>
 
   <div class="grid">
-    <section>
-      <h2>Flight</h2>
-      <div class="row2">
-        <div><label for="date">Date of first fix (UTC)</label><input id="date" type="date"></div>
-        <div><label for="alt">Cruise altitude (ft)</label><input id="alt" type="number" value="35000" step="1000" min="0"></div>
-      </div>
-      <label for="route">Route: one fix per line: <code>IDENT [LAT LON] [HHMM]</code></label>
-      <textarea id="route" spellcheck="false" autocapitalize="characters"></textarea>
-      <div class="small">Airports from the built-in list need no coordinates. The first and last fix need a UTC time. Fixes without a time are spread out by distance. Times past 0000Z roll to the next day automatically. Lines starting with <code>#</code> are ignored.</div>
-
-      <label for="conv">Convention</label>
-      <select id="conv"></select>
-
-      <details>
-        <summary>Advanced</summary>
-        <div class="row3">
-          <div><label for="fajr">Fajr angle °</label><input id="fajr" type="number" step="0.5"></div>
-          <div><label for="isha">Isha angle °</label><input id="isha" type="number" step="0.5"></div>
-          <div><label for="asr">Asr</label><select id="asr"><option value="1">Shafi'i</option><option value="2">Hanafi</option></select></div>
+    <!-- ========== INPUTS ========== -->
+    <div class="col">
+      <section>
+        <h2>Flight</h2>
+        <div class="r3">
+          <div><label for="date">Date (UTC)</label><input id="date" type="date"></div>
+          <div><label for="dep">Airborne UTC</label><input id="dep" class="mono" inputmode="numeric" placeholder="1530" maxlength="5"></div>
+          <div><label for="arr">Landing UTC</label><input id="arr" class="mono" inputmode="numeric" placeholder="0530" maxlength="5"></div>
         </div>
-        <div class="row3">
-          <div><label for="ihZ">Zuhr +min</label><input id="ihZ" type="number" value="2"></div>
-          <div><label for="ihM">Maghrib +min</label><input id="ihM" type="number" value="1"></div>
-          <div><label for="tz">Local offset</label><input id="tz" placeholder="+08:00"></div>
-        </div>
-        <div class="row2">
-          <div><label for="climb">Climb (min)</label><input id="climb" type="number" value="20"></div>
-          <div><label for="desc">Descent (min)</label><input id="desc" type="number" value="25"></div>
-        </div>
-        <label class="chk"><input id="dipTw" type="checkbox" checked> Apply altitude dip to Fajr &amp; Isha (a juristic choice)</label>
-      </details>
+        <label for="conv">Convention</label>
+        <select id="conv"></select>
+      </section>
 
-      <button id="go">Calculate</button>
-      <div class="errors" id="errors"></div>
-    </section>
+      <section>
+        <h2>Route <button class="link" id="addWp" type="button">+ Add waypoint</button></h2>
+        <div class="wp wphead"><span></span><span>Ident</span><span>Lat</span><span>Lon</span><span>ETO</span><span></span></div>
+        <div id="wps"></div>
+        <div class="hint">Lat/Lon as <span class="mono">N0244.6</span> / <span class="mono">E10141.9</span> or decimal. Airports from the built-in list fill in automatically. ETO (HHMM UTC) is optional on waypoints; without it the time is spread by distance. Times roll past 0000Z automatically.</div>
+      </section>
 
-    <section>
-      <h2>Prayer times en route</h2>
-      <div id="summary" class="small">Enter a route and press Calculate.</div>
-      <div id="depStatus"></div>
-      <div class="tablewrap"><table id="tbl" hidden>
-        <thead><tr><th>Event</th><th>UTC</th><th id="thLocal" hidden>Local</th><th>Elapsed</th><th>Position · alt · leg</th></tr></thead>
-        <tbody></tbody>
-      </table></div>
-      <div id="arrStatus"></div>
-    </section>
+      <section>
+        <h2>Vertical profile <button class="link" id="addStep" type="button">+ Add step</button></h2>
+        <div class="r3">
+          <div><label for="fl">Initial FL</label><input id="fl" class="mono" inputmode="numeric" value="350"></div>
+          <div><label for="elevO">Origin elev ft</label><input id="elevO" inputmode="numeric" value="70"></div>
+          <div><label for="elevD">Dest elev ft</label><input id="elevD" inputmode="numeric" value="83"></div>
+        </div>
+        <div class="r3">
+          <div><label for="climb">Climb fpm</label><input id="climb" inputmode="numeric" value="1500"></div>
+          <div><label for="stepRate">Step fpm</label><input id="stepRate" inputmode="numeric" value="1000"></div>
+          <div><label for="descent">Descent fpm</label><input id="descent" inputmode="numeric" value="1500"></div>
+        </div>
+        <div id="stepsHead" class="step wphead" hidden><span>Start at T+ (hh:mm)</span><span>New FL</span><span></span></div>
+        <div id="steps"></div>
+        <div class="hint">Altitude matters because the horizon dips as you climb, which brings sunrise earlier and Maghrib later.</div>
+      </section>
+
+      <section>
+        <details>
+          <summary>Advanced</summary>
+          <div class="r3">
+            <div><label for="fajr">Fajr angle °</label><input id="fajr" type="number" step="0.5"></div>
+            <div><label for="isha">Isha angle °</label><input id="isha" type="number" step="0.5"></div>
+            <div><label for="asr">Asr</label><select id="asr"><option value="1">Shafi'i</option><option value="2">Hanafi</option></select></div>
+          </div>
+          <div class="r3">
+            <div><label for="ihZ">Zuhr +min</label><input id="ihZ" type="number" value="2"></div>
+            <div><label for="ihM">Maghrib +min</label><input id="ihM" type="number" value="1"></div>
+            <div><label for="tz">Local offset</label><input id="tz" class="mono" placeholder="+08:00"></div>
+          </div>
+          <label class="chk"><input id="dipTw" type="checkbox" checked> Apply altitude dip to Fajr &amp; Isha (a juristic choice)</label>
+        </details>
+        <button class="primary" id="go" type="button" style="margin-top:12px">Calculate</button>
+        <div class="errors" id="errors"></div>
+      </section>
+    </div>
+
+    <!-- ========== OUTPUTS ========== -->
+    <div class="col">
+      <section id="liveSec" hidden>
+        <h2>Now <span class="sub" id="liveClock"></span></h2>
+        <div class="r3" style="margin-bottom:10px">
+          <div><label for="liveMode">Time</label><select id="liveMode"><option value="device">Device clock</option><option value="manual">Set time</option></select></div>
+          <div><label for="liveT">UTC (DD/HHMM)</label><input id="liveT" class="mono" placeholder="02/0300" disabled></div>
+          <div><label for="hdg">Heading °T (opt.)</label><input id="hdg" class="mono" inputmode="numeric" placeholder="track"></div>
+        </div>
+        <div class="live">
+          <div class="dial" id="dial"></div>
+          <div>
+            <div class="sub">Qibla relative to <span id="relSrc">track</span></div>
+            <div class="big mono" id="relBig">—</div>
+            <dl class="kv" style="margin-top:8px">
+              <dt>Qibla</dt><dd id="qTrue">—</dd>
+              <dt id="hdgLabel">Track</dt><dd id="trkTrue">—</dd>
+              <dt>Position</dt><dd id="posNow">—</dd>
+              <dt>Altitude</dt><dd id="altNow">—</dd>
+            </dl>
+          </div>
+        </div>
+        <div class="now" id="prayNow"></div>
+      </section>
+
+      <section>
+        <h2>Prayer windows</h2>
+        <div class="summary" id="summary">Enter the flight and press Calculate.</div>
+        <div class="tablewrap"><table id="winTbl" class="cards" hidden>
+          <thead><tr><th>Prayer</th><th>Opens</th><th>Closes</th><th>Airborne time available</th><th>Qibla at opening</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </section>
+
+      <section>
+        <h2>Timeline</h2>
+        <div class="tablewrap"><table id="evTbl" class="cards" hidden>
+          <thead><tr><th>Event</th><th>UTC</th><th>Elapsed</th><th>Position</th><th>FL</th><th>TRK °T</th><th>Qibla rel.</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </section>
+    </div>
   </div>
 
   <footer>
-    The sun's position is computed directly (NOAA/Meeus), and the aircraft position is interpolated along the great circle between fixes. Start times are rounded up to the minute and Sunrise (the end of Fajr) is rounded down. This is a reference prototype: check it against your authority before relying on it.
+    Qibla is the great-circle bearing (°T) to the Kaaba. "Relative" uses the planned track unless you enter a heading. Use TRUE heading, not magnetic, and enter heading to account for drift. Prayer-window opening times are rounded up to the minute and closing times are rounded down. This is a reference prototype: check it against your authority before relying on it.
   </footer>
 </main>
 
@@ -126,106 +208,299 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:12px}
 (function(){
   "use strict";
   const S = window.Solat, $ = (id) => document.getElementById(id);
-  const SAMPLE = `# Example only. Replace with your OFP fixes.
-KUL 1530
-MAA 1805
-IKA N3524.0 E05109.0
-IST N4058.6 E02848.8 0040
-LHR 0530`;
+  const MIN = S.MIN, HOUR = S.HOUR, DAY = S.DAY;
+  const pad = (n) => String(n).padStart(2, "0");
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
   const store = {
-    get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
-    set(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+    get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch(e){ return null; } },
+    set(k,v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} },
   };
+
+  // ---------- form state ----------
+  const DEFAULT = {
+    date: new Date().toISOString().slice(0,10), dep: "1530", arr: "0530", conv: "jakim",
+    wps: [ { id:"KUL", lat:"N0244.6", lon:"E10141.9", eto:"" },
+           { id:"LHR", lat:"N5128.7", lon:"W00027.7", eto:"" } ],
+    fl: "350", elevO: "70", elevD: "83", climb: "1500", stepRate: "1000", descent: "1500",
+    steps: [], tz: "", dipTw: true, ihZ: "2", ihM: "1",
+  };
+  let state = Object.assign({}, DEFAULT, store.get("solat.v2") || {});
 
   for (const [k,c] of Object.entries(S.CONVENTIONS)) {
     const o = document.createElement("option"); o.value = k; o.textContent = c.name; $("conv").appendChild(o);
   }
+  const dl = document.createElement("datalist"); dl.id = "stations";
+  Object.keys(S.STATIONS).sort().forEach((k) => { const o = document.createElement("option"); o.value = k; dl.appendChild(o); });
+  document.body.appendChild(dl);
+
   function applyConv(){ const c = S.CONVENTIONS[$("conv").value]; $("fajr").value = c.fajr; $("isha").value = c.isha; $("asr").value = c.asr; }
-  $("conv").addEventListener("change", applyConv);
 
-  // restore
-  $("route").value = store.get("route") || SAMPLE;
-  $("conv").value = store.get("conv") || "jakim";
-  applyConv();
-  ["alt","tz","dipTw"].forEach((id)=>{ const v = store.get(id); if (v!==null){ if(id==="dipTw") $(id).checked = v==="1"; else $(id).value = v; } });
-  $("date").value = store.get("date") || new Date().toISOString().slice(0,10);
-
-  const pad = (n) => String(n).padStart(2,"0");
-  function fmtUTC(ms, mode){
-    const d = new Date(mode === "floor" ? Math.floor(ms/60000)*60000 : Math.ceil(ms/60000)*60000);
-    return `${pad(d.getUTCDate())}/${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}Z`;
+  function renderWps(){
+    const box = $("wps"); box.innerHTML = "";
+    state.wps.forEach((w, i) => {
+      const first = i === 0, last = i === state.wps.length - 1;
+      const row = document.createElement("div"); row.className = "wp";
+      row.innerHTML =
+        `<span class="tag">${first ? "DEP" : last ? "ARR" : i}</span>` +
+        `<input class="mono" list="stations" value="${esc(w.id)}" data-k="id" aria-label="Ident">` +
+        `<input class="mono" value="${esc(w.lat)}" data-k="lat" aria-label="Latitude" placeholder="N0000.0">` +
+        `<input class="mono" value="${esc(w.lon)}" data-k="lon" aria-label="Longitude" placeholder="E00000.0">` +
+        `<input class="mono" value="${first ? esc(state.dep) : last ? esc(state.arr) : esc(w.eto)}" data-k="eto" ${first||last ? "disabled title='Set in Flight'" : ""} aria-label="ETO" placeholder="${first||last ? "" : "auto"}" inputmode="numeric" maxlength="5">` +
+        (first || last ? "<span></span>" : `<button class="x" type="button" aria-label="Remove waypoint">✕</button>`);
+      row.querySelectorAll("input").forEach((inp) => inp.addEventListener("change", () => {
+        const k = inp.dataset.k; w[k] = inp.value.trim().toUpperCase();
+        if (k === "id") {
+          const st = S.station(w.id);
+          if (st) { w.lat = S.fmtLat(st.lat); w.lon = S.fmtLon(st.lon); renderWps(); }
+        }
+        save();
+      }));
+      const rm = row.querySelector("button.x");
+      if (rm) rm.addEventListener("click", () => { state.wps.splice(i, 1); renderWps(); save(); });
+      box.appendChild(row);
+    });
   }
+  function renderSteps(){
+    const box = $("steps"); box.innerHTML = "";
+    $("stepsHead").hidden = !state.steps.length;
+    state.steps.forEach((s, i) => {
+      const row = document.createElement("div"); row.className = "step";
+      row.innerHTML = `<input class="mono" value="${esc(s.at)}" data-k="at" placeholder="05:00" aria-label="Elapsed time">` +
+        `<input class="mono" value="${esc(s.fl)}" data-k="fl" placeholder="370" inputmode="numeric" aria-label="Flight level">` +
+        `<button class="x" type="button" aria-label="Remove step">✕</button>`;
+      row.querySelectorAll("input").forEach((inp) => inp.addEventListener("change", () => { s[inp.dataset.k] = inp.value.trim(); save(); }));
+      row.querySelector("button").addEventListener("click", () => { state.steps.splice(i, 1); renderSteps(); save(); });
+      box.appendChild(row);
+    });
+  }
+  const SIMPLE = ["date","dep","arr","conv","fl","elevO","elevD","climb","stepRate","descent","tz","ihZ","ihM"];
+  function readSimple(){ SIMPLE.forEach((k) => state[k] = $(k).value.trim()); state.dipTw = $("dipTw").checked; }
+  function save(){ readSimple(); store.set("solat.v2", state); }
+
+  SIMPLE.forEach((k) => { if (state[k] != null) $(k).value = state[k]; });
+  $("dipTw").checked = !!state.dipTw;
+  applyConv();
+  renderWps(); renderSteps();
+  $("conv").addEventListener("change", () => { applyConv(); save(); });
+  ["dep","arr"].forEach((k) => $(k).addEventListener("change", () => { save(); renderWps(); }));
+  SIMPLE.forEach((k) => $(k).addEventListener("change", save));
+  $("addWp").addEventListener("click", () => { state.wps.splice(state.wps.length - 1, 0, { id:"", lat:"", lon:"", eto:"" }); renderWps(); save(); });
+  $("addStep").addEventListener("click", () => { state.steps.push({ at:"", fl:"" }); renderSteps(); save(); });
+
+  // ---------- parsing ----------
+  function hhmm(s){
+    const m = /^(\d{1,2}):?(\d{2})$/.exec(String(s||"").trim());
+    if (!m || +m[1] > 23 || +m[2] > 59) return null;
+    return (+m[1]*60 + +m[2]) * MIN;
+  }
+  function elapsed(s){
+    const m = /^(\d{1,2}):?(\d{2})$/.exec(String(s||"").trim());
+    if (!m || +m[2] > 59) return null;
+    return (+m[1]*60 + +m[2]) * MIN;
+  }
+  function flToFt(s){ const v = +String(s||"").replace(/^FL/i,""); if (!isFinite(v) || v <= 0) return null; return v < 1000 ? v*100 : v; }
   function parseOffset(s){
     const m = /^([+-])?(\d{1,2})(?::?(\d{2}))?$/.exec((s||"").trim());
-    if (!m) return null;
-    return (m[1]==="-"?-1:1) * (+m[2]*60 + +(m[3]||0));
+    return m ? (m[1]==="-"?-1:1) * (+m[2]*60 + +(m[3]||0)) : null;
   }
-  function fmtLocal(ms, off, mode){
-    const r = mode === "floor" ? Math.floor(ms/60000)*60000 : Math.ceil(ms/60000)*60000;
-    const d = new Date(r + off*60000);
-    return `${pad(d.getUTCDate())}/${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
-  }
-  const fmtElapsed = (ms) => { const m = Math.round(ms/60000); return `T+${Math.floor(m/60)}:${pad(m%60)}`; };
-  const LABEL = { Fajr:"Fajr (Subuh)", Sunrise:"Sunrise (Fajr ends)", Zuhr:"Zuhr", Asr:"Asr", Maghrib:"Maghrib", Isha:"Isha" };
 
+  function build(){
+    readSimple();
+    const errs = [];
+    const day = Date.parse(state.date + "T00:00:00Z");
+    if (!isFinite(day)) errs.push("Set the date.");
+    const dep = hhmm(state.dep), arr = hhmm(state.arr);
+    if (dep === null) errs.push("Airborne time must be HHMM.");
+    if (arr === null) errs.push("Landing time must be HHMM.");
+    const wps = [];
+    let last = null;
+    state.wps.forEach((w, i) => {
+      const name = w.id || (i === 0 ? "DEP" : i === state.wps.length-1 ? "ARR" : "WP" + i);
+      let lat = S.parseLat(w.lat), lon = S.parseLon(w.lon);
+      if ((lat === null || lon === null) && S.station(w.id)) { const st = S.station(w.id); lat = st.lat; lon = st.lon; }
+      if (lat === null || lon === null) { errs.push(`${name}: position missing or invalid.`); return; }
+      let eto = null;
+      const raw = i === 0 ? state.dep : i === state.wps.length-1 ? state.arr : w.eto;
+      if (raw) {
+        const v = hhmm(raw);
+        if (v === null) errs.push(`${name}: ETO must be HHMM.`);
+        else if (isFinite(day)) {
+          eto = day + v;
+          while (last !== null && eto <= last) eto += DAY;
+          last = eto;
+        }
+      }
+      wps.push({ name, lat, lon, eto });
+    });
+    const initialFt = flToFt(state.fl);
+    if (initialFt === null) errs.push("Initial FL is invalid.");
+    if (errs.length) throw new Error(errs.join("\n"));
+
+    const start = wps[0].eto, end = wps[wps.length-1].eto;
+    const steps = [];
+    state.steps.forEach((s, i) => {
+      if (!s.at && !s.fl) return;
+      const e = elapsed(s.at), ft = flToFt(s.fl);
+      if (e === null || ft === null) errs.push(`Step ${i+1}: needs T+ hh:mm and FL.`);
+      else steps.push({ t: start + e, ft });
+    });
+    if (errs.length) throw new Error(errs.join("\n"));
+    const profile = S.makeProfile({ start, end, origElev: +state.elevO || 0, destElev: +state.elevD || 0,
+      initialFt, steps, climbFpm: +state.climb, stepFpm: +state.stepRate, descentFpm: +state.descent });
+    const route = S.makeRoute(wps, profile);
+    const conv = { fajr: +$("fajr").value, isha: +$("isha").value, asr: +$("asr").value,
+      dipOnTwilight: state.dipTw,
+      ihtiyat: Object.assign({}, S.DEFAULT_IHTIYAT, { Zuhr: +state.ihZ || 0, Maghrib: +state.ihM || 0 }) };
+    return { route, conv };
+  }
+
+  // ---------- formatting ----------
+  const ceilMin = (t) => Math.ceil(t / MIN) * MIN, floorMin = (t) => Math.floor(t / MIN) * MIN;
+  function fmtZ(t, round){ const d = new Date(round(t)); return `${pad(d.getUTCDate())}/${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}Z`; }
+  function fmtLocal(t, round){
+    const off = parseOffset(state.tz); if (off === null) return "";
+    const d = new Date(round(t) + off*MIN); return `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())} LT`;
+  }
+  const fmtDur = (ms) => { const m = Math.max(0, Math.round(ms / MIN)); return `${Math.floor(m/60)}h ${pad(m%60)}m`; };
+  const fmtT = (ms) => { const neg = ms < 0; const m = Math.round(Math.abs(ms) / MIN); return `${neg?"T−":"T+"}${Math.floor(m/60)}:${pad(m%60)}`; };
+  const fmtFL = (ft) => ft >= 10000 ? "FL" + String(Math.round(ft/100)).padStart(3,"0") : Math.round(ft/100)*100 + " ft";
+  const fmtRel = (r) => { const a = Math.round(Math.abs(r)); return a === 0 ? "Ahead" : a === 180 ? "Behind" : (r < 0 ? "L " : "R ") + a + "°"; };
+  const fmtDeg = (d) => String(Math.round(d) % 360).padStart(3, "0") + "°";
+  const LABEL = { Fajr:"Fajr", Sunrise:"Sunrise", Zuhr:"Zuhr", Asr:"Asr", Maghrib:"Maghrib", Isha:"Isha" };
+
+  // ---------- render results ----------
+  let result = null;
   function run(){
     $("errors").textContent = "";
-    const dateStr = $("date").value;
-    if (!dateStr) { $("errors").textContent = "Set the date."; return; }
-    const depDay = Date.parse(dateStr + "T00:00:00Z");
-    const { wps, errors } = S.parseRoute($("route").value, depDay);
-    if (errors.length) { $("errors").textContent = errors.join("\n"); return; }
+    let b;
+    try { b = build(); } catch(e){ $("errors").textContent = e.message; return; }
+    save();
+    const { route, conv } = b;
+    const pw = S.prayerWindows(route, conv);
+    result = { route, conv, ...pw };
+    const first = route.wps[0], last = route.wps[route.wps.length-1], prof = route.profile;
+    $("summary").textContent = `${first.name} ${fmtZ(route.start, floorMin)} → ${last.name} ${fmtZ(route.end, floorMin)} · ` +
+      `${Math.round(route.distNm)} nm · ${fmtDur(route.end - route.start)} · max ${fmtFL(prof.maxFt)} · ` +
+      `Fajr ${conv.fajr}° Isha ${conv.isha}° ${conv.asr === 2 ? "Hanafi" : "Shafi'i"} Asr`;
 
-    const conv = {
-      fajr: +$("fajr").value, isha: +$("isha").value, asr: +$("asr").value,
-      dipOnTwilight: $("dipTw").checked,
-      ihtiyat: { ...S.DEFAULT_IHTIYAT, Zuhr: +$("ihZ").value || 0, Maghrib: +$("ihM").value || 0 },
-    };
-    const off = parseOffset($("tz").value);
-    let route;
-    try { route = S.makeRoute(wps, +$("alt").value || 0, +$("climb").value || 0, +$("desc").value || 0); }
-    catch(e){ $("errors").textContent = e.message; return; }
-
-    ["alt","tz"].forEach((id)=>store.set(id,$(id).value));
-    store.set("route",$("route").value); store.set("conv",$("conv").value);
-    store.set("date",dateStr); store.set("dipTw",$("dipTw").checked?"1":"0");
-
-    const events = S.findEvents(route, conv);
-    const first = route.wps[0], last = route.wps[route.wps.length-1];
-    const dur = route.end - route.start;
-    $("summary").innerHTML = `${first.name} ${fmtUTC(route.start,"floor")} → ${last.name} ${fmtUTC(route.end,"floor")} · ${Math.round(route.distNm)} nm · ${Math.floor(dur/3600000)}h${pad(Math.round(dur/60000)%60)} · Fajr ${conv.fajr}° Isha ${conv.isha}° ${conv.asr===2?"Hanafi":"Shafi'i"} Asr`;
-
-    const dep = S.periodAt(first.lat, first.lon, route.start, conv);
-    const arr = S.periodAt(last.lat, last.lon, route.end, conv);
-    const periodText = (p, where, t) => {
-      if (!p) return "";
-      const what = p.current === "Sunrise" ? "<b>no prayer period</b> (after sunrise, before Zuhr)" : `<b>${p.current}</b> period (began ${fmtUTC(p.since)} on the ground)`;
-      return `<div class="status">${where} ${fmtUTC(t,"floor")}: ${what}</div>`;
-    };
-    $("depStatus").innerHTML = periodText(dep, "At " + first.name + " airborne", route.start);
-    $("arrStatus").innerHTML = periodText(arr, "At " + last.name + " landing", route.end);
-
-    const tb = $("tbl").querySelector("tbody"); tb.innerHTML = "";
-    $("thLocal").hidden = off === null;
-    if (!events.length) {
-      tb.innerHTML = `<tr><td colspan="5" class="small">No prayer time starts while airborne. Check the departure and landing status.</td></tr>`;
+    // windows
+    const wb = $("winTbl").querySelector("tbody"); wb.innerHTML = "";
+    for (const w of pw.windows) {
+      const se = w.startEvent;
+      const openTxt = w.openAtDeparture
+        ? `<span class="pill">open at take-off</span><div class="s">since ${fmtZ(w.start, ceilMin)} at ${esc(first.name)}</div>`
+        : `<span class="mono"><b>${fmtZ(w.start, ceilMin)}</b></span> <span class="s">${fmtT(w.start - route.start)}</span><div class="s mono">${S.fmtPos(se.lat, se.lon)} · ${fmtFL(se.alt)}</div>`;
+      let closeTxt;
+      if (w.problem) closeTxt = `<span class="mono"><b>${fmtZ(w.end, floorMin)}</b></span> <span class="pill warn">check</span><div class="s">${esc(w.problem)}</div>`;
+      else if (w.openAtArrival) closeTxt = `<span class="pill">still open at landing</span><div class="s">closes ${fmtZ(w.end, floorMin)} at ${esc(last.name)}</div>`;
+      else closeTxt = `<span class="mono"><b>${fmtZ(w.end, floorMin)}</b></span> <span class="s">${fmtT(w.end - route.start)}</span><div class="s">${w.name === "Fajr" ? "sunrise" : "next prayer"}</div>`;
+      const qp = w.openAtDeparture ? S.situationAt(route, pw.windows, route.start) : null;
+      const q = qp ? { qibla: qp.qibla, track: qp.track } : { qibla: se.qibla, track: se.track };
+      const rel = S.relBearing(q.qibla, q.track);
+      const lt = state.tz ? `<div class="s">${fmtLocal(w.openAtDeparture ? route.start : w.start, ceilMin)}</div>` : "";
+      wb.insertAdjacentHTML("beforeend",
+        `<tr><td><b>${w.name}</b></td><td data-l="Opens">${openTxt}${lt}</td><td data-l="Closes">${closeTxt}</td>` +
+        `<td class="t" data-l="Airborne time">${fmtDur(w.airborneMs)}</td>` +
+        `<td data-l="Qibla at opening"><span class="mono"><b>${fmtRel(rel)}</b></span> <span class="s">${S.clockCode(rel)} o'clock</span><div class="s mono">QDM ${fmtDeg(q.qibla)} · TRK ${fmtDeg(q.track)}</div></td></tr>`);
     }
-    for (const e of events) {
-      const mode = e.name === "Sunrise" ? "floor" : "ceil";
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td class="ev">${LABEL[e.name]}</td><td class="t">${fmtUTC(e.t,mode)}</td>` +
-        (off !== null ? `<td class="t">${fmtLocal(e.t,off,mode)}</td>` : "") +
-        `<td class="m">${fmtElapsed(e.t-route.start)}</td>` +
-        `<td class="m">${S.fmtPos(e.lat,e.lon)}<br><span class="small">${Math.round(e.alt/100)*100} ft · ${e.leg}</span></td>`;
-      tb.appendChild(tr);
+    if (!pw.windows.length) wb.innerHTML = `<tr><td colspan="5" class="s">No prayer window overlaps this flight.</td></tr>`;
+    $("winTbl").hidden = false;
+
+    // timeline: prayer events + profile marks + waypoints
+    const rows = [];
+    for (const e of pw.events) rows.push({ t: e.t, kind: "ev", label: LABEL[e.name], s: e, round: e.name === "Sunrise" ? floorMin : ceilMin });
+    for (const m of prof.marks) { const s = route.state(m.t); rows.push({ t: m.t, kind: "mark", label: m.kind, s, round: floorMin }); }
+    route.wps.forEach((w, i) => { const s = route.state(w.eto); rows.push({ t: w.eto, kind: "mark", label: (i === 0 ? "Airborne " : i === route.wps.length-1 ? "Landing " : "Over ") + w.name, s, round: floorMin }); });
+    rows.sort((a, b) => a.t - b.t);
+    const eb = $("evTbl").querySelector("tbody"); eb.innerHTML = "";
+    for (const r of rows) {
+      const q = S.qiblaBearing(r.s), rel = S.relBearing(q, r.s.track);
+      eb.insertAdjacentHTML("beforeend",
+        `<tr class="${r.kind === "mark" ? "mark" : ""}"><td>${r.kind === "ev" ? "<b>" + esc(r.label) + "</b>" : esc(r.label)}</td>` +
+        `<td class="t" data-l="UTC">${fmtZ(r.t, r.round)}</td><td class="mono" data-l="Elapsed">${fmtT(r.t - route.start)}</td>` +
+        `<td class="mono" data-l="Position">${S.fmtPos(r.s.lat, r.s.lon)}</td><td class="mono" data-l="Level">${fmtFL(r.s.alt)}</td>` +
+        `<td class="mono" data-l="Track">${fmtDeg(r.s.track)}</td>${r.kind === "ev" ? `<td class="mono" data-l="Qibla rel.">${fmtRel(rel)}</td>` : ""}</tr>`);
     }
-    $("tbl").hidden = false;
+    $("evTbl").hidden = false;
+    $("liveSec").hidden = false;
+    live();
   }
+
+  // ---------- live panel ----------
+  function dialSvg(rel){
+    const r = 58, c = 75;
+    const a = (rel - 90) * Math.PI / 180;
+    const x = c + Math.cos(a) * (r - 6), y = c + Math.sin(a) * (r - 6);
+    let ticks = "";
+    for (let k = 0; k < 12; k++) {
+      const b = (k * 30 - 90) * Math.PI / 180, r1 = k % 3 ? r - 4 : r - 9;
+      ticks += `<line x1="${c + Math.cos(b)*r1}" y1="${c + Math.sin(b)*r1}" x2="${c + Math.cos(b)*r}" y2="${c + Math.sin(b)*r}" stroke="var(--muted)" stroke-width="${k%3?1:2}"/>`;
+    }
+    return `<svg viewBox="0 0 150 150" role="img" aria-label="Qibla ${fmtRel(rel)} relative to the nose">
+      <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--line)" stroke-width="2"/>${ticks}
+      <path d="M${c} ${c-26} l5 14 l14 7 v5 l-14 -3 l-2 13 l5 4 v4 l-8 -2 l-8 2 v-4 l5 -4 l-2 -13 l-14 3 v-5 l14 -7 z" fill="var(--plane)"/>
+      <line x1="${c}" y1="${c}" x2="${x}" y2="${y}" stroke="var(--qibla)" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="${x}" cy="${y}" r="6" fill="var(--qibla)"/>
+      <text x="${c}" y="11" text-anchor="middle" font-size="10" fill="var(--muted)">NOSE</text>
+    </svg>`;
+  }
+  function liveTime(){
+    if ($("liveMode").value === "device") return Date.now();
+    const m = /^(\d{1,2})\/(\d{2})(\d{2})$/.exec($("liveT").value.trim());
+    if (!m || !result) return null;
+    const d = new Date(result.route.start);
+    let t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), +m[1], +m[2], +m[3]);
+    if (t < result.route.start - 20*DAY) t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, +m[1], +m[2], +m[3]);
+    return t;
+  }
+  function live(){
+    if (!result) return;
+    const t = liveTime();
+    if (t === null) { $("prayNow").textContent = "Enter time as DD/HHMM UTC."; return; }
+    const { route, windows } = result;
+    const hdgIn = $("hdg").value.trim();
+    const hdg = hdgIn === "" ? NaN : ((+hdgIn % 360) + 360) % 360;
+    const s = S.situationAt(route, windows, t, hdg);
+    const d = new Date(t);
+    $("liveClock").textContent = `${pad(d.getUTCDate())}/${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}Z · ${fmtT(t - route.start)}`;
+    $("dial").innerHTML = dialSvg(s.rel);
+    $("relBig").textContent = `${fmtRel(s.rel)} · ${s.clock} o'clock`;
+    $("relSrc").textContent = s.headingSource === "HDG" ? "heading" : "planned track";
+    $("hdgLabel").textContent = s.headingSource === "HDG" ? "Heading" : "Track";
+    $("qTrue").textContent = fmtDeg(s.qibla) + " T";
+    $("trkTrue").textContent = fmtDeg(s.heading) + " T";
+    $("posNow").textContent = S.fmtPos(s.lat, s.lon) + " · " + s.leg;
+    $("altNow").textContent = fmtFL(s.alt);
+    let html;
+    const phase = t < route.start ? "Before take-off" : t > route.end ? "After landing" : "Airborne";
+    if (s.current) {
+      const ends = s.current.end;
+      html = `${phase}: <b>${s.current.name}</b> window open` +
+        ` · <b>${fmtDur(ends - t)}</b> remaining (closes ${fmtZ(ends, floorMin)})` +
+        (s.current.problem ? `<br><span class="pill warn">check</span> ${esc(s.current.problem)}` : "");
+    } else html = `${phase}: no prayer window open`;
+    if (s.next) html += `<br>Next: <b>${s.next.name}</b> opens ${fmtZ(s.next.start, ceilMin)}, in ${fmtDur(s.next.start - t)}`;
+    if (s.current && s.current.name !== "Isha" && s.current.end && s.next && s.current.end < s.next.start)
+      html += ` <span class="s">(no window ${fmtZ(s.current.end, floorMin)}–${fmtZ(s.next.start, ceilMin)})</span>`;
+    $("prayNow").innerHTML = html;
+  }
+  $("liveMode").addEventListener("change", () => {
+    const manual = $("liveMode").value === "manual";
+    $("liveT").disabled = !manual;
+    if (manual && !$("liveT").value && result) {
+      const d = new Date(result.route.start + (result.route.end - result.route.start) / 2);
+      $("liveT").value = `${pad(d.getUTCDate())}/${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}`;
+    }
+    live();
+  });
+  ["liveT","hdg"].forEach((k) => $(k).addEventListener("input", live));
+  setInterval(() => { if ($("liveMode").value === "device") live(); }, 15000);
+
   $("go").addEventListener("click", run);
   run();
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
-    navigator.serviceWorker.register("sw.js").catch(()=>{});
+    navigator.serviceWorker.register("sw.js").catch(() => {});
   }
 })();
 </script>
