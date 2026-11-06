@@ -17,7 +17,9 @@ What it does:
    - Changing off-block, taxi, airborne or any waypoint ETA moves every later ETA and the landing time by the same amount (moved fields are highlighted) and recalculates the prayer times at once.
 3. **Prayer times** are the zero crossings of `sun_altitude(t, position(t)) − threshold(altitude(t))` along the time axis, refined by bisection.
 4. **Vertical profile** covers climb, the initial FL, step climbs or descents at T+hh:mm, and a descent line to the destination elevation. Horizon dip is applied at the altitude of the moment.
-5. **Output** shows each prayer window: when it opens and closes (UTC), the airborne time available, and the qibla relative to track (or to heading if you enter one), in degrees and as a clock code. A **Now** panel shows the current window, the time remaining, and a qibla dial.
+5. **Output** shows each prayer window: when it opens and closes (UTC), the time available, and the **qibla in °M with a magnetic-track-up dial**, plus left/right of track and a clock code.
+   - Magnetic variation comes from the World Magnetic Model 2025 (NOAA/BGS, public domain, bundled as `wmm.js`, valid to 2030). It is computed at the aircraft's position and level, and matches the reference implementation to 0.01°.
+   - Left/right of track is the same in true or magnetic. Drift is not included, so on the ND compare with track, not heading.
 
 6. **Route library:**
    - **My waypoints:** save a name and its coordinates once; typing that name in the route fills in the position.
@@ -29,7 +31,7 @@ What it does:
    - shows the route as entered (flown part solid, rest dashed) with the aircraft moving along it;
    - day, twilight and night shading from the sun's true position;
    - **prayer lines** for Fajr, Sunrise, Zuhr, Asr, Maghrib and Isha: the places where each prayer is starting at the slider time, so you can watch the aircraft cross them;
-   - **▶** plays the flight, and the slider also drives the Now panel.
+   - **▶** plays the flight. The readout under the slider gives the time, position, magnetic track, qibla °M, the window open and the next prayer.
    - **Zoom** from 1× to 80× (wheel, pinch, double-tap, or + / −). The display renders at the screen's native resolution. Zoomed in, the coastline switches to Natural Earth 1:50m and every fix is labelled with its ETA. There is a scale bar in nm.
    - **Prayer chips** jump to the moment the aircraft physically crosses each prayer line and zoom onto it. Each crossing is given relative to the nearest fix, e.g. `Isha 1526Z · VLADA +13 nm`, together with the crossing time and the prayer time (crossing plus ihtiyat).
    - Lines are drawn from the sun angle alone: ihtiyat is added to the time, not drawn on the map.

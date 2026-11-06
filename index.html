@@ -77,14 +77,6 @@ td.s{font-size:12px;color:var(--muted)}
 tr.mark td{color:var(--muted);font-size:13px}
 .pill{display:inline-block;font-size:11px;padding:1px 6px;border-radius:999px;background:var(--soft);color:var(--accent);font-weight:600;white-space:nowrap}
 .pill.warn{background:transparent;color:var(--warn);border:1px solid var(--warn)}
-.live{display:grid;grid-template-columns:150px minmax(0,1fr);gap:14px;align-items:center}
-@media (max-width:420px){.live{grid-template-columns:minmax(0,1fr)} .dial{max-width:180px;margin:0 auto}}
-.dial svg{width:100%;height:auto;display:block}
-.big{font-size:26px;font-weight:700;line-height:1.1}
-.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;font-size:13px}
-.kv dt{color:var(--muted)} .kv dd{margin:0;font-family:ui-monospace,Menlo,monospace}
-.now{padding:10px;border-radius:8px;background:var(--soft);margin-top:10px}
-.now b{color:var(--accent)}
 .summary{font-size:13px;color:var(--muted);margin-bottom:8px}
 footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .lib{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
@@ -97,22 +89,25 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .ok{color:var(--accent);font-size:12px;margin-top:6px;min-height:1em}
 .qcell{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;min-width:120px}
 .qcell svg{width:120px;height:auto;display:block}
-.globewrap{position:relative;max-width:620px;margin:0 auto}
+.globewrap{position:relative;max-width:min(100%,480px);margin:0 auto}
 #globe{width:100%;aspect-ratio:1/1;display:block;touch-action:none;cursor:grab}
 #globe:active{cursor:grabbing}
 .zoomctl{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;align-items:center}
-.zoomctl button{width:36px;height:36px;padding:0;font-size:18px;font-weight:700;background:var(--panel);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.zoomctl button{width:30px;height:30px;padding:0;font-size:16px;font-weight:700;background:var(--panel);box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .zoomctl span{font:600 11px ui-monospace,Menlo,monospace;color:var(--muted);background:var(--panel);border-radius:4px;padding:1px 4px}
-.evchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.evchips button{font-size:12px;padding:5px 9px;display:inline-flex;gap:6px;align-items:center}
+.evchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.evchips button{font-size:11px;padding:3px 7px;display:inline-flex;gap:6px;align-items:center}
 .evchips i{display:inline-block;width:9px;height:9px;border-radius:50%}
-.gctl{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;margin-top:8px}
+.gctl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center;margin-top:4px}
+.gctl button{padding:3px 10px}
 .gctl input[type=range]{padding:0;accent-color:var(--accent);height:28px;background:none;border:0}
-.gtime{font-family:ui-monospace,Menlo,monospace;font-size:13px;margin-top:6px;min-height:3.9em}
-.gtime .sub{font-size:12px}
+.gtime{font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.4;margin-top:4px;min-height:5.6em}
+.gtime .sub{font-size:11px}
+#globeSec details{margin-top:6px}
+#globeSec summary{font-size:12px;color:var(--muted);cursor:pointer}
 .gtime b{color:var(--accent)}
-.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.legend button{display:inline-flex;gap:6px;align-items:center;font-size:12px;padding:4px 8px}
+.legend{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.legend button{display:inline-flex;gap:5px;align-items:center;font-size:11px;padding:2px 7px}
 .legend button[aria-pressed=false]{opacity:.4}
 .legend i{display:inline-block;width:16px;height:3px;border-radius:2px}
 .ofp{border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px;background:var(--field)}
@@ -258,29 +253,6 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 
     <!-- ========== OUTPUTS ========== -->
     <div class="col">
-      <section id="liveSec" hidden>
-        <h2>Now <span class="sub" id="liveClock"></span></h2>
-        <div class="r3" style="margin-bottom:10px">
-          <div><label for="liveMode">Time</label><select id="liveMode"><option value="device">Device clock</option><option value="manual">Set time</option></select></div>
-          <div><label for="liveT">UTC (DD/HHMM)</label><input id="liveT" class="mono" placeholder="02/0300" disabled></div>
-          <div><label for="hdg">Heading °T (opt.)</label><input id="hdg" class="mono" inputmode="numeric" placeholder="track"></div>
-        </div>
-        <div class="live">
-          <div class="dial" id="dial"></div>
-          <div>
-            <div class="sub">Qibla relative to <span id="relSrc">track</span></div>
-            <div class="big mono" id="relBig">—</div>
-            <dl class="kv" style="margin-top:8px">
-              <dt>Qibla</dt><dd id="qTrue">—</dd>
-              <dt id="hdgLabel">Track</dt><dd id="trkTrue">—</dd>
-              <dt>Position</dt><dd id="posNow">—</dd>
-              <dt>Altitude</dt><dd id="altNow">—</dd>
-            </dl>
-          </div>
-        </div>
-        <div class="now" id="prayNow"></div>
-      </section>
-
       <section id="globeSec" hidden>
         <h2>Globe <label class="chk" style="margin:0"><input type="checkbox" id="gFollow" checked> Follow aircraft</label></h2>
         <div class="globewrap"><canvas id="globe" aria-label="Globe showing the route, day and night, and prayer lines"></canvas>
@@ -289,12 +261,11 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
         <div class="gctl">
           <button type="button" id="gPlay" aria-label="Play">▶</button>
           <input type="range" id="gSlider" min="0" max="100" value="0" step="1" aria-label="Time along the flight">
-          <button type="button" id="gNow" title="Jump to the device clock">Now</button>
         </div>
         <div class="gtime" id="gTime"></div>
         <div class="evchips" id="gEvents"></div>
         <div class="legend" id="gLegend"></div>
-        <div class="hint">Coloured lines show where the sun is at each prayer's angle at the slider time, for the aircraft's current altitude (ihtiyat is added to the time, not drawn). As the slider moves, watch the aircraft cross them. Shading: day, then twilight (to 18°), then night. The sun and moon sit over the point where each is overhead; the moon is drawn in its current phase, lit side towards the sun. An arrow on the edge means it is out of view in that direction. Drag to rotate; pinch, scroll or double-tap to zoom. Tap a prayer above to jump to the moment the aircraft crosses its line: the crossing is where the line meets the <b>aircraft</b>, not where it meets the route at other times.</div>
+        <details><summary>How to read the globe</summary><div class="hint">Coloured lines show where the sun is at each prayer's angle at the slider time, for the aircraft's current altitude (ihtiyat is added to the time, not drawn). As the slider moves, watch the aircraft cross them. Shading: day, then twilight (to 18°), then night. The sun and moon sit over the point where each is overhead; the moon is drawn in its current phase, lit side towards the sun. An arrow on the edge means it is out of view in that direction. Drag to rotate; pinch, scroll or double-tap to zoom. Tap a prayer above to jump to the moment the aircraft crosses its line: the crossing is where the line meets the <b>aircraft</b>, not where it meets the route at other times.</div></details>
       </section>
 
       <section>
@@ -302,7 +273,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
         <div class="summary" id="summary">Enter the flight and press Calculate.</div>
         <div class="errors" id="gsWarn" style="margin:0 0 8px"></div>
         <div class="tablewrap"><table id="winTbl" class="cards" hidden>
-          <thead><tr><th>Prayer</th><th>Opens</th><th>Closes</th><th>Prayer time available</th><th>Qibla at opening (TRK up)</th></tr></thead>
+          <thead><tr><th>Prayer</th><th>Opens</th><th>Closes</th><th>Prayer time available</th><th>Qibla at opening (MAG TRK up)</th></tr></thead>
           <tbody></tbody>
         </table></div>
       </section>
@@ -310,7 +281,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       <section>
         <h2>Timeline</h2>
         <div class="tablewrap"><table id="evTbl" class="cards" hidden>
-          <thead><tr><th>Event</th><th>UTC</th><th>Elapsed</th><th>Position</th><th>FL</th><th>TRK °T</th><th>Qibla rel.</th></tr></thead>
+          <thead><tr><th>Event</th><th>UTC</th><th>Elapsed</th><th>Position</th><th>FL</th><th>TRK °M</th><th>Qibla °M</th></tr></thead>
           <tbody></tbody>
         </table></div>
       </section>
@@ -318,7 +289,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   </div>
 
   <footer>
-    Qibla is the great-circle bearing (°T) to the Kaaba. "Relative" uses the planned track unless you enter a heading. Use TRUE heading, not magnetic, and enter heading to account for drift. Prayer-window opening times are rounded up to the minute and closing times are rounded down. This is a reference prototype: check it against your authority before relying on it.
+    Qibla is the great-circle bearing to the Kaaba, shown magnetic (°M) using the World Magnetic Model 2025 variation at the aircraft's position and level, to match a magnetic track on the ND. Left/right of track is the same in true or magnetic. It is relative to the planned track: drift (heading vs track) is not included. Prayer-window opening times are rounded up to the minute and closing times are rounded down. This is a reference prototype: check it against your authority before relying on it.
   </footer>
 </main>
 
@@ -326,6 +297,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 <script src="world.js"></script>
 <script src="globe.js"></script>
 <script src="ofp.js"></script>
+<script src="wmm.js"></script>
 <script>
 (function(){
   "use strict";
@@ -673,7 +645,13 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   const fmtT = (ms) => { const neg = ms < 0; const m = Math.round(Math.abs(ms) / MIN); return `${neg?"T−":"T+"}${Math.floor(m/60)}:${pad(m%60)}`; };
   const fmtFL = (ft) => ft >= 10000 ? "FL" + String(Math.round(ft/100)).padStart(3,"0") : Math.round(ft/100)*100 + " ft";
   const fmtRel = (r) => { const a = Math.round(Math.abs(r)); return a === 0 ? "Ahead" : a === 180 ? "Behind" : (r < 0 ? "L " : "R ") + a + "°"; };
-  const fmtDeg = (d) => String(Math.round(d) % 360).padStart(3, "0") + "°";
+  const fmtDeg = (d) => String(((Math.round(d) % 360) + 360) % 360).padStart(3, "0") + "°";
+  // Magnetic variation (WMM2025) at a route state; east positive. Magnetic = true − variation.
+  function magAt(st, t){
+    const v = window.SolatWMM.declination(st.lat, st.lon, (st.alt || 0) * 0.0003048, window.SolatWMM.yearOf(t));
+    return { v, trk: st.track - v, q: S.qiblaBearing(st) - v };
+  }
+  const fmtVar = (v) => `${Math.abs(v).toFixed(1)}°${v >= 0 ? "E" : "W"}`;
   const LABEL = { Fajr:"Fajr", Sunrise:"Sunrise", Zuhr:"Zuhr", Asr:"Asr", Maghrib:"Maghrib", Isha:"Isha" };
 
   // ---------- render results ----------
@@ -708,6 +686,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       else closeTxt = `<span class="mono"><b>${fmtZ(w.end, floorMin)}</b></span> <span class="s">${fmtT(w.end - route.start)}</span><div class="s">${w.name === "Fajr" ? "sunrise" : "next prayer"}</div>`;
       const qp = w.openAtDeparture ? S.situationAt(route, pw.windows, route.start) : null;
       const q = qp ? { qibla: qp.qibla, track: qp.track } : { qibla: se.qibla, track: se.track };
+      const qm = magAt(qp || se, qp ? route.start : se.t);
       const rel = S.relBearing(q.qibla, q.track);
       // Time from opening (or take-off) to the next prayer, along the moving route,
       // compared with staying at the opening position.
@@ -728,8 +707,8 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       wb.insertAdjacentHTML("beforeend",
         `<tr><td><b>${w.name}</b></td><td data-l="Opens">${openTxt}${lt}</td><td data-l="Closes">${closeTxt}</td>` +
         `<td data-l="Prayer time available">${availTxt}</td>` +
-        `<td data-l="Qibla at opening (TRK up)"><div class="qcell">${dialSvg(q.track, q.qibla, "TRK " + fmtDeg(q.track))}` +
-        `<div><span class="mono"><b>${fmtRel(rel)}</b></span> <span class="s">· ${S.clockCode(rel)} o'clock</span></div><div class="s mono">QDM ${fmtDeg(q.qibla)}</div></div></td></tr>`);
+        `<td data-l="Qibla at opening (MAG TRK up)"><div class="qcell">${dialSvg(qm.trk, qm.q, "TRK " + fmtDeg(qm.trk) + "M")}` +
+        `<div class="mono"><b>QIBLA ${fmtDeg(qm.q)}M</b></div><div><span class="mono">${fmtRel(rel)}</span> <span class="s">· ${S.clockCode(rel)} o'clock</span></div><div class="s mono">VAR ${fmtVar(qm.v)}</div></div></td></tr>`);
     }
     if (!pw.windows.length) wb.innerHTML = `<tr><td colspan="5" class="s">No prayer window overlaps this flight.</td></tr>`;
     $("winTbl").hidden = false;
@@ -742,20 +721,18 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     rows.sort((a, b) => a.t - b.t);
     const eb = $("evTbl").querySelector("tbody"); eb.innerHTML = "";
     for (const r of rows) {
-      const q = S.qiblaBearing(r.s), rel = S.relBearing(q, r.s.track);
+      const q = S.qiblaBearing(r.s), rel = S.relBearing(q, r.s.track), m = magAt(r.s, r.t);
       eb.insertAdjacentHTML("beforeend",
         `<tr class="${r.kind === "mark" ? "mark" : ""}"><td>${r.kind === "ev" ? "<b>" + esc(r.label) + "</b>" : esc(r.label)}</td>` +
         `<td class="t" data-l="UTC">${fmtZ(r.t, r.round)}</td><td class="mono" data-l="Elapsed">${fmtT(r.t - route.start)}</td>` +
         `<td class="mono" data-l="Position">${S.fmtPos(r.s.lat, r.s.lon)}${r.kind === "ev" ? `<div class="s">${esc(S.fixRef(r.s))}</div>` : ""}</td><td class="mono" data-l="Level">${fmtFL(r.s.alt)}</td>` +
-        `<td class="mono" data-l="Track">${fmtDeg(r.s.track)}</td>${r.kind === "ev" ? `<td class="mono" data-l="Qibla rel.">${fmtRel(rel)}</td>` : ""}</tr>`);
+        `<td class="mono" data-l="Track °M">${fmtDeg(m.trk)}</td>${r.kind === "ev" ? `<td class="mono" data-l="Qibla °M">${fmtDeg(m.q)} <span class="s">${fmtRel(rel)}</span></td>` : ""}</tr>`);
     }
     $("evTbl").hidden = false;
-    $("liveSec").hidden = false;
-    live();
     setupGlobe();
   }
 
-  // ---------- live panel ----------
+  // ---------- qibla dial ----------
   // Compass dial, reference (TRK or HDG) at the top. Card letters rotate with the reference.
   function dialSvg(ref, qibla, topLabel){
     const rel = S.relBearing(qibla, ref), c = 75, r = 58;
@@ -780,57 +757,6 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       <text x="${c}" y="${c + r + 15}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="ui-monospace,Menlo,monospace">${esc(topLabel)}</text>
     </svg>`;
   }
-  function liveTime(){
-    if ($("liveMode").value === "device") return Date.now();
-    const m = /^(\d{1,2})\/(\d{2})(\d{2})$/.exec($("liveT").value.trim());
-    if (!m || !result) return null;
-    const d = new Date(result.route.start);
-    let t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), +m[1], +m[2], +m[3]);
-    if (t < result.route.start - 20*DAY) t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, +m[1], +m[2], +m[3]);
-    return t;
-  }
-  function live(){
-    if (!result) return;
-    const t = liveTime();
-    if (t === null) { $("prayNow").textContent = "Enter time as DD/HHMM UTC."; return; }
-    const { route, windows } = result;
-    const hdgIn = $("hdg").value.trim();
-    const hdg = hdgIn === "" ? NaN : ((+hdgIn % 360) + 360) % 360;
-    const s = S.situationAt(route, windows, t, hdg);
-    const d = new Date(t);
-    $("liveClock").textContent = `${pad(d.getUTCDate())}/${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}Z · ${fmtT(t - route.start)}`;
-    $("dial").innerHTML = dialSvg(s.heading, s.qibla, `${s.headingSource} ${fmtDeg(s.heading)}`);
-    $("relBig").textContent = `${fmtRel(s.rel)} · ${s.clock} o'clock`;
-    $("relSrc").textContent = s.headingSource === "HDG" ? "heading" : "planned track";
-    $("hdgLabel").textContent = s.headingSource === "HDG" ? "Heading" : "Track";
-    $("qTrue").textContent = fmtDeg(s.qibla) + " T";
-    $("trkTrue").textContent = fmtDeg(s.heading) + " T";
-    $("posNow").textContent = S.fmtPos(s.lat, s.lon) + " · " + s.leg;
-    $("altNow").textContent = fmtFL(s.alt);
-    let html;
-    const phase = t < route.start ? "Before take-off" : t > route.end ? "After landing" : "Airborne";
-    if (s.current) {
-      const ends = s.current.end;
-      html = `${phase}: <b>${s.current.name}</b> window open` +
-        ` · <b>${fmtDur(ends - t)}</b> remaining (closes ${fmtZ(ends, floorMin)})` +
-        (s.current.problem ? `<br><span class="pill warn">check</span> ${esc(s.current.problem)}` : "");
-    } else html = `${phase}: no prayer window open`;
-    if (s.next) html += `<br>Next: <b>${s.next.name}</b> opens ${fmtZ(s.next.start, ceilMin)}, in ${fmtDur(s.next.start - t)}`;
-    if (s.current && s.current.name !== "Isha" && s.current.end && s.next && s.current.end < s.next.start)
-      html += ` <span class="s">(no window ${fmtZ(s.current.end, floorMin)}–${fmtZ(s.next.start, ceilMin)})</span>`;
-    $("prayNow").innerHTML = html;
-  }
-  $("liveMode").addEventListener("change", () => {
-    const manual = $("liveMode").value === "manual";
-    $("liveT").disabled = !manual;
-    if (manual && !$("liveT").value && result) {
-      const d = new Date(result.route.start + (result.route.end - result.route.start) / 2);
-      $("liveT").value = `${pad(d.getUTCDate())}/${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}`;
-    }
-    live();
-  });
-  ["liveT","hdg"].forEach((k) => $(k).addEventListener("input", live));
-  setInterval(() => { if ($("liveMode").value === "device") live(); }, 15000);
 
   // ---------- globe ----------
   const globe = window.SolatGlobe.create($("globe"), {
@@ -885,18 +811,12 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       const ev = exactEv && exactT === exactEv.raw ? exactEv : null;
       const hms = (x) => { const d = new Date(Math.round(x / 1000) * 1000); return `${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}Z`; };
       const evLine = ev ? `<b>${ev.name}</b> line crossed ${hms(ev.raw)} at ${esc(S.fixRef(ev))} · prayer time <b>${fmtZ(ev.t, ev.name === "Sunrise" ? floorMin : ceilMin).slice(3)}</b>${ev.t > ev.raw ? ` (incl. +${Math.round((ev.t - ev.raw) / MIN)} min ihtiyat)` : ""}<br>` : "";
-      $("gTime").innerHTML = evLine + `${fmtZ(t, floorMin)} · ${fmtT(t - route.start)} · ${fmtFL(s.alt)} · ${S.fmtPos(s.lat, s.lon)} · ${esc(S.fixRef(s))}<br>${pr}${nx}<br><span class="sub">${sky}</span>`;
+      const gm = magAt(s, t), grel = S.relBearing(gm.q, gm.trk);
+      const qib = `TRK <b>${fmtDeg(gm.trk)}M</b> · Qibla <b>${fmtDeg(gm.q)}M</b> (${fmtRel(grel)}, ${S.clockCode(grel)} o'clock) · VAR ${fmtVar(gm.v)}`;
+      $("gTime").innerHTML = evLine + `${fmtZ(t, floorMin)} · ${fmtT(t - route.start)} · ${fmtFL(s.alt)} · ${S.fmtPos(s.lat, s.lon)} · ${esc(S.fixRef(s))}<br>${qib}<br>${pr}${nx}<br><span class="sub">${sky}</span>`;
     });
   }
-  // The slider also drives the Now panel.
-  function syncNow(){
-    const t = sliderTime(); if (t === null) return;
-    const d = new Date(t);
-    $("liveMode").value = "manual"; $("liveT").disabled = false;
-    $("liveT").value = `${pad(d.getUTCDate())}/${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}`;
-    live();
-  }
-  $("gSlider").addEventListener("input", () => { exactT = null; drawGlobe(); syncNow(); });
+  $("gSlider").addEventListener("input", () => { exactT = null; drawGlobe(); });
   $("gFollow").addEventListener("change", () => globe.setFollow($("gFollow").checked));
   let playing = null;
   function stop(){ if (playing) { clearInterval(playing); playing = null; $("gPlay").textContent = "▶"; $("gPlay").setAttribute("aria-label", "Play"); } }
@@ -908,16 +828,9 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     const stepMin = Math.max(1, Math.round(+sl.max / 400));   // whole flight in ~13 s
     playing = setInterval(() => {
       exactT = null; sl.value = Math.min(+sl.max, +sl.value + stepMin);
-      drawGlobe(); syncNow();
+      drawGlobe();
       if (+sl.value >= +sl.max) stop();
     }, 33);
-  });
-  $("gNow").addEventListener("click", () => {
-    if (!result) return;
-    const v = Math.round((Date.now() - result.route.start) / MIN);
-    exactT = null; $("gSlider").value = Math.max(0, Math.min(+$("gSlider").max, v));
-    $("liveMode").value = "device"; $("liveT").disabled = true;
-    drawGlobe(); live();
   });
   window.addEventListener("resize", drawGlobe);
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawGlobe);
@@ -935,7 +848,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
         stop(); exactT = e.raw; exactEv = e;
         $("gSlider").value = Math.round((e.raw - result.route.start) / MIN);
         globe.setFollow(true); $("gFollow").checked = true; globe.setZoom(14);
-        drawGlobe(); syncNow();
+        drawGlobe();
       });
       box.appendChild(b);
     }
