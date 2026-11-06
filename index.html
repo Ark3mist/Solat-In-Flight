@@ -99,6 +99,10 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .qcell{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;min-width:120px}
 .qcell svg{width:120px;height:auto;display:block}
 .nowres{margin-top:10px}
+.altlbl{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.unit{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.unit button{border:0;border-radius:0;padding:1px 7px;font-size:11px;background:var(--field);color:var(--muted)}
+.unit button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);font-weight:700}
 .nowgrid{display:grid;grid-template-columns:132px minmax(0,1fr);gap:12px;align-items:center}
 .nowgrid svg{width:132px;height:auto;display:block}
 .nowpray{padding:10px;border-radius:8px;background:var(--soft);margin-bottom:10px;font-size:15px}
@@ -279,7 +283,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
       <section id="nowSec">
         <h2>Now <span class="sub" id="nowClock"></span></h2>
         <div class="r3">
-          <div><label for="nowAlt">Altitude (m)</label><input id="nowAlt" class="mono" inputmode="numeric" placeholder="planned" maxlength="6"><div class="s mono" id="nowAltFt"></div></div>
+          <div><label for="nowAlt" class="altlbl">Altitude <span class="unit" role="group" aria-label="Altitude unit"><button type="button" data-u="m" aria-pressed="true">m</button><button type="button" data-u="ft" aria-pressed="false">ft</button></span></label><input id="nowAlt" class="mono" inputmode="numeric" placeholder="planned" maxlength="6"><div class="s mono" id="nowAltFt"></div></div>
           <div><label for="nowHdg">Heading °M</label><input id="nowHdg" class="mono" inputmode="numeric" placeholder="track" maxlength="3"></div>
           <div><label for="nowTime">Time UTC</label><input id="nowTime" class="mono" inputmode="numeric" placeholder="device" maxlength="5"><div class="s" id="nowTimeSrc"></div></div>
         </div>
@@ -810,7 +814,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   }
 
   // ---------- Now ----------
-  let nowCache = null;
+  let nowCache = null, altUnit = store.get("solat.altUnit") === "ft" ? "ft" : "m";
   const ft = (m) => m * 3.28084;
   const durNow = (ms) => ms < MIN ? "under 1 min" : fmtDur(ms);
   function nowTime(){
@@ -823,9 +827,10 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   function nowCalc(){
     const manual = toMin($("nowTime").value) !== null;
     $("nowTimeSrc").textContent = manual ? "set by you" : "device clock";
-    const altM = parseFloat($("nowAlt").value);
-    const altFt = isFinite(altM) && altM >= 0 ? ft(altM) : null;
-    $("nowAltFt").textContent = altFt !== null ? `= ${Math.round(altFt).toLocaleString("en")} ft` : "";
+    const altIn = parseFloat($("nowAlt").value);
+    const altFt = isFinite(altIn) && altIn >= 0 ? (altUnit === "m" ? ft(altIn) : altIn) : null;
+    $("nowAltFt").textContent = altFt === null ? "" : altUnit === "m"
+      ? `= ${Math.round(altFt).toLocaleString("en")} ft` : `= ${Math.round(altFt / 3.28084).toLocaleString("en")} m`;
     const t = Math.floor(nowTime() / MIN) * MIN, d = new Date(t);
     $("nowClock").textContent = `${pad(d.getUTCDate())}/${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}Z`;
     if (!result) return;
@@ -874,8 +879,20 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
         </dl></div>`;
   }
   ["nowAlt", "nowHdg", "nowTime"].forEach((k) => $(k).addEventListener("input", () => nowCalc()));
+  // Altitude unit: metres (cabin screens) or feet (cockpit). Switching converts a value already entered.
+  function setAltUnit(u, convert){
+    if (convert && u !== altUnit) {
+      const v = parseFloat($("nowAlt").value);
+      if (isFinite(v)) $("nowAlt").value = Math.round(u === "ft" ? ft(v) : v / 3.28084);
+    }
+    altUnit = u; store.set("solat.altUnit", u);
+    document.querySelectorAll(".unit button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.u === u)));
+    $("nowAlt").placeholder = "planned";
+    nowCalc();
+  }
+  document.querySelectorAll(".unit button").forEach((b) => b.addEventListener("click", (e) => { e.preventDefault(); setAltUnit(b.dataset.u, true); }));
   setInterval(() => { if (toMin($("nowTime").value) === null) nowCalc(); }, 20000);
-  nowCalc();
+  setAltUnit(altUnit, false);
 
   // ---------- globe ----------
   const globe = window.SolatGlobe.create($("globe"), {
@@ -1107,7 +1124,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   run();
 
   // ---------- version, data validity, update ----------
-  const APP_VERSION = "2026.11.06c", APP_DATE = Date.UTC(2026, 10, 6);
+  const APP_VERSION = "2026.11.06d", APP_DATE = Date.UTC(2026, 10, 6);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){
