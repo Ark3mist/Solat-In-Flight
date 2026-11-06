@@ -109,6 +109,14 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .nowpray .big{font-size:22px;font-weight:700;color:var(--accent)}
 .nowkv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;font-size:13px;margin:0}
 .nowkv dt{color:var(--muted)} .nowkv dd{margin:0}
+.ground{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.ground h4{margin:0 0 6px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.gtimes{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+.gtimes div{border:1px solid var(--line);border-radius:6px;padding:5px 4px;text-align:center;font-size:12px}
+.gtimes b{display:block;font-family:ui-monospace,Menlo,monospace;font-size:14px}
+.gtimes .on{border-color:var(--accent);background:var(--soft)}
+.gtimes .on span{color:var(--accent);font-weight:700}
+@media (max-width:420px){.gtimes{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .s{font-size:12px;color:var(--muted)}
 .installbtn{font-weight:600;border:1px solid var(--accent);color:var(--accent);background:var(--panel);padding:6px 12px;border-radius:999px}
 .installbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:10px 12px;margin-bottom:12px;border:1px solid var(--accent);border-radius:10px;background:var(--soft);font-size:14px}
@@ -125,7 +133,8 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
 .ver{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:12px;color:var(--muted)}
 .ver .warn{color:var(--warn);font-weight:600} .ver .bad{color:var(--err);font-weight:600}
 @media (max-width:860px){
-  .grid{display:flex;flex-direction:column}
+  .grid{display:flex;flex-direction:column;align-items:stretch}
+  .grid>.col>section{width:100%}
   .col{display:contents}
   #flightSec{order:1} #nowSec{order:2} #routeSec{order:3} #calcSec{order:4} #globeSec{order:5} #winSec{order:6} #tlSec{order:7}
 }
@@ -876,7 +885,36 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
           <dt>Position</dt><dd class="mono">${S.fmtPos(s.lat, s.lon)} <span class="s">${esc(S.fixRef(s))}</span></dd>
           <dt>Altitude</dt><dd class="mono">${altFt !== null ? `${Math.round(altFt).toLocaleString("en")} ft` : `${fmtFL(altNow)} <span class="s">(planned)</span>`}</dd>
           <dt>Reference</dt><dd class="mono">${refName === "heading" ? `HDG ${fmtDeg(hM)}M` : `TRK ${fmtDeg(s.track - v)}M <span class="s">(planned)</span>`}</dd>
-        </dl></div>`;
+        </dl></div>${groundHtml(s, t, altFt !== null ? altFt : altNow, s.current)}`;
+  }
+  // Prayer times for someone on the ground directly below, for the local solar day around t.
+  const groundCache = {};
+  function groundDay(lat, lon, t){
+    const off = lon / 15 * HOUR, d0 = Math.floor((t + off) / DAY) * DAY - off;      // local mean-solar midnight
+    const key = `${lat.toFixed(2)},${lon.toFixed(2)},${d0}`;
+    if (groundCache[key]) return groundCache[key];
+    const r = S.makeRoute([{ name: "G", lat, lon, eto: d0 }, { name: "G", lat, lon, eto: d0 + DAY }],
+      S.makeProfile({ start: d0, end: d0 + DAY, initialFt: 0 }));
+    const ev = {}; for (const e of S.findEvents(r, result.conv)) if (!(e.name in ev)) ev[e.name] = e.t;
+    return (groundCache[key] = { d0, ev });
+  }
+  function groundHtml(s, t, altFt, airCurrent){
+    const { ev } = groundDay(s.lat, s.lon, t);
+    const order = ["Fajr", "Sunrise", "Zuhr", "Asr", "Maghrib", "Isha"];
+    // the period in force on the ground at t: the last event passed (Sunrise ends Fajr; nothing until Zuhr)
+    let cur = null; for (const n of order) if (ev[n] != null && ev[n] <= t) cur = n;
+    if (cur === null) cur = "Isha";                  // before today's Fajr: still last night's Isha
+    const label = { Sunrise: "Syuruk" };
+    const cells = order.map((n) => {
+      const v = ev[n];
+      const txt = v == null ? "—" : (() => { const d = new Date(n === "Sunrise" ? floorMin(v) : ceilMin(v)); return pad(d.getUTCHours()) + pad(d.getUTCMinutes()); })();
+      return `<div class="${n === cur && n !== "Sunrise" ? "on" : ""}"><span>${label[n] || n}</span><b>${txt}</b></div>`;
+    }).join("");
+    const groundNow = cur === "Sunrise" ? "no prayer (after sunrise)" : cur;
+    const air = airCurrent ? airCurrent.name : "no prayer";
+    const lt = " · UTC";
+    const note = altFt > 1000 ? `<div class="s" style="margin-top:6px">On the ground now: <b>${groundNow}</b> · in the aircraft: <b>${air}</b>${groundNow !== air && !(cur === "Sunrise" && !airCurrent) ? " (altitude and movement shift the times)" : ""}.</div>` : "";
+    return `<div class="ground"><h4>On the ground below · ${S.fmtPos(s.lat, s.lon)}${lt}</h4><div class="gtimes">${cells}</div>${note}</div>`;
   }
   ["nowAlt", "nowHdg", "nowTime"].forEach((k) => $(k).addEventListener("input", () => nowCalc()));
   // Altitude unit: metres (cabin screens) or feet (cockpit). Switching converts a value already entered.
@@ -1124,7 +1162,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   run();
 
   // ---------- version, data validity, update ----------
-  const APP_VERSION = "2026.11.06d", APP_DATE = Date.UTC(2026, 10, 6);
+  const APP_VERSION = "2026.11.06e", APP_DATE = Date.UTC(2026, 10, 6);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){

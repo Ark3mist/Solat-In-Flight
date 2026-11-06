@@ -29,6 +29,7 @@ What it does:
 6. **Now box:** altitude in metres or feet (tap **m / ft**; the other unit is shown underneath), heading °M and the time (device clock, or HHMM you type).
    - It shows at once which prayer is open, the time left, the next prayer, the qibla and the sun as clock positions from the nose, and when and where the next sunrise or sunset happens.
    - The aircraft is assumed to hold the altitude you entered from now on; the position comes from the planned route.
+   - **On the ground below:** that day's six times (UTC) for someone on the ground directly under the aircraft, with the one in force highlighted, so you can compare them with the in-flight times.
    - **Saved routes** (in Route): save, load and delete; **Export / Import backup** moves them between devices.
 7. **Prayer time available** is measured from opening (or take-off) until the next prayer, along the moving route. It is compared with someone staying at the position where the window opened: flying east shortens a window and flying west lengthens it.
 
