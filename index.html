@@ -52,7 +52,12 @@ button{font:inherit;border:1px solid var(--line);border-radius:6px;padding:7px 1
 button.primary{font-weight:600;border:0;padding:11px 16px;background:var(--accent);color:var(--accent-ink);width:100%}
 button.link{border:0;background:none;color:var(--accent);padding:4px 0;font-size:13px;font-weight:600}
 button.x{padding:4px 8px;color:var(--muted)}
-.wp{display:grid;grid-template-columns:24px 78px minmax(0,1fr) minmax(0,1fr) 52px 28px;gap:5px;gap:6px;align-items:center;margin-bottom:6px}
+.wp{display:grid;grid-template-columns:22px minmax(52px,74px) minmax(0,1fr) minmax(0,1fr) 54px 24px;gap:4px;align-items:center;margin-bottom:4px}
+.wp input{padding:5px 5px;font-size:13px}
+.wp input[data-k=eto]{text-align:center;padding:5px 2px;letter-spacing:-.02em}
+.wp input[data-k=eto].moved{border-color:var(--accent);background:var(--soft)}
+.wp button.x{padding:2px 4px}
+#wps{max-height:min(62vh,560px);overflow-y:auto;overscroll-behavior:contain;padding-right:2px}
 .wp .tag{font-size:11px;color:var(--muted);text-align:center}
 .wphead{font-size:11px;color:var(--muted);margin-bottom:4px}
 .step{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 30px;gap:6px;align-items:center;margin-bottom:6px}
@@ -117,10 +122,11 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .ofp .warn{color:var(--warn);font-size:12px}
 .avail{font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:16px}
 @media (max-width:560px){
-  .wp{grid-template-columns:30px minmax(0,1fr) 70px 30px;grid-template-areas:"tag id eto x" ". lat lon lon";row-gap:4px;padding-bottom:6px;border-bottom:1px solid var(--line)}
-  .wp>:nth-child(1){grid-area:tag}.wp>:nth-child(2){grid-area:id}.wp>:nth-child(3){grid-area:lat}
-  .wp>:nth-child(4){grid-area:lon}.wp>:nth-child(5){grid-area:eto}.wp>:nth-child(6){grid-area:x}
-  .wp.wphead{display:none}
+  .wp{grid-template-columns:18px minmax(44px,1fr) minmax(62px,1.15fr) minmax(68px,1.25fr) 44px 20px;gap:3px}
+  .wp input{padding:5px 3px;font-size:12px}
+  .wp input[data-k=eto]{padding:5px 1px}
+  .wp .tag{font-size:10px}
+  .wp button.x{padding:2px 0;font-size:12px}
   table.cards thead{display:none}
   table.cards tr{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;padding:8px 0;border-bottom:1px solid var(--line)}
   table.cards td{border:0;padding:0}
@@ -143,14 +149,16 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       <section>
         <h2>Flight</h2>
         <div class="r3">
-          <div><label for="date">Date (UTC)</label><input id="date" type="date"></div>
-          <div><label for="dep">Airborne UTC</label><input id="dep" class="mono" inputmode="numeric" placeholder="1530" maxlength="5"></div>
-          <div><label for="arr">Landing UTC</label><input id="arr" class="mono" inputmode="numeric" placeholder="auto" maxlength="5"></div>
+          <div><label for="date">Off-block date (UTC)</label><input id="date" type="date"></div>
+          <div><label for="offb">Off-block UTC</label><input id="offb" class="mono" inputmode="numeric" placeholder="1025" maxlength="5"></div>
+          <div><label for="taxi">Taxi-out min</label><input id="taxi" class="mono" inputmode="numeric" value="20" maxlength="3"></div>
         </div>
         <div class="r3">
+          <div><label for="dep">Airborne UTC</label><input id="dep" class="mono" inputmode="numeric" placeholder="1530" maxlength="5"></div>
+          <div><label for="arr">Landing UTC</label><input id="arr" class="mono" inputmode="numeric" placeholder="auto" maxlength="5"></div>
           <div><label for="gs">Avg GS kt</label><input id="gs" class="mono" inputmode="numeric" value="430"></div>
-          <div style="grid-column:span 2"><div class="hint" style="margin-top:26px">Leave Landing blank to estimate it from great-circle distance ÷ GS.</div></div>
         </div>
+        <div class="hint">Airborne = off-block + taxi. Changing off-block, taxi, airborne or any waypoint ETA moves every later ETA (and landing) by the same amount and recalculates. Leave Landing blank to estimate it from distance ÷ GS.</div>
         <label for="conv">Convention</label>
         <select id="conv"></select>
       </section>
@@ -332,7 +340,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 
   // ---------- form state ----------
   const DEFAULT = {
-    date: new Date().toISOString().slice(0,10), dep: "1530", arr: "", gs: "430", conv: "jakim",
+    date: new Date().toISOString().slice(0,10), offb: "", taxi: "20", dep: "1530", arr: "", gs: "430", conv: "jakim",
     wps: [ { id:"KUL", lat:"N0244.6", lon:"E10141.9", eto:"" },
            { id:"LHR", lat:"N5128.7", lon:"W00027.7", eto:"" } ],
     fl: "350", elevO: "70", elevD: "83", climb: "1500", stepRate: "1000", descent: "1500",
@@ -393,7 +401,20 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 
   function applyConv(){ const c = S.CONVENTIONS[$("conv").value]; $("fajr").value = c.fajr; $("isha").value = c.isha; $("asr").value = c.asr; }
 
-  function renderWps(){
+  // HHMM arithmetic for propagating a revised time down the route.
+  const toMin = (x) => { const v = hhmm(x); return v === null ? null : v / MIN; };
+  const fromMin = (m) => { m = ((Math.round(m) % 1440) + 1440) % 1440; return pad(Math.floor(m / 60)) + pad(m % 60); };
+  function deltaMin(oldV, newV){                 // signed minutes, nearest way round the clock
+    const a = toMin(oldV), b = toMin(newV); if (a === null || b === null) return 0;
+    return ((b - a + 720) % 1440 + 1440) % 1440 - 720;
+  }
+  function shiftAfter(i, d){                     // move every later ETA and the landing time by d minutes
+    state.wps.forEach((w, j) => { if (j > i && j < state.wps.length - 1 && toMin(w.eto) !== null) w.eto = fromMin(toMin(w.eto) + d); });
+    if (toMin(state.arr) !== null) { state.arr = fromMin(toMin(state.arr) + d); $("arr").value = state.arr; }
+  }
+  let autoT = 0;
+  function autoRun(){ clearTimeout(autoT); autoT = setTimeout(() => { try { build(); } catch(e){ return; } run(); }, 150); }
+  function renderWps(changedAt = -1, moved = 0){
     const box = $("wps"); box.innerHTML = "";
     state.wps.forEach((w, i) => {
       const first = i === 0, last = i === state.wps.length - 1;
@@ -406,13 +427,20 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
         `<input class="mono" value="${first ? esc(state.dep) : last ? esc(state.arr) : esc(w.eto)}" data-k="eto" ${first||last ? "disabled title='Set in Flight'" : ""} aria-label="ETA" placeholder="${first ? "" : "auto"}" inputmode="numeric" maxlength="5">` +
         (first || last ? "<span></span>" : `<button class="x" type="button" aria-label="Remove waypoint">✕</button>`);
       row.querySelectorAll("input").forEach((inp) => inp.addEventListener("change", () => {
-        const k = inp.dataset.k; w[k] = inp.value.trim().toUpperCase();
+        const k = inp.dataset.k, v = inp.value.trim().toUpperCase();
+        if (k === "eto") {
+          const d = deltaMin(w.eto, v); w.eto = v;
+          if (d) shiftAfter(i, d);
+          save(); renderWps(i, d); autoRun(); return;
+        }
+        w[k] = v;
         if (k === "id") {
           const st = lookup(w.id);
           if (st) { w.lat = S.fmtLat(st.lat); w.lon = S.fmtLon(st.lon); renderWps(); }
         }
         save();
       }));
+      if (moved && i > changedAt) { const e = row.querySelector("[data-k=eto]"); if (e.value) { e.classList.add("moved"); e.title = `Moved ${moved > 0 ? "+" : ""}${moved} min`; } }
       const rm = row.querySelector("button.x");
       if (rm) rm.addEventListener("click", () => { state.wps.splice(i, 1); renderWps(); save(); });
       box.appendChild(row);
@@ -431,7 +459,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       box.appendChild(row);
     });
   }
-  const SIMPLE = ["date","dep","arr","gs","conv","fl","elevO","elevD","climb","stepRate","descent","tz","ihZ","ihM"];
+  const SIMPLE = ["date","offb","taxi","dep","arr","gs","conv","fl","elevO","elevD","climb","stepRate","descent","tz","ihZ","ihM"];
   function readSimple(){ SIMPLE.forEach((k) => state[k] = $(k).value.trim()); state.dipTw = $("dipTw").checked; }
   function save(){ readSimple(); store.set("solat.v2", state); }
 
@@ -440,7 +468,29 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   applyConv();
   renderWps(); renderSteps();
   $("conv").addEventListener("change", () => { applyConv(); save(); });
-  ["dep","arr"].forEach((k) => $(k).addEventListener("change", () => { save(); renderWps(); }));
+  // Off-block + taxi -> airborne; a new airborne time moves all ETAs with it.
+  function setAirborne(newDep){
+    const d = deltaMin(state.dep, newDep);
+    state.dep = newDep; $("dep").value = newDep;
+    if (d) shiftAfter(0, d);
+    return d;
+  }
+  function onTimes(src){
+    const prevDep = state.dep;
+    const offb = toMin($("offb").value), taxi = Math.max(0, Math.round(+$("taxi").value || 0));
+    if (src === "dep") {
+      const dep = toMin($("dep").value);
+      if (dep !== null && offb !== null) $("offb").value = fromMin(dep - taxi);
+      state.dep = prevDep;                       // so the shift is measured from the old time
+      setAirborne($("dep").value.trim());
+    } else if ((src === "offb" || src === "taxi") && offb !== null) {
+      setAirborne(fromMin(offb + taxi));
+    }
+    const d = deltaMin(prevDep, state.dep);
+    save(); renderWps(0, d); autoRun();
+  }
+  ["offb","taxi","dep"].forEach((k) => $(k).addEventListener("change", () => onTimes(k)));
+  $("arr").addEventListener("change", () => { save(); renderWps(); autoRun(); });
   SIMPLE.forEach((k) => $(k).addEventListener("change", save));
   $("addWp").addEventListener("click", () => { state.wps.splice(state.wps.length - 1, 0, { id:"", lat:"", lon:"", eto:"" }); renderWps(); save(); });
   $("addStep").addEventListener("click", () => { state.steps.push({ at:"", fl:"" }); renderSteps(); save(); });
@@ -554,8 +604,10 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     const errs = [];
     const day = Date.parse(state.date + "T00:00:00Z");
     if (!isFinite(day)) errs.push("Set the date.");
-    const dep = hhmm(state.dep), arr = hhmm(state.arr);
-    if (dep === null) errs.push("Airborne time must be HHMM.");
+    const dep = hhmm(state.dep), arr = hhmm(state.arr), offb = state.offb ? hhmm(state.offb) : null;
+    const taxiMs = Math.max(0, +state.taxi || 0) * MIN;
+    if (state.offb && offb === null) errs.push("Off-block time must be HHMM.");
+    if (dep === null && offb === null) errs.push("Airborne time must be HHMM.");
     if (state.arr && arr === null) errs.push("Landing time must be HHMM (or blank to estimate).");
     const gs = +state.gs;
     if (!state.arr && !(gs >= 100 && gs <= 1200)) errs.push("Average ground speed must be 100–1200 kt.");
@@ -568,7 +620,8 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       if (lat === null || lon === null) { errs.push(`${name}: position missing or invalid.`); return; }
       let eto = null;
       const raw = i === 0 ? state.dep : i === state.wps.length-1 ? state.arr : w.eto;
-      if (raw) {
+      if (i === 0 && offb !== null && isFinite(day)) { eto = day + offb + taxiMs; last = eto; }
+      else if (raw) {
         const v = hhmm(raw);
         if (v === null) errs.push(`${name}: ETA must be HHMM.`);
         else if (isFinite(day)) {
@@ -942,14 +995,16 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   const elOf = (min) => `${Math.floor(min / 60)}:${pad(min % 60)}`;
   function showOfp(o){
     ofpData = o;
+    const tx = Math.max(0, Math.round(+$("taxi").value || 20));
     const real = o.points.filter((p) => !p.pseudo);
     const ok = real.length >= 2 && o.airborne;
     let h = "";
     if (o.points.length) {
       h += `<dl>
         <dt>Flight</dt><dd>${esc(o.flight || "")} ${esc(o.depIcao || "?")} → ${esc(o.destIcao || "?")}</dd>
-        <dt>Airborne</dt><dd>${o.airborne ? fmtZ(o.airborne, floorMin) : "?"} <span class="s">(STD ${esc(o.std || "?")} + taxi ${o.taxiMin ?? "?"} min)</span></dd>
-        <dt>Landing</dt><dd>${o.landing ? fmtZ(o.landing, floorMin) : "?"} <span class="s">(flight time ${o.fltMin != null ? elOf(o.fltMin) : "?"})</span></dd>
+        <dt>Off-block</dt><dd>${o.offBlock ? fmtZ(o.offBlock, floorMin) : "?"} <span class="s">(STD)</span></dd>
+        <dt>Airborne</dt><dd>${o.offBlock ? fmtZ(o.offBlock + tx * MIN, floorMin) : "?"} <span class="s">(+ taxi ${tx} min${o.taxiMin != null && o.taxiMin !== tx ? `; OFP plans ${o.taxiMin}` : ""})</span></dd>
+        <dt>Landing</dt><dd>${o.offBlock && o.fltMin != null ? fmtZ(o.offBlock + (tx + o.fltMin) * MIN, floorMin) : "?"} <span class="s">(airborne + flight time ${o.fltMin != null ? elOf(o.fltMin) : "?"})</span></dd>
         <dt>Waypoints</dt><dd>${real.length} fixes <span class="s">+ ${o.points.length - real.length} SETP/ETP/T-O-C/T-O-D points</span></dd>
         <dt>Levels</dt><dd>${o.initialFL ? "FL" + o.initialFL : "?"}${(o.steps || []).map((s) => ` → FL${s.fl} from ${esc(s.at)} (T+${elOf(s.eltm)})`).join("")}</dd>
         <dt>Climb / descent</dt><dd>${o.climbFpm || "?"} / ${o.descentFpm || "?"} fpm <span class="s">(from T-O-C / T-O-D)</span></dd>
@@ -966,11 +1021,15 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     const o = ofpData; if (!o) return;
     const withPseudo = $("ofpPseudo") && $("ofpPseudo").checked;
     const pts = o.points.filter((p, i) => withPseudo || !p.pseudo || i === 0 || i === o.points.length - 1);
-    state.date = new Date(o.airborne).toISOString().slice(0, 10);
-    state.dep = hhmmOf(o.airborne);
-    state.arr = o.landing ? hhmmOf(o.landing) : "";
+    const taxi = Math.max(0, Math.round(+$("taxi").value || 20));
+    const air = (o.offBlock != null ? o.offBlock : o.airborne - (o.taxiMin || 0) * MIN) + taxi * MIN;
+    const flt = o.fltMin != null ? o.fltMin : o.landing ? (o.landing - o.airborne) / MIN : null;
+    state.date = new Date(o.offBlock != null ? o.offBlock : air).toISOString().slice(0, 10);
+    state.offb = o.std || ""; state.taxi = String(taxi);
+    state.dep = hhmmOf(air);
+    state.arr = flt != null ? hhmmOf(air + flt * MIN) : "";
     state.wps = pts.map((p, i) => ({ id: p.name, lat: S.fmtLat(p.lat), lon: S.fmtLon(p.lon),
-      eto: i > 0 && i < pts.length - 1 && p.eto ? hhmmOf(p.eto) : "" }));
+      eto: i > 0 && i < pts.length - 1 && p.eltm != null ? hhmmOf(air + p.eltm * MIN) : "" }));
     if (o.initialFL) state.fl = String(o.initialFL);
     state.steps = (o.steps || []).map((s) => ({ at: elOf(s.eltm), fl: String(s.fl) }));
     if (o.climbFpm) state.climb = String(o.climbFpm);

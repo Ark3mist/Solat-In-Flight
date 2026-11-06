@@ -13,6 +13,8 @@ What it does:
 
 1. **Sun position** comes from the NOAA/Meeus algorithm for the actual date, with no lookup tables.
 2. **Route** runs from departure to arrival, and you can add waypoints with optional ETAs (HHMM UTC). Fixes without an ETA are timed by distance.
+   - **Off-block + taxi = airborne** (taxi defaults to 20 min). Landing = airborne + flight time.
+   - Changing off-block, taxi, airborne or any waypoint ETA moves every later ETA and the landing time by the same amount (moved fields are highlighted) and recalculates the prayer times at once.
 3. **Prayer times** are the zero crossings of `sun_altitude(t, position(t)) − threshold(altitude(t))` along the time axis, refined by bisection.
 4. **Vertical profile** covers climb, the initial FL, step climbs or descents at T+hh:mm, and a descent line to the destination elevation. Horizon dip is applied at the altitude of the moment.
 5. **Output** shows each prayer window: when it opens and closes (UTC), the airborne time available, and the qibla relative to track (or to heading if you enter one), in degrees and as a clock code. A **Now** panel shows the current window, the time remaining, and a qibla dial.
@@ -36,7 +38,7 @@ What it does:
 
 9. **Import OFP:** load the briefing package as a PDF, or paste its text.
    - It reads the COORDINATES INFORMATION list, the nav log (ELTM and FL per fix) and the header (date, STD, taxi, flight time). The reclearance log is skipped.
-   - From these it sets the airborne and landing times, every waypoint with its ETA, the initial FL and step climbs, and the climb and descent rates (from T-O-C and T-O-D).
+   - From these it sets off-block (STD), airborne (off-block + the taxi setting, 20 min by default, not the OFP's planned taxi), landing (airborne + FLT time), every waypoint with its ETA, the initial FL and step climbs, and the climb and descent rates (from T-O-C and T-O-D).
    - The file is read **on the device**. Nothing is uploaded, and it works offline.
    - PDF reading uses [pdf.js](https://github.com/mozilla/pdf.js) 3.11.174 (Apache-2.0, bundled in `vendor/pdfjs`), loaded only when you choose a PDF.
    - The parser has been tested against one Lido-style OFP layout. Other layouts may need parser changes.
