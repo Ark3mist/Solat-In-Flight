@@ -274,11 +274,26 @@
       const inEnd = Math.min(wEnd, route.end);
       wins.push({
         name: e.name, start: e.t, end: wEnd, endEvent: endEv, startEvent: e, problem,
+        groundMs: groundWindowMs(e, conv),
         openAtDeparture: e.t < route.start, openAtArrival: wEnd > route.end,
         airborneMs: Math.max(0, inEnd - inStart),
       });
     });
     return { windows: wins, events: ev.filter((e) => e.t >= route.start && e.t <= route.end) };
+  }
+
+  // Length of the same window for an observer who stays at the point (and
+  // altitude) where it opened. Comparing it with the window along the route
+  // shows how much flying east (shorter) or west (longer) changes it.
+  function groundWindowMs(e, conv) {
+    const t0 = e.t - 3 * HOUR, t1 = e.t + 30 * HOUR;
+    const prof = makeProfile({ start: t0, end: t1, origElev: e.alt, destElev: e.alt, initialFt: e.alt });
+    const fixed = makeRoute([{ name: "", lat: e.lat, lon: e.lon, eto: t0 }, { name: "", lat: e.lat, lon: e.lon, eto: t1 }], prof);
+    const ev = findEvents(fixed, conv, t0, t1);
+    let best = -1;
+    ev.forEach((x, i) => { if (x.name === e.name && (best < 0 || Math.abs(x.t - e.t) < Math.abs(ev[best].t - e.t))) best = i; });
+    if (best < 0 || !ev[best + 1] || ev[best + 1].name !== ENDS[e.name]) return null;
+    return ev[best + 1].t - ev[best].t;
   }
 
   // Situation at a given instant (for the live panel).

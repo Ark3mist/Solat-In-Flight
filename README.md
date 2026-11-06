@@ -17,6 +17,12 @@ What it does:
 4. **Vertical profile** covers climb, the initial FL, step climbs or descents at T+hh:mm, and a descent line to the destination elevation. Horizon dip is applied at the altitude of the moment.
 5. **Output** shows each prayer window: when it opens and closes (UTC), the airborne time available, and the qibla relative to track (or to heading if you enter one), in degrees and as a clock code. A **Now** panel shows the current window, the time remaining, and a qibla dial.
 
+6. **Route library:**
+   - **My waypoints:** save a name and its coordinates once; typing that name in the route fills in the position.
+   - **Saved routes:** save, load and delete routes.
+   - **Export backup / Import:** move your library between devices. It is stored in the browser, so each device keeps its own copy.
+7. **Prayer time available** is measured from opening (or take-off) until the next prayer, along the moving route. It is compared with someone staying at the position where the window opened: flying east shortens a window and flying west lengthens it.
+
 Windows already open at take-off, or still open at landing, are completed using the aircraft on the ground at the origin or destination. If a closing angle is never reached on the track (a high-latitude summer night), the window is flagged.
 
 ## Python (command line)

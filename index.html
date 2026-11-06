@@ -45,7 +45,7 @@ button{font:inherit;border:1px solid var(--line);border-radius:6px;padding:7px 1
 button.primary{font-weight:600;border:0;padding:11px 16px;background:var(--accent);color:var(--accent-ink);width:100%}
 button.link{border:0;background:none;color:var(--accent);padding:4px 0;font-size:13px;font-weight:600}
 button.x{padding:4px 8px;color:var(--muted)}
-.wp{display:grid;grid-template-columns:22px 70px minmax(0,1fr) minmax(0,1fr) 62px 30px;gap:6px;align-items:center;margin-bottom:6px}
+.wp{display:grid;grid-template-columns:24px 78px minmax(0,1fr) minmax(0,1fr) 52px 28px;gap:5px;gap:6px;align-items:center;margin-bottom:6px}
 .wp .tag{font-size:11px;color:var(--muted);text-align:center}
 .wphead{font-size:11px;color:var(--muted);margin-bottom:4px}
 .step{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 30px;gap:6px;align-items:center;margin-bottom:6px}
@@ -75,6 +75,17 @@ tr.mark td{color:var(--muted);font-size:13px}
 .now b{color:var(--accent)}
 .summary{font-size:13px;color:var(--muted);margin-bottom:8px}
 footer{margin-top:16px;font-size:12px;color:var(--muted)}
+.lib{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.librow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center;margin-top:6px}
+.fixrow{display:grid;grid-template-columns:80px minmax(0,1fr) minmax(0,1fr) auto;gap:6px;align-items:center;margin-top:6px}
+.fixlist{max-height:220px;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:6px}
+.fixlist div{display:grid;grid-template-columns:80px minmax(0,1fr) 30px;gap:6px;align-items:center;padding:4px 8px;border-bottom:1px solid var(--line);font-family:ui-monospace,Menlo,monospace;font-size:13px}
+.fixlist div:last-child{border-bottom:0}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.ok{color:var(--accent);font-size:12px;margin-top:6px;min-height:1em}
+.qcell{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;min-width:120px}
+.qcell svg{width:120px;height:auto;display:block}
+.avail{font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:16px}
 @media (max-width:560px){
   .wp{grid-template-columns:30px minmax(0,1fr) 70px 30px;grid-template-areas:"tag id eto x" ". lat lon lon";row-gap:4px;padding-bottom:6px;border-bottom:1px solid var(--line)}
   .wp>:nth-child(1){grid-area:tag}.wp>:nth-child(2){grid-area:id}.wp>:nth-child(3){grid-area:lat}
@@ -119,6 +130,40 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
         <div class="wp wphead"><span></span><span>Ident</span><span>Lat</span><span>Lon</span><span>ETO</span><span></span></div>
         <div id="wps"></div>
         <div class="hint">Lat/Lon as <span class="mono">N0244.6</span> / <span class="mono">E10141.9</span> or decimal. Airports from the built-in list fill in automatically. ETO (HHMM UTC) is optional on waypoints; without it the time is spread by distance. Times roll past 0000Z automatically.</div>
+        <div class="lib">
+          <label for="routeSel">Saved routes</label>
+          <div class="librow">
+            <select id="routeSel"></select>
+            <button type="button" id="routeLoad">Load</button>
+            <button type="button" id="routeDel">Delete</button>
+          </div>
+          <div class="librow" style="grid-template-columns:minmax(0,1fr) auto">
+            <input id="routeName" placeholder="Route name, e.g. KUL-LHR via IKA">
+            <button type="button" id="routeSave">Save route</button>
+          </div>
+          <div class="ok" id="routeMsg"></div>
+        </div>
+      </section>
+
+      <section>
+        <details id="fixDetails">
+          <summary>My waypoints <span id="fixCount"></span></summary>
+          <div class="hint">Saved waypoints fill in their coordinates when you type the name in the route, just like airports.</div>
+          <div class="fixrow">
+            <input id="fxId" class="mono" placeholder="NAME" aria-label="Waypoint name">
+            <input id="fxLat" class="mono" placeholder="N3525.0" aria-label="Latitude">
+            <input id="fxLon" class="mono" placeholder="E05109.0" aria-label="Longitude">
+            <button type="button" id="fxAdd">Save</button>
+          </div>
+          <div class="btnrow">
+            <button type="button" id="fxFromRoute">Save all route waypoints</button>
+            <button type="button" id="libExport">Export backup</button>
+            <button type="button" id="libImportBtn">Import</button>
+            <input type="file" id="libImport" accept="application/json,.json" hidden>
+          </div>
+          <div class="ok" id="fixMsg"></div>
+          <div class="fixlist" id="fixList"></div>
+        </details>
       </section>
 
       <section>
@@ -188,7 +233,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
         <div class="summary" id="summary">Enter the flight and press Calculate.</div>
         <div class="errors" id="gsWarn" style="margin:0 0 8px"></div>
         <div class="tablewrap"><table id="winTbl" class="cards" hidden>
-          <thead><tr><th>Prayer</th><th>Opens</th><th>Closes</th><th>Airborne time available</th><th>Qibla at opening</th></tr></thead>
+          <thead><tr><th>Prayer</th><th>Opens</th><th>Closes</th><th>Prayer time available</th><th>Qibla at opening (TRK up)</th></tr></thead>
           <tbody></tbody>
         </table></div>
       </section>
@@ -234,9 +279,53 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   for (const [k,c] of Object.entries(S.CONVENTIONS)) {
     const o = document.createElement("option"); o.value = k; o.textContent = c.name; $("conv").appendChild(o);
   }
+  // ---------- library: saved waypoints + routes (browser storage) ----------
+  let fixes = store.get("solat.fixes") || {};     // { NAME: {lat:"N..", lon:"E.."} }
+  let routes = store.get("solat.routes") || {};   // { name: {wps:[{id,lat,lon}], saved:iso} }
   const dl = document.createElement("datalist"); dl.id = "stations";
-  Object.keys(S.STATIONS).sort().forEach((k) => { const o = document.createElement("option"); o.value = k; dl.appendChild(o); });
   document.body.appendChild(dl);
+  function refreshDatalist(){
+    dl.innerHTML = "";
+    const names = new Set([...Object.keys(S.STATIONS), ...Object.keys(fixes)]);
+    [...names].sort().forEach((k) => { const o = document.createElement("option"); o.value = k; dl.appendChild(o); });
+  }
+  // User waypoints first, then built-in airports.
+  function lookup(id){
+    id = String(id || "").trim().toUpperCase();
+    const f = fixes[id];
+    if (f) { const lat = S.parseLat(f.lat), lon = S.parseLon(f.lon); if (lat !== null && lon !== null) return { lat, lon }; }
+    return S.station(id);
+  }
+  function flash(id, msg){ $(id).textContent = msg; clearTimeout(flash[id]); flash[id] = setTimeout(() => $(id).textContent = "", 4000); }
+  function renderFixes(){
+    const box = $("fixList"); box.innerHTML = "";
+    const keys = Object.keys(fixes).sort();
+    $("fixCount").textContent = keys.length ? `(${keys.length})` : "";
+    box.hidden = !keys.length;
+    keys.forEach((k) => {
+      const row = document.createElement("div");
+      row.innerHTML = `<span><b>${esc(k)}</b></span><span>${esc(fixes[k].lat)} ${esc(fixes[k].lon)}</span><button class="x" type="button" aria-label="Delete ${esc(k)}">✕</button>`;
+      row.querySelector("button").addEventListener("click", () => { delete fixes[k]; store.set("solat.fixes", fixes); renderFixes(); refreshDatalist(); });
+      box.appendChild(row);
+    });
+  }
+  function saveFix(id, latS, lonS){
+    id = String(id || "").trim().toUpperCase();
+    const lat = S.parseLat(latS), lon = S.parseLon(lonS);
+    if (!/^[A-Z0-9_-]{2,12}$/.test(id)) return "Name: 2–12 letters/digits.";
+    if (lat === null || lon === null) return `${id}: invalid coordinates.`;
+    fixes[id] = { lat: S.fmtLat(lat), lon: S.fmtLon(lon) };
+    return null;
+  }
+  function renderRoutes(sel){
+    const box = $("routeSel"); box.innerHTML = "";
+    const keys = Object.keys(routes).sort();
+    if (!keys.length) { box.innerHTML = `<option value="">No saved routes yet</option>`; }
+    keys.forEach((k) => { const o = document.createElement("option"); o.value = k;
+      o.textContent = `${k} (${routes[k].wps.map((w) => w.id || "?").join(" ")})`; box.appendChild(o); });
+    if (sel && routes[sel]) box.value = sel;
+    $("routeLoad").disabled = $("routeDel").disabled = !keys.length;
+  }
 
   function applyConv(){ const c = S.CONVENTIONS[$("conv").value]; $("fajr").value = c.fajr; $("isha").value = c.isha; $("asr").value = c.asr; }
 
@@ -255,7 +344,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       row.querySelectorAll("input").forEach((inp) => inp.addEventListener("change", () => {
         const k = inp.dataset.k; w[k] = inp.value.trim().toUpperCase();
         if (k === "id") {
-          const st = S.station(w.id);
+          const st = lookup(w.id);
           if (st) { w.lat = S.fmtLat(st.lat); w.lon = S.fmtLon(st.lon); renderWps(); }
         }
         save();
@@ -292,6 +381,70 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   $("addWp").addEventListener("click", () => { state.wps.splice(state.wps.length - 1, 0, { id:"", lat:"", lon:"", eto:"" }); renderWps(); save(); });
   $("addStep").addEventListener("click", () => { state.steps.push({ at:"", fl:"" }); renderSteps(); save(); });
 
+  $("routeSave").addEventListener("click", () => {
+    const wpsNow = state.wps.map((w) => ({ id: w.id, lat: w.lat, lon: w.lon }));
+    const name = $("routeName").value.trim() || wpsNow.map((w) => w.id).filter(Boolean).join("-");
+    if (!name) { flash("routeMsg", "Give the route a name."); return; }
+    if (wpsNow.some((w) => S.parseLat(w.lat) === null || S.parseLon(w.lon) === null)) { flash("routeMsg", "Every waypoint needs valid coordinates before saving."); return; }
+    const existed = !!routes[name];
+    routes[name] = { wps: wpsNow, saved: new Date().toISOString() };
+    store.set("solat.routes", routes); renderRoutes(name); $("routeName").value = "";
+    flash("routeMsg", `${existed ? "Updated" : "Saved"} route "${name}" (${wpsNow.length} points).`);
+  });
+  $("routeLoad").addEventListener("click", () => {
+    const r = routes[$("routeSel").value]; if (!r) return;
+    state.wps = r.wps.map((w) => ({ id: w.id, lat: w.lat, lon: w.lon, eto: "" }));
+    renderWps(); save(); flash("routeMsg", `Loaded "${$("routeSel").value}". Waypoint ETOs cleared; times come from airborne/landing.`);
+  });
+  $("routeDel").addEventListener("click", () => {
+    const k = $("routeSel").value; if (!routes[k]) return;
+    if (!confirm(`Delete saved route "${k}"?`)) return;
+    delete routes[k]; store.set("solat.routes", routes); renderRoutes(); flash("routeMsg", `Deleted "${k}".`);
+  });
+
+  $("fxAdd").addEventListener("click", () => {
+    const err = saveFix($("fxId").value, $("fxLat").value, $("fxLon").value);
+    if (err) { flash("fixMsg", err); return; }
+    store.set("solat.fixes", fixes); renderFixes(); refreshDatalist();
+    flash("fixMsg", `Saved ${$("fxId").value.trim().toUpperCase()}.`);
+    $("fxId").value = $("fxLat").value = $("fxLon").value = "";
+  });
+  $("fxFromRoute").addEventListener("click", () => {
+    let n = 0; const errs = [];
+    state.wps.forEach((w) => {
+      if (!w.id || S.station(w.id)) return;          // airports are built in already
+      const e = saveFix(w.id, w.lat, w.lon); if (e) errs.push(e); else n++;
+    });
+    store.set("solat.fixes", fixes); renderFixes(); refreshDatalist();
+    flash("fixMsg", errs.length ? errs.join(" ") : `Saved ${n} waypoint${n === 1 ? "" : "s"} from the route.`);
+  });
+  $("libExport").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify({ app: "solat-in-flight", version: 1, fixes, routes }, null, 2)], { type: "application/json" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+    a.download = `solat-in-flight-backup-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  });
+  $("libImportBtn").addEventListener("click", () => $("libImport").click());
+  $("libImport").addEventListener("change", async () => {
+    const file = $("libImport").files[0]; if (!file) return;
+    try {
+      const d = JSON.parse(await file.text());
+      if (!d || d.app !== "solat-in-flight") throw new Error("Not a Solat In Flight backup file.");
+      let nf = 0, nr = 0;
+      for (const [k, v] of Object.entries(d.fixes || {})) if (!saveFix(k, v.lat, v.lon)) nf++;
+      for (const [k, v] of Object.entries(d.routes || {})) {
+        if (!v || !Array.isArray(v.wps) || v.wps.length < 2) continue;
+        routes[String(k).slice(0, 80)] = { wps: v.wps.map((w) => ({ id: String(w.id || "").toUpperCase().slice(0, 12), lat: String(w.lat || ""), lon: String(w.lon || "") })), saved: v.saved || "" };
+        nr++;
+      }
+      store.set("solat.fixes", fixes); store.set("solat.routes", routes);
+      renderFixes(); refreshDatalist(); renderRoutes();
+      flash("fixMsg", `Imported ${nf} waypoints and ${nr} routes.`);
+    } catch (e) { flash("fixMsg", "Import failed: " + e.message); }
+    $("libImport").value = "";
+  });
+  refreshDatalist(); renderFixes(); renderRoutes();
+
   // ---------- parsing ----------
   function hhmm(s){
     const m = /^(\d{1,2}):?(\d{2})$/.exec(String(s||"").trim());
@@ -324,7 +477,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     state.wps.forEach((w, i) => {
       const name = w.id || (i === 0 ? "DEP" : i === state.wps.length-1 ? "ARR" : "WP" + i);
       let lat = S.parseLat(w.lat), lon = S.parseLon(w.lon);
-      if ((lat === null || lon === null) && S.station(w.id)) { const st = S.station(w.id); lat = st.lat; lon = st.lon; }
+      if ((lat === null || lon === null) && lookup(w.id)) { const st = lookup(w.id); lat = st.lat; lon = st.lon; }
       if (lat === null || lon === null) { errs.push(`${name}: position missing or invalid.`); return; }
       let eto = null;
       const raw = i === 0 ? state.dep : i === state.wps.length-1 ? state.arr : w.eto;
@@ -416,11 +569,27 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       const qp = w.openAtDeparture ? S.situationAt(route, pw.windows, route.start) : null;
       const q = qp ? { qibla: qp.qibla, track: qp.track } : { qibla: se.qibla, track: se.track };
       const rel = S.relBearing(q.qibla, q.track);
+      // Time from opening (or take-off) to the next prayer, along the moving route,
+      // compared with staying at the opening position.
+      const from = Math.max(w.start, route.start);
+      const availMs = floorMin(w.end) - ceilMin(from);
+      let availTxt = `<div class="avail">${fmtDur(availMs)}</div><div class="s">until ${w.name === "Fajr" ? "sunrise" : w.problem ? "next event" : "next prayer"}${w.openAtDeparture ? ", from take-off" : ""}</div>` +
+        (w.openAtArrival ? `<div class="s">${fmtDur(floorMin(route.end) - ceilMin(from))} of it airborne, the rest after landing</div>` : "");
+      if (w.groundMs != null) {
+        const full = w.end - w.start, diff = Math.round((full - w.groundMs) / MIN);
+        const east = Math.sin(q.track * Math.PI / 180);
+        const why = east > 0.3 ? "you are flying east" : east < -0.3 ? "you are flying west" : "your latitude is changing";
+        const dir = (diff < 0 ? "shorter" : "longer") + " because " + why;
+        availTxt += Math.abs(diff) >= 2
+          ? `<div class="s">On the ground there: ${fmtDur(w.groundMs)}<br><b>${Math.abs(diff)} min ${dir}</b></div>`
+          : `<div class="s">Same as on the ground (${fmtDur(w.groundMs)})</div>`;
+      }
       const lt = state.tz ? `<div class="s">${fmtLocal(w.openAtDeparture ? route.start : w.start, ceilMin)}</div>` : "";
       wb.insertAdjacentHTML("beforeend",
         `<tr><td><b>${w.name}</b></td><td data-l="Opens">${openTxt}${lt}</td><td data-l="Closes">${closeTxt}</td>` +
-        `<td class="t" data-l="Airborne time">${fmtDur(w.airborneMs)}</td>` +
-        `<td data-l="Qibla at opening"><span class="mono"><b>${fmtRel(rel)}</b></span> <span class="s">${S.clockCode(rel)} o'clock</span><div class="s mono">QDM ${fmtDeg(q.qibla)} · TRK ${fmtDeg(q.track)}</div></td></tr>`);
+        `<td data-l="Prayer time available">${availTxt}</td>` +
+        `<td data-l="Qibla at opening (TRK up)"><div class="qcell">${dialSvg(q.track, q.qibla, "TRK " + fmtDeg(q.track))}` +
+        `<div><span class="mono"><b>${fmtRel(rel)}</b></span> <span class="s">· ${S.clockCode(rel)} o'clock</span></div><div class="s mono">QDM ${fmtDeg(q.qibla)}</div></div></td></tr>`);
     }
     if (!pw.windows.length) wb.innerHTML = `<tr><td colspan="5" class="s">No prayer window overlaps this flight.</td></tr>`;
     $("winTbl").hidden = false;
@@ -446,21 +615,28 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   }
 
   // ---------- live panel ----------
-  function dialSvg(rel){
-    const r = 58, c = 75;
-    const a = (rel - 90) * Math.PI / 180;
-    const x = c + Math.cos(a) * (r - 6), y = c + Math.sin(a) * (r - 6);
-    let ticks = "";
-    for (let k = 0; k < 12; k++) {
-      const b = (k * 30 - 90) * Math.PI / 180, r1 = k % 3 ? r - 4 : r - 9;
-      ticks += `<line x1="${c + Math.cos(b)*r1}" y1="${c + Math.sin(b)*r1}" x2="${c + Math.cos(b)*r}" y2="${c + Math.sin(b)*r}" stroke="var(--muted)" stroke-width="${k%3?1:2}"/>`;
+  // Compass dial, reference (TRK or HDG) at the top. Card letters rotate with the reference.
+  function dialSvg(ref, qibla, topLabel){
+    const rel = S.relBearing(qibla, ref), c = 75, r = 58;
+    const at = (deg, rad) => { const a = (deg - 90) * Math.PI / 180; return [c + Math.cos(a) * rad, c + Math.sin(a) * rad]; };
+    let ticks = "", card = "";
+    for (let k = 0; k < 36; k++) {
+      const brg = k * 10, d = S.relBearing(brg, ref), major = k % 9 === 0;
+      const [x1, y1] = at(d, major ? r - 9 : (k % 3 ? r - 3 : r - 6)), [x2, y2] = at(d, r);
+      ticks += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="var(--muted)" stroke-width="${major ? 2 : 1}"/>`;
     }
-    return `<svg viewBox="0 0 150 150" role="img" aria-label="Qibla ${fmtRel(rel)} relative to the nose">
-      <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--line)" stroke-width="2"/>${ticks}
-      <path d="M${c} ${c-26} l5 14 l14 7 v5 l-14 -3 l-2 13 l5 4 v4 l-8 -2 l-8 2 v-4 l5 -4 l-2 -13 l-14 3 v-5 l14 -7 z" fill="var(--plane)"/>
-      <line x1="${c}" y1="${c}" x2="${x}" y2="${y}" stroke="var(--qibla)" stroke-width="3" stroke-linecap="round"/>
-      <circle cx="${x}" cy="${y}" r="6" fill="var(--qibla)"/>
-      <text x="${c}" y="11" text-anchor="middle" font-size="10" fill="var(--muted)">NOSE</text>
+    [["N",0],["E",90],["S",180],["W",270]].forEach(([l, b]) => {
+      const [x, y] = at(S.relBearing(b, ref), r - 17);
+      card += `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="${l === "N" ? 700 : 400}" fill="var(--muted)">${l}</text>`;
+    });
+    const [qx, qy] = at(rel, r - 4);
+    return `<svg viewBox="0 -12 150 174" role="img" aria-label="Qibla ${fmtRel(rel)} of ${esc(topLabel)}">
+      <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--line)" stroke-width="2"/>${ticks}${card}
+            <polygon points="${c},${c - r - 2} ${c - 6},${c - r - 11} ${c + 6},${c - r - 11}" fill="var(--plane)"/>
+      <path d="M${c} ${c-24} l4 12 l12 6 v4 l-12 -3 l-2 11 l4 3 v4 l-6 -2 l-6 2 v-4 l4 -3 l-2 -11 l-12 3 v-4 l12 -6 z" fill="var(--plane)"/>
+      <line x1="${c}" y1="${c}" x2="${qx.toFixed(1)}" y2="${qy.toFixed(1)}" stroke="var(--qibla)" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="${qx.toFixed(1)}" cy="${qy.toFixed(1)}" r="5.5" fill="var(--qibla)"/>
+      <text x="${c}" y="${c + r + 15}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="ui-monospace,Menlo,monospace">${esc(topLabel)}</text>
     </svg>`;
   }
   function liveTime(){
@@ -482,7 +658,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     const s = S.situationAt(route, windows, t, hdg);
     const d = new Date(t);
     $("liveClock").textContent = `${pad(d.getUTCDate())}/${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}Z · ${fmtT(t - route.start)}`;
-    $("dial").innerHTML = dialSvg(s.rel);
+    $("dial").innerHTML = dialSvg(s.heading, s.qibla, `${s.headingSource} ${fmtDeg(s.heading)}`);
     $("relBig").textContent = `${fmtRel(s.rel)} · ${s.clock} o'clock`;
     $("relSrc").textContent = s.headingSource === "HDG" ? "heading" : "planned track";
     $("hdgLabel").textContent = s.headingSource === "HDG" ? "Heading" : "Track";

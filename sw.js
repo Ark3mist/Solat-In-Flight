@@ -1,5 +1,5 @@
 // Caches the app so it opens with no connection (after one online visit).
-const CACHE = "solat-flight-v3";
+const CACHE = "solat-flight-v4";
 const FILES = ["./", "index.html", "solat.js", "manifest.webmanifest", "icon.svg"];
 
 self.addEventListener("install", (e) => {
