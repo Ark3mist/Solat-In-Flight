@@ -28,7 +28,9 @@ What it does:
    - day, twilight and night shading from the sun's true position;
    - **prayer lines** for Fajr, Sunrise, Zuhr, Asr, Maghrib and Isha: the places where each prayer is starting at the slider time, so you can watch the aircraft cross them;
    - **▶** plays the flight, and the slider also drives the Now panel.
-   Land outlines are Natural Earth 1:110m (public domain), via world-atlas (ISC).
+   - **Zoom** from 1× to 80× (wheel, pinch, double-tap, or + / −). The display renders at the screen's native resolution. Zoomed in, the coastline switches to Natural Earth 1:50m and every fix is labelled with its ETO. There is a scale bar in nm.
+   - **Prayer chips** jump to the moment each prayer starts and zoom onto the aircraft. Each crossing is given relative to the nearest fix, e.g. `Isha 1526Z · VLADA +13 nm`.
+   Land outlines are Natural Earth 1:110m and 1:50m (public domain), via world-atlas (ISC).
 
 9. **Import OFP:** load the briefing package as a PDF, or paste its text.
    - It reads the COORDINATES INFORMATION list, the nav log (ELTM and FL per fix) and the header (date, STD, taxi, flight time). The reclearance log is skipped.

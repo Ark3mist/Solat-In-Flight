@@ -204,6 +204,11 @@
       p.track = f < 0.999 ? bearing(p, b) : bearing(gcInterp(a, b, 0.99), b);
       const leg = cum[i + 1] - cum[i];
       p.distFlown = cum[i] + leg * f;
+      // position relative to the fixes either side (for "EDATA +24 nm")
+      p.fromFix = a.name; p.toFix = b.name;
+      p.nmFromFix = leg * f; p.nmToFix = leg * (1 - f);
+      p.minFromFix = (Math.min(Math.max(t, start), end) - a.eto) / MIN;
+      p.minToFix = (b.eto - Math.min(Math.max(t, start), end)) / MIN;
       return p;
     }
     return { wps, cum, start, end, state, profile, distNm: cum[cum.length - 1] };
@@ -308,7 +313,17 @@
       rel, clock: clockCode(rel), current, next };
   }
 
-  root.Solat = { CONVENTIONS, DEFAULT_IHTIYAT, STATIONS, EVENTS, KAABA, MIN, HOUR, DAY,
+  // "over EDATA", "EDATA +24 nm" or "BAKUV −12 nm" (whichever fix is nearer).
+  function fixRef(s) {
+    if (!s || s.fromFix == null) return "";
+    const near = s.nmToFix < s.nmFromFix;
+    const nm = Math.round(near ? s.nmToFix : s.nmFromFix);
+    const fix = near ? s.toFix : s.fromFix;
+    if (nm < 1) return "over " + fix;
+    return `${fix} ${near ? "−" : "+"}${nm} nm`;
+  }
+
+  root.Solat = { fixRef, CONVENTIONS, DEFAULT_IHTIYAT, STATIONS, EVENTS, KAABA, MIN, HOUR, DAY,
     parseLat, parseLon, station, fmtLat, fmtLon, fmtPos, sunPosition, sunAltHa, dipDeg,
     gcNm, gcInterp, bearing, qiblaBearing, relBearing, clockCode,
     makeProfile, makeRoute, findEvents, prayerWindows, situationAt };

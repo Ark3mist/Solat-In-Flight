@@ -15,17 +15,17 @@
 :root{
   --bg:#f5f6f8; --panel:#fff; --ink:#111827; --muted:#5b6472; --line:#dde1e6; --field:#f8f9fb;
   --accent:#0f766e; --accent-ink:#fff; --soft:#e7f3f1; --warn:#b45309; --err:#b91c1c; --qibla:#0f766e; --plane:#111827;
-  --ocean:#cfe2ee; --land:#ece6d3; --night-ocean:#1d2c45; --night-land:#323a49; --grid:rgba(17,24,39,.14); --halo:#ffffff; --route:#334155;
+  --ocean:#cfe2ee; --land:#ece6d3; --night-ocean:#1d2c45; --night-land:#323a49; --grid:rgba(17,24,39,.14); --halo:#ffffff; --route:#334155; --coast:#a39a80; --night:#0d1830;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#0b1016; --panel:#121a23; --ink:#e6e9ee; --muted:#8c97a7; --line:#243142; --field:#0e151d;
   --accent:#2dd4bf; --accent-ink:#06201d; --soft:#123330; --warn:#f59e0b; --err:#f87171; --qibla:#2dd4bf; --plane:#e6e9ee;
-  --ocean:#173a54; --land:#46553f; --night-ocean:#050b14; --night-land:#111923; --grid:rgba(230,233,238,.14); --halo:#0b1016; --route:#cbd5e1;
+  --ocean:#173a54; --land:#46553f; --night-ocean:#050b14; --night-land:#111923; --grid:rgba(230,233,238,.14); --halo:#0b1016; --route:#cbd5e1; --coast:#7d8c74; --night:#02060d;
 }}
 :root[data-theme="dark"]{
   --bg:#0b1016; --panel:#121a23; --ink:#e6e9ee; --muted:#8c97a7; --line:#243142; --field:#0e151d;
   --accent:#2dd4bf; --accent-ink:#06201d; --soft:#123330; --warn:#f59e0b; --err:#f87171; --qibla:#2dd4bf; --plane:#e6e9ee;
-  --ocean:#173a54; --land:#46553f; --night-ocean:#050b14; --night-land:#111923; --grid:rgba(230,233,238,.14); --halo:#0b1016; --route:#cbd5e1;
+  --ocean:#173a54; --land:#46553f; --night-ocean:#050b14; --night-land:#111923; --grid:rgba(230,233,238,.14); --halo:#0b1016; --route:#cbd5e1; --coast:#7d8c74; --night:#02060d;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -91,6 +91,12 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .globewrap{position:relative;max-width:620px;margin:0 auto}
 #globe{width:100%;aspect-ratio:1/1;display:block;touch-action:none;cursor:grab}
 #globe:active{cursor:grabbing}
+.zoomctl{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;align-items:center}
+.zoomctl button{width:36px;height:36px;padding:0;font-size:18px;font-weight:700;background:var(--panel);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.zoomctl span{font:600 11px ui-monospace,Menlo,monospace;color:var(--muted);background:var(--panel);border-radius:4px;padding:1px 4px}
+.evchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.evchips button{font-size:12px;padding:5px 9px;display:inline-flex;gap:6px;align-items:center}
+.evchips i{display:inline-block;width:9px;height:9px;border-radius:50%}
 .gctl{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;margin-top:8px}
 .gctl input[type=range]{padding:0;accent-color:var(--accent);height:28px;background:none;border:0}
 .gtime{font-family:ui-monospace,Menlo,monospace;font-size:13px;margin-top:6px;min-height:2.6em}
@@ -264,15 +270,18 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 
       <section id="globeSec" hidden>
         <h2>Globe <label class="chk" style="margin:0"><input type="checkbox" id="gFollow" checked> Follow aircraft</label></h2>
-        <div class="globewrap"><canvas id="globe" aria-label="Globe showing the route, day and night, and prayer lines"></canvas></div>
+        <div class="globewrap"><canvas id="globe" aria-label="Globe showing the route, day and night, and prayer lines"></canvas>
+          <div class="zoomctl"><button type="button" id="gZin" aria-label="Zoom in">+</button><button type="button" id="gZout" aria-label="Zoom out">−</button><button type="button" id="gZreset" aria-label="Reset view" style="font-size:14px">⤢</button><span id="gZlbl">×1</span></div>
+        </div>
         <div class="gctl">
           <button type="button" id="gPlay" aria-label="Play">▶</button>
           <input type="range" id="gSlider" min="0" max="100" value="0" step="1" aria-label="Time along the flight">
           <button type="button" id="gNow" title="Jump to the device clock">Now</button>
         </div>
         <div class="gtime" id="gTime"></div>
+        <div class="evchips" id="gEvents"></div>
         <div class="legend" id="gLegend"></div>
-        <div class="hint">Coloured lines show where each prayer is <b>starting</b> at the slider time, at the aircraft's current altitude. As the slider moves, watch the aircraft cross them. Shading: day, then twilight (to 18°), then night. Drag the globe to rotate it.</div>
+        <div class="hint">Coloured lines show where each prayer is <b>starting</b> at the slider time, at the aircraft's current altitude. As the slider moves, watch the aircraft cross them. Shading: day, then twilight (to 18°), then night. Drag to rotate; pinch, scroll or double-tap to zoom. Tap a prayer above to jump to the moment the aircraft crosses its line: the crossing is where the line meets the <b>aircraft</b>, not where it meets the route at other times.</div>
       </section>
 
       <section>
@@ -611,7 +620,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       const se = w.startEvent;
       const openTxt = w.openAtDeparture
         ? `<span class="pill">open at take-off</span><div class="s">since ${fmtZ(w.start, ceilMin)} at ${esc(first.name)}</div>`
-        : `<span class="mono"><b>${fmtZ(w.start, ceilMin)}</b></span> <span class="s">${fmtT(w.start - route.start)}</span><div class="s mono">${S.fmtPos(se.lat, se.lon)} · ${fmtFL(se.alt)}</div>`;
+        : `<span class="mono"><b>${fmtZ(w.start, ceilMin)}</b></span> <span class="s">${fmtT(w.start - route.start)}</span><div class="s mono">${S.fmtPos(se.lat, se.lon)} · ${fmtFL(se.alt)}</div><div class="s"><b>${esc(S.fixRef(se))}</b></div>`;
       let closeTxt;
       if (w.problem) closeTxt = `<span class="mono"><b>${fmtZ(w.end, floorMin)}</b></span> <span class="pill warn">check</span><div class="s">${esc(w.problem)}</div>`;
       else if (w.openAtArrival) closeTxt = `<span class="pill">still open at landing</span><div class="s">closes ${fmtZ(w.end, floorMin)} at ${esc(last.name)}</div>`;
@@ -656,7 +665,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       eb.insertAdjacentHTML("beforeend",
         `<tr class="${r.kind === "mark" ? "mark" : ""}"><td>${r.kind === "ev" ? "<b>" + esc(r.label) + "</b>" : esc(r.label)}</td>` +
         `<td class="t" data-l="UTC">${fmtZ(r.t, r.round)}</td><td class="mono" data-l="Elapsed">${fmtT(r.t - route.start)}</td>` +
-        `<td class="mono" data-l="Position">${S.fmtPos(r.s.lat, r.s.lon)}</td><td class="mono" data-l="Level">${fmtFL(r.s.alt)}</td>` +
+        `<td class="mono" data-l="Position">${S.fmtPos(r.s.lat, r.s.lon)}${r.kind === "ev" ? `<div class="s">${esc(S.fixRef(r.s))}</div>` : ""}</td><td class="mono" data-l="Level">${fmtFL(r.s.alt)}</td>` +
         `<td class="mono" data-l="Track">${fmtDeg(r.s.track)}</td>${r.kind === "ev" ? `<td class="mono" data-l="Qibla rel.">${fmtRel(rel)}</td>` : ""}</tr>`);
     }
     $("evTbl").hidden = false;
@@ -743,7 +752,14 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   setInterval(() => { if ($("liveMode").value === "device") live(); }, 15000);
 
   // ---------- globe ----------
-  const globe = window.SolatGlobe.create($("globe"), { onFollowChange: (v) => { $("gFollow").checked = v; } });
+  const globe = window.SolatGlobe.create($("globe"), {
+    onFollowChange: (v) => { $("gFollow").checked = v; },
+    onViewChange: (v) => { $("gZlbl").textContent = "×" + (v.zoom < 10 ? v.zoom.toFixed(1).replace(/\.0$/, "") : Math.round(v.zoom)); },
+  });
+  $("gZin").addEventListener("click", () => globe.zoomBy(2));
+  $("gZout").addEventListener("click", () => globe.zoomBy(0.5));
+  $("gZreset").addEventListener("click", () => globe.reset());
+  let exactT = null;   // set when jumping to an event, cleared when the slider moves
   const hiddenLines = store.get("solat.hiddenLines") || {};
   const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
   window.SolatGlobe.LINES.forEach((L) => {
@@ -757,20 +773,20 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     $("gLegend").appendChild(b);
   });
   let gRaf = 0;
-  function sliderTime(){ return result ? result.route.start + (+$("gSlider").value) * MIN : null; }
+  function sliderTime(){ return result ? (exactT !== null ? exactT : result.route.start + (+$("gSlider").value) * MIN) : null; }
   function drawGlobe(){
     if (!result) return;
     cancelAnimationFrame(gRaf);
     gRaf = requestAnimationFrame(() => {
       const t = sliderTime(), { route, conv, events, windows } = result;
       globe.draw({ route, t, conv, events, hidden: hiddenLines,
-        fmtTime: (x) => { const d = new Date(x); return pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + "Z"; },
-        colors: { ocean: css("--ocean"), land: css("--land"), nightOcean: css("--night-ocean"), nightLand: css("--night-land"),
-          grid: css("--grid"), halo: css("--halo"), route: css("--route"), accent: css("--accent"), ink: css("--ink"), bg: css("--panel") } });
+        fmtTime: (x, name) => { const d = new Date(name === "Sunrise" ? floorMin(x) : ceilMin(x)); return pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + "Z"; },
+        colors: { ocean: css("--ocean"), land: css("--land"), coast: css("--coast"), night: css("--night"), muted: css("--muted"),
+          grid: css("--grid"), halo: css("--halo"), route: css("--route"), accent: css("--accent"), ink: css("--ink") } });
       const s = S.situationAt(route, windows, t);
       const pr = s.current ? `<b>${s.current.name}</b> open, ${fmtDur(s.current.end - t)} left` : "no prayer window open";
       const nx = s.next ? ` · next <b>${s.next.name}</b> in ${fmtDur(s.next.start - t)}` : "";
-      $("gTime").innerHTML = `${fmtZ(t, floorMin)} · ${fmtT(t - route.start)} · ${fmtFL(s.alt)} · ${S.fmtPos(s.lat, s.lon)}<br>${pr}${nx}`;
+      $("gTime").innerHTML = `${fmtZ(t, exactT !== null ? ceilMin : floorMin)} · ${fmtT(t - route.start)} · ${fmtFL(s.alt)} · ${S.fmtPos(s.lat, s.lon)} · ${esc(S.fixRef(s))}<br>${pr}${nx}`;
     });
   }
   // The slider also drives the Now panel.
@@ -781,7 +797,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     $("liveT").value = `${pad(d.getUTCDate())}/${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}`;
     live();
   }
-  $("gSlider").addEventListener("input", () => { drawGlobe(); syncNow(); });
+  $("gSlider").addEventListener("input", () => { exactT = null; drawGlobe(); syncNow(); });
   $("gFollow").addEventListener("change", () => globe.setFollow($("gFollow").checked));
   let playing = null;
   function stop(){ if (playing) { clearInterval(playing); playing = null; $("gPlay").textContent = "▶"; $("gPlay").setAttribute("aria-label", "Play"); } }
@@ -792,7 +808,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     $("gPlay").textContent = "❚❚"; $("gPlay").setAttribute("aria-label", "Pause");
     const stepMin = Math.max(1, Math.round(+sl.max / 400));   // whole flight in ~13 s
     playing = setInterval(() => {
-      sl.value = Math.min(+sl.max, +sl.value + stepMin);
+      exactT = null; sl.value = Math.min(+sl.max, +sl.value + stepMin);
       drawGlobe(); syncNow();
       if (+sl.value >= +sl.max) stop();
     }, 33);
@@ -800,7 +816,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   $("gNow").addEventListener("click", () => {
     if (!result) return;
     const v = Math.round((Date.now() - result.route.start) / MIN);
-    $("gSlider").value = Math.max(0, Math.min(+$("gSlider").max, v));
+    exactT = null; $("gSlider").value = Math.max(0, Math.min(+$("gSlider").max, v));
     $("liveMode").value = "device"; $("liveT").disabled = true;
     drawGlobe(); live();
   });
@@ -809,7 +825,21 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   function setupGlobe(){
     const sl = $("gSlider"), old = +sl.max > 0 ? +sl.value / +sl.max : 0;
     const total = Math.round((result.route.end - result.route.start) / MIN);
-    sl.max = total; sl.value = Math.round(old * total);
+    sl.max = total; sl.value = Math.round(old * total); exactT = null;
+    // one chip per prayer event: jump to the crossing and zoom onto the aircraft
+    const box = $("gEvents"); box.innerHTML = "";
+    for (const e of result.events) {
+      const L = window.SolatGlobe.LINES.find((x) => x.name === e.name);
+      const b = document.createElement("button"); b.type = "button";
+      b.innerHTML = `<i style="background:${L ? L.color : "var(--ink)"}"></i><b>${e.name}</b> ${fmtZ(e.t, e.name === "Sunrise" ? floorMin : ceilMin)} · ${esc(S.fixRef(e))}`;
+      b.addEventListener("click", () => {
+        stop(); exactT = e.t;
+        $("gSlider").value = Math.round((e.t - result.route.start) / MIN);
+        globe.setFollow(true); $("gFollow").checked = true; globe.setZoom(14);
+        drawGlobe(); syncNow();
+      });
+      box.appendChild(b);
+    }
     $("globeSec").hidden = false;
     drawGlobe();
   }
