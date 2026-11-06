@@ -52,6 +52,7 @@ input.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;text
 .r3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 button{font:inherit;border:1px solid var(--line);border-radius:6px;padding:7px 10px;background:var(--field);color:var(--ink);cursor:pointer}
 button.primary{font-weight:600;border:0;padding:11px 16px;background:var(--accent);color:var(--accent-ink);width:100%}
+button.link.danger{color:var(--err)}
 button.link{border:0;background:none;color:var(--accent);padding:4px 0;font-size:13px;font-weight:600}
 button.x{padding:4px 8px;color:var(--muted)}
 .wp{display:grid;grid-template-columns:22px minmax(0,1fr) 50px 56px 24px;gap:4px;align-items:center;margin-bottom:4px}
@@ -110,14 +111,16 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .nowkv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;font-size:13px;margin:0}
 .nowkv dt{color:var(--muted)} .nowkv dd{margin:0}
 .cmpin{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) minmax(0,1.2fr);gap:8px;align-items:end}
-.cmpin button{padding:7px 9px}
+.cmparrow{padding-bottom:8px;color:var(--muted);font-size:18px}
+.cmpin input[readonly]{background:var(--panel);font-weight:700}
 .cmpout table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
 .cmpout th,.cmpout td{padding:6px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 .cmpout th{font-size:12px;color:var(--muted);font-weight:600}
 .cmpout td b{font-family:ui-monospace,Menlo,monospace;font-size:15px}
 .cmpout .utc{display:block;font-size:11px;color:var(--muted);font-family:ui-monospace,Menlo,monospace}
 .cmpout tr.cur td{background:var(--soft)}
-.cmpout .diff{font-family:ui-monospace,Menlo,monospace;font-size:13px}
+.cmpout .diff{font-family:ui-monospace,Menlo,monospace;font-size:13px;white-space:nowrap}
+@media (max-width:560px){.cmpout .diff{font-size:11px} .cmpout th,.cmpout td{padding:6px 3px}}
 @media (max-width:560px){.cmpin{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)} .cmpin>div:last-child{grid-column:1/-1}}
 .ground{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
 .ground h4{margin:0 0 6px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
@@ -232,7 +235,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
       </section>
 
       <section id="routeSec">
-        <h2>Route <span><button class="link" id="ofpOpen" type="button">Import OFP</button> &nbsp; <button class="link" id="llToggle" type="button" aria-pressed="false">Lat/Lon</button> &nbsp; <button class="link" id="addWp" type="button">+ Add</button></span></h2>
+        <h2>Route <span><button class="link" id="ofpOpen" type="button">Import OFP</button> &nbsp; <button class="link" id="llToggle" type="button" aria-pressed="false">Lat/Lon</button> &nbsp; <button class="link" id="addWp" type="button">+ Add</button> &nbsp; <button class="link danger" id="clearRoute" type="button">Clear</button></span></h2>
         <div id="ofpBox" class="ofp" hidden>
           <div class="hint" style="margin-top:0">Load the briefing package (PDF) or paste its text. It is read <b>on this device only</b>: nothing is uploaded, and it works offline. The app reads the coordinates list, the nav log (ELTM and FL) and the header times.</div>
           <div class="btnrow">
@@ -335,15 +338,15 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
       </section>
 
       <section id="cmpSec">
-        <h2>Compare airports</h2>
+        <h2>City-Pair <span class="sub" id="cmpPair"></span></h2>
         <div class="cmpin">
-          <div><label for="cmpA">Airport A</label><input id="cmpA" class="mono" list="stations" placeholder="KUL / WMKK"></div>
-          <button type="button" id="cmpSwap" aria-label="Swap airports" title="Swap">⇄</button>
-          <div><label for="cmpB">Airport B</label><input id="cmpB" class="mono" list="stations" placeholder="LHR / EGLL"></div>
+          <div><label for="cmpA">DEP</label><input id="cmpA" class="mono" readonly tabindex="-1" title="From the Route"></div>
+          <span class="cmparrow">→</span>
+          <div><label for="cmpB">ARR</label><input id="cmpB" class="mono" readonly tabindex="-1" title="From the Route"></div>
           <div><label for="cmpDate">Date</label><input id="cmpDate" type="date"></div>
         </div>
         <div id="cmpOut" class="cmpout"></div>
-        <div class="hint">Ground times at each airport for that local date, same convention as above. IATA or ICAO codes from the built-in list, your saved waypoints, or coordinates like <span class="mono">N0244.6 E10141.9</span> (UTC only, no local time). Local time follows each airport's time zone, including daylight saving.</div>
+        <div class="hint">Ground times at the departure and arrival airports of the Route, for that local date, same convention as above. The date follows the flight date unless you change it. Local time follows each airport's time zone, including daylight saving; an airport outside the built-in list shows UTC only.</div>
       </section>
 
       <section id="tlSec">
@@ -499,7 +502,8 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   }
   const SIMPLE = ["date","offb","taxi","dep","arr","gs","conv","tz","ihF","ihZ","ihA","ihM","ihI"];   // levels and rates live in state (route FLs / OFP)
   function readSimple(){ SIMPLE.forEach((k) => state[k] = $(k).value.trim()); state.dipTw = $("dipTw").checked; }
-  function save(){ readSimple(); store.set("solat.v2", state); }
+  let cmpReady = false;
+  function save(){ readSimple(); store.set("solat.v2", state); if (cmpReady) cmpCalc(); }
 
   SIMPLE.forEach((k) => { if (state[k] != null) $(k).value = state[k]; });
   $("dipTw").checked = !!state.dipTw;
@@ -536,6 +540,15 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   $("llToggle").addEventListener("click", () => { setLL(!state.showLL); save(); });
   $("addWp").addEventListener("click", () => { setLL(true); state.wps.splice(state.wps.length - 1, 0, { id:"", lat:"", lon:"", eto:"" }); renderWps(); save(); });
 
+  $("clearRoute").addEventListener("click", () => {
+    const W = state.wps, n = W.length - 2;
+    if (!confirm(`Clear the route?\n\nThis removes ${n > 0 ? `all ${n} waypoint${n === 1 ? "" : "s"} with their FLs and ETAs` : "the waypoints"}, and keeps only DEP (${W[0].id || "—"}) and ARR (${W[W.length - 1].id || "—"}).\nSaved routes are not affected.`)) return;
+    const keep = (w) => ({ id: w.id, lat: w.lat, lon: w.lon, eto: "", fl: "" });
+    state.wps = [keep(W[0]), keep(W[W.length - 1])];
+    state.steps = []; $("routeName").value = "";
+    renderWps(); save(); flash("routeMsg", "Route cleared: only DEP and ARR are left.");
+    autoRun();
+  });
   $("routeSave").addEventListener("click", () => {
     const wpsNow = state.wps.map((w) => ({ id: w.id, lat: w.lat, lon: w.lon }));
     const name = $("routeName").value.trim() || wpsNow.map((w) => w.id).filter(Boolean).join("-");
@@ -871,9 +884,17 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     return { ev, d0 };
   }
   function cmpCalc(){
-    const A = place($("cmpA").value), B = place($("cmpB").value), date = $("cmpDate").value;
-    store.set("solat.cmp", { a: $("cmpA").value, b: $("cmpB").value, d: date });
-    if (!A || !B || !date) { $("cmpOut").innerHTML = `<p class="s">Enter two airports and a date.</p>`; return; }
+    const W = state.wps, dep = W[0] || {}, arr = W[W.length - 1] || {};
+    $("cmpA").value = dep.id || ""; $("cmpB").value = arr.id || "";
+    // the date follows the flight date, unless the user picked another one for this flight date
+    const c = store.get("solat.cmp") || {};
+    if (c.flight !== state.date) { $("cmpDate").value = state.date || new Date().toISOString().slice(0, 10); store.set("solat.cmp", { flight: state.date, d: $("cmpDate").value }); }
+    const date = $("cmpDate").value;
+    const fromWp = (w) => { const p = place(w.id); if (p && !p.error) return p; const lat = S.parseLat(w.lat), lon = S.parseLon(w.lon);
+      return lat !== null && lon !== null ? { name: w.id || S.fmtPos(lat, lon), lat, lon, tz: null } : (w.id ? { error: `${w.id}: no position` } : null); };
+    const A = fromWp(dep), B = fromWp(arr);
+    $("cmpPair").textContent = dep.id && arr.id ? `${dep.id} – ${arr.id}` : "";
+    if (!A || !B || !date) { $("cmpOut").innerHTML = `<p class="s">Set DEP and ARR in the Route.</p>`; return; }
     if (A.error || B.error) { $("cmpOut").innerHTML = `<p class="errors">${esc(A.error || B.error)}</p>`; return; }
     const conv = currentConv(), a = dayTimes(A, date, conv), b = dayTimes(B, date, conv);
     const order = [["Fajr", "Fajr"], ["Sunrise", "Syuruk"], ["Zuhr", "Zuhr"], ["Asr", "Asr"], ["Maghrib", "Maghrib"], ["Isha", "Isha"]];
@@ -890,22 +911,19 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     const curAt = (x) => { let c = null; for (const [n] of order) if (x.ev[n] != null && x.ev[n] <= now) c = n; return now >= x.d0 && now < x.d0 + DAY ? (c || "Isha") : null; };
     const ca = curAt(a), cb = curAt(b);
     const zone = (P, t) => { if (!P.tz) return "UTC (no time zone)"; const o = tzOffset(P.tz, t); return `local, UTC${o >= 0 ? "+" : "−"}${Math.floor(Math.abs(o) / 60)}${Math.abs(o) % 60 ? ":" + pad(Math.abs(o) % 60) : ""}`; };
-    let rows = order.map(([n, lbl]) => `<tr class="${n === ca || n === cb ? "cur" : ""}"><td>${lbl}${n === ca ? " <span class='pill'>now at A</span>" : ""}${n === cb ? " <span class='pill'>now at B</span>" : ""}</td>${cell(A, a.ev[n], n)}${cell(B, b.ev[n], n)}<td class="diff">${a.ev[n] != null && b.ev[n] != null ? dur(rnd(n, b.ev[n]) - rnd(n, a.ev[n])) : "—"}</td></tr>`).join("");
+    let rows = order.map(([n, lbl]) => `<tr class="${n === ca || n === cb ? "cur" : ""}"><td>${lbl}${n === ca ? " <span class='pill'>now at DEP</span>" : ""}${n === cb ? " <span class='pill'>now at ARR</span>" : ""}</td>${cell(A, a.ev[n], n)}${cell(B, b.ev[n], n)}<td class="diff">${a.ev[n] != null && b.ev[n] != null ? dur(rnd(n, b.ev[n]) - rnd(n, a.ev[n])) : "—"}</td></tr>`).join("");
     const dayLen = (x) => x.ev.Sunrise != null && x.ev.Maghrib != null ? fmtDur(x.ev.Maghrib - x.ev.Sunrise) : "—";
     const qA = S.qiblaBearing(A), qB = S.qiblaBearing(B), dist = Math.round(S.gcNm(A, B));
     rows += `<tr><td>Daylight</td><td>${dayLen(a)}</td><td>${dayLen(b)}</td><td></td></tr>`;
     rows += `<tr><td>Qibla</td><td class="mono">${fmtDeg(qA)}T</td><td class="mono">${fmtDeg(qB)}T</td><td></td></tr>`;
-    $("cmpOut").innerHTML = `<table><thead><tr><th></th><th>A · ${esc(A.name)}<span class="utc">${zone(A, a.d0 + DAY / 2)}</span></th><th>B · ${esc(B.name)}<span class="utc">${zone(B, b.d0 + DAY / 2)}</span></th><th>B vs A<span class="utc">real time</span></th></tr></thead><tbody>${rows}</tbody></table>
-      <p class="s">${dist.toLocaleString("en")} nm apart. "B vs A" is the gap in real time (UTC): + means the prayer starts later at B.</p>`;
+    $("cmpOut").innerHTML = `<table><thead><tr><th></th><th>DEP · ${esc(A.name)}<span class="utc">${zone(A, a.d0 + DAY / 2)}</span></th><th>ARR · ${esc(B.name)}<span class="utc">${zone(B, b.d0 + DAY / 2)}</span></th><th>ARR vs DEP<span class="utc">real time</span></th></tr></thead><tbody>${rows}</tbody></table>
+      <p class="s">${dist.toLocaleString("en")} nm apart. "ARR vs DEP" is the gap in real time (UTC): + means the prayer starts later at the arrival airport.</p>`;
   }
   {
     const c = store.get("solat.cmp") || {};
-    $("cmpA").value = c.a || (state.wps[0] && state.wps[0].id) || "KUL";
-    $("cmpB").value = c.b || (state.wps[state.wps.length - 1] && state.wps[state.wps.length - 1].id) || "LHR";
-    $("cmpDate").value = c.d || new Date().toISOString().slice(0, 10);
-    ["cmpA", "cmpB", "cmpDate"].forEach((k) => $(k).addEventListener("change", cmpCalc));
-    $("cmpSwap").addEventListener("click", () => { const t = $("cmpA").value; $("cmpA").value = $("cmpB").value; $("cmpB").value = t; cmpCalc(); });
-    cmpCalc();
+    $("cmpDate").value = c.flight === state.date && c.d ? c.d : (state.date || new Date().toISOString().slice(0, 10));
+    $("cmpDate").addEventListener("change", () => { store.set("solat.cmp", { flight: state.date, d: $("cmpDate").value }); cmpCalc(); });
+    cmpReady = true; cmpCalc();
   }
 
   // ---------- Now ----------
@@ -1248,7 +1266,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   run();
 
   // ---------- version, data validity, update ----------
-  const APP_VERSION = "2026.11.06f", APP_DATE = Date.UTC(2026, 10, 6);
+  const APP_VERSION = "2026.11.06g", APP_DATE = Date.UTC(2026, 10, 6);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){

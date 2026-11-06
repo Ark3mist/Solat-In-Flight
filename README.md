@@ -19,6 +19,7 @@ What it does:
    - **Off-block + taxi = airborne** (taxi defaults to 20 min). Landing = airborne + flight time.
    - Changing off-block, taxi, airborne or any waypoint ETA moves every later ETA and the landing time by the same amount (moved fields are highlighted) and recalculates the prayer times at once.
    - **FL per fix:** the cruise level from that fix on (blank = unchanged). The initial FL and step climbs in the vertical profile are built from these, with each change starting at the fix before. Changing an FL replaces the rest of that level segment (up to the next planned level change) and recalculates. The OFP import fills them from the nav log.
+   - **Clear** (with a confirmation) removes every waypoint and keeps only DEP and ARR.
    - **Lat/Lon** columns are hidden by default; the *Lat/Lon* button shows them (and *+ Add* opens them for the new fix).
 3. **Prayer times** are the zero crossings of `sun_altitude(t, position(t)) − threshold(altitude(t))` along the time axis, refined by bisection.
 4. **Vertical profile** covers climb, the initial FL, step climbs or descents at T+hh:mm, and a descent line to the destination elevation. Horizon dip is applied at the altitude of the moment.
@@ -65,7 +66,7 @@ You can pick the convention with `--convention workbook|jakim|mwl`.
 
 For a review of the original Excel workbook (v3.7) and the reasons for this design, see [`docs/excel-analysis.md`](docs/excel-analysis.md).
 
-**Compare airports:** two airports (IATA or ICAO from the built-in list, saved waypoints, or coordinates) and a date. Shows each prayer in local time (with daylight saving) and UTC, the real-time gap between them, which prayer is in force now at each, daylight length and qibla. The built-in list now includes ICAO codes and time zones, plus CDG, IST, FRA, MCT, CMB and MLE.
+**City-Pair:** the Route's DEP and ARR airports (always taken from the Route) and a date, which follows the flight date unless you change it. Shows each prayer in local time (with daylight saving) and UTC, the real-time gap between them, which prayer is in force now at each, daylight length and qibla. The built-in list now includes ICAO codes and time zones, plus CDG, IST, FRA, MCT, CMB and MLE.
 
 **Version and updates:** the header shows the version date, when you last checked for an update, and when the magnetic data (WMM2025) expires (31 Dec 2029). *Check for update* compares with `version.json` online; the sun and moon formulas do not expire.
 
