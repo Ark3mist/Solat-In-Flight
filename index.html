@@ -52,7 +52,14 @@ button{font:inherit;border:1px solid var(--line);border-radius:6px;padding:7px 1
 button.primary{font-weight:600;border:0;padding:11px 16px;background:var(--accent);color:var(--accent-ink);width:100%}
 button.link{border:0;background:none;color:var(--accent);padding:4px 0;font-size:13px;font-weight:600}
 button.x{padding:4px 8px;color:var(--muted)}
-.wp{display:grid;grid-template-columns:22px minmax(52px,74px) minmax(0,1fr) minmax(0,1fr) 54px 24px;gap:4px;align-items:center;margin-bottom:4px}
+.wp{display:grid;grid-template-columns:22px minmax(0,1fr) 50px 56px 24px;gap:4px;align-items:center;margin-bottom:4px}
+.wp .ll{display:none}
+section.showll .wp{grid-template-columns:20px minmax(48px,64px) minmax(0,1fr) minmax(0,1.08fr) 40px 50px 22px;gap:3px}
+section.showll .wp input{font-size:12px;padding:5px 3px}
+section.showll .wp .ll{display:block}
+.wp input[data-k=fl]{text-align:center;padding:5px 2px}
+.wp input.moved{border-color:var(--accent);background:var(--soft)}
+button.link[aria-pressed=true]{text-decoration:underline}
 .wp input{padding:5px 5px;font-size:13px}
 .wp input[data-k=eto]{text-align:center;padding:5px 2px;letter-spacing:-.02em}
 .wp input[data-k=eto].moved{border-color:var(--accent);background:var(--soft)}
@@ -117,7 +124,9 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .ofp .warn{color:var(--warn);font-size:12px}
 .avail{font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:16px}
 @media (max-width:560px){
-  .wp{grid-template-columns:18px minmax(44px,1fr) minmax(62px,1.15fr) minmax(68px,1.25fr) 44px 20px;gap:3px}
+  .wp{grid-template-columns:18px minmax(0,1fr) 46px 50px 20px;gap:3px}
+  section.showll .wp{grid-template-columns:16px minmax(40px,1fr) minmax(58px,1.1fr) minmax(64px,1.2fr) 34px 42px 18px;gap:2px}
+  section.showll .wp input{font-size:11px;padding:5px 2px}
   .wp input{padding:5px 3px;font-size:12px}
   .wp input[data-k=eto]{padding:5px 1px}
   .wp .tag{font-size:10px}
@@ -159,7 +168,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       </section>
 
       <section>
-        <h2>Route <span><button class="link" id="ofpOpen" type="button">Import OFP</button> &nbsp; <button class="link" id="addWp" type="button">+ Add waypoint</button></span></h2>
+        <h2>Route <span><button class="link" id="ofpOpen" type="button">Import OFP</button> &nbsp; <button class="link" id="llToggle" type="button" aria-pressed="false">Lat/Lon</button> &nbsp; <button class="link" id="addWp" type="button">+ Add</button></span></h2>
         <div id="ofpBox" class="ofp" hidden>
           <div class="hint" style="margin-top:0">Load the briefing package (PDF) or paste its text. It is read <b>on this device only</b>: nothing is uploaded, and it works offline. The app reads the coordinates list, the nav log (ELTM and FL) and the header times.</div>
           <div class="btnrow">
@@ -175,9 +184,9 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
           <div class="ok" id="ofpMsg"></div>
           <div id="ofpPreview"></div>
         </div>
-        <div class="wp wphead"><span></span><span>Ident</span><span>Lat</span><span>Lon</span><span>ETA</span><span></span></div>
+        <div class="wp wphead"><span></span><span>Ident</span><span class="ll">Lat</span><span class="ll">Lon</span><span>FL</span><span>ETA</span><span></span></div>
         <div id="wps"></div>
-        <div class="hint">Lat/Lon as <span class="mono">N0244.6</span> / <span class="mono">E10141.9</span> or decimal. Airports from the built-in list fill in automatically. ETA (HHMM UTC) is optional on waypoints; without it the time is spread by distance. Times roll past 0000Z automatically.</div>
+        <div class="hint">Lat/Lon as <span class="mono">N0244.6</span> / <span class="mono">E10141.9</span> or decimal. Airports from the built-in list fill in automatically. ETA (HHMM UTC) is optional on waypoints; without it the time is spread by distance. Times roll past 0000Z automatically. FL is the cruise level from that fix on (blank = same as before). Changing an FL changes the rest of that level segment; changing an ETA moves every later ETA. Both recalculate straight away.</div>
         <div class="lib">
           <label for="routeSel">Saved routes</label>
           <div class="librow">
@@ -228,7 +237,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
         </div>
         <div id="stepsHead" class="step wphead" hidden><span>Start at T+ (hh:mm)</span><span>New FL</span><span></span></div>
         <div id="steps"></div>
-        <div class="hint">Altitude matters because the horizon dips as you climb, which brings sunrise earlier and Maghrib later.</div>
+        <div class="hint">Altitude matters because the horizon dips as you climb, which brings sunrise earlier and Maghrib later. When the route has FLs, the initial FL and steps here are filled from them.</div>
       </section>
 
       <section>
@@ -386,7 +395,9 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   }
   let autoT = 0;
   function autoRun(){ clearTimeout(autoT); autoT = setTimeout(() => { try { build(); } catch(e){ return; } run(); }, 150); }
-  function renderWps(changedAt = -1, moved = 0){
+  // Cruise FL in force at fix i: its own, or the last one set before it.
+  function effFL(i){ for (let j = i; j > 0; j--) if (state.wps[j].fl) return state.wps[j].fl; return ""; }
+  function renderWps(changedAt = -1, moved = 0, flMoved = []){
     const box = $("wps"); box.innerHTML = "";
     state.wps.forEach((w, i) => {
       const first = i === 0, last = i === state.wps.length - 1;
@@ -394,12 +405,23 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       row.innerHTML =
         `<span class="tag">${first ? "DEP" : last ? "ARR" : i}</span>` +
         `<input class="mono" list="stations" value="${esc(w.id)}" data-k="id" aria-label="Ident">` +
-        `<input class="mono" value="${esc(w.lat)}" data-k="lat" aria-label="Latitude" placeholder="N0000.0">` +
-        `<input class="mono" value="${esc(w.lon)}" data-k="lon" aria-label="Longitude" placeholder="E00000.0">` +
+        `<input class="mono ll" value="${esc(w.lat)}" data-k="lat" aria-label="Latitude" placeholder="N0000.0">` +
+        `<input class="mono ll" value="${esc(w.lon)}" data-k="lon" aria-label="Longitude" placeholder="E00000.0">` +
+        `<input class="mono" value="${first || last ? "" : esc(w.fl || "")}" data-k="fl" ${first||last ? "disabled title='Ground'" : ""} aria-label="Flight level" placeholder="${first || last ? "GND" : effFL(i) || "CLB"}" inputmode="numeric" maxlength="3">` +
         `<input class="mono" value="${first ? esc(state.dep) : last ? esc(state.arr) : esc(w.eto)}" data-k="eto" ${first||last ? "disabled title='Set in Flight'" : ""} aria-label="ETA" placeholder="${first ? "" : "auto"}" inputmode="numeric" maxlength="5">` +
         (first || last ? "<span></span>" : `<button class="x" type="button" aria-label="Remove waypoint">✕</button>`);
       row.querySelectorAll("input").forEach((inp) => inp.addEventListener("change", () => {
         const k = inp.dataset.k, v = inp.value.trim().toUpperCase();
+        if (k === "fl") {
+          const nv = v.replace(/^FL/, ""), old = effFL(i);
+          if (nv && !/^\d{2,3}$/.test(nv)) { inp.value = w.fl || ""; return; }
+          const run = [];
+          if (nv && old) { for (let j = i; j < state.wps.length - 1 && effFL(j) === old; j++) run.push(j); }
+          else run.push(i);
+          run.forEach((j) => state.wps[j].fl = nv);
+          if (!nv) state.wps[i].fl = "";
+          save(); renderWps(-1, 0, run.slice(1)); autoRun(); return;
+        }
         if (k === "eto") {
           const d = deltaMin(w.eto, v); w.eto = v;
           if (d) shiftAfter(i, d);
@@ -412,6 +434,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
         }
         save();
       }));
+      if (flMoved.includes(i)) row.querySelector("[data-k=fl]").classList.add("moved");
       if (moved && i > changedAt) { const e = row.querySelector("[data-k=eto]"); if (e.value) { e.classList.add("moved"); e.title = `Moved ${moved > 0 ? "+" : ""}${moved} min`; } }
       const rm = row.querySelector("button.x");
       if (rm) rm.addEventListener("click", () => { state.wps.splice(i, 1); renderWps(); save(); });
@@ -464,7 +487,11 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   ["offb","taxi","dep"].forEach((k) => $(k).addEventListener("change", () => onTimes(k)));
   $("arr").addEventListener("change", () => { save(); renderWps(); autoRun(); });
   SIMPLE.forEach((k) => $(k).addEventListener("change", save));
-  $("addWp").addEventListener("click", () => { state.wps.splice(state.wps.length - 1, 0, { id:"", lat:"", lon:"", eto:"" }); renderWps(); save(); });
+  const routeSec = $("wps").closest("section");
+  function setLL(on){ state.showLL = !!on; routeSec.classList.toggle("showll", !!on); $("llToggle").setAttribute("aria-pressed", String(!!on)); }
+  setLL(state.showLL);
+  $("llToggle").addEventListener("click", () => { setLL(!state.showLL); save(); });
+  $("addWp").addEventListener("click", () => { setLL(true); state.wps.splice(state.wps.length - 1, 0, { id:"", lat:"", lon:"", eto:"" }); renderWps(); save(); });
   $("addStep").addEventListener("click", () => { state.steps.push({ at:"", fl:"" }); renderSteps(); save(); });
 
   $("routeSave").addEventListener("click", () => {
@@ -618,7 +645,25 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     }
     const start = wps[0].eto, end = wps[wps.length-1].eto;
     const steps = [];
-    state.steps.forEach((s, i) => {
+    let fromFixes = null;
+    if (state.wps.some((w, i) => i > 0 && i < state.wps.length - 1 && w.fl)) {
+      // levels per fix: initial FL = first one set; a change at fix i starts at the fix before it
+      const timed = S.makeRoute(wps, null).wps;
+      let cur = null; fromFixes = { initialFt: null, steps: [] };
+      for (let i = 1; i < state.wps.length - 1; i++) {
+        const f = state.wps[i].fl ? flToFt(state.wps[i].fl) : null;
+        if (f === null || f === cur) continue;
+        if (cur === null) fromFixes.initialFt = f;
+        else fromFixes.steps.push({ t: timed[i - 1].eto, ft: f, at: timed[i - 1].name });
+        cur = f;
+      }
+    }
+    if (fromFixes) {
+      steps.push(...fromFixes.steps);
+      state.fl = String(fromFixes.initialFt / 100); $("fl").value = state.fl;
+      state.steps = fromFixes.steps.map((x) => ({ at: elOf(Math.round((x.t - start) / MIN)), fl: String(x.ft / 100) }));
+      renderSteps();
+    } else state.steps.forEach((s, i) => {
       if (!s.at && !s.fl) return;
       const e = elapsed(s.at), ft = flToFt(s.fl);
       if (e === null || ft === null) errs.push(`Step ${i+1}: needs T+ hh:mm and FL.`);
@@ -626,7 +671,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     });
     if (errs.length) throw new Error(errs.join("\n"));
     const profile = S.makeProfile({ start, end, origElev: +state.elevO || 0, destElev: +state.elevD || 0,
-      initialFt, steps, climbFpm: +state.climb, stepFpm: +state.stepRate, descentFpm: +state.descent });
+      initialFt: fromFixes ? fromFixes.initialFt : initialFt, steps, climbFpm: +state.climb, stepFpm: +state.stepRate, descentFpm: +state.descent });
     const route = S.makeRoute(wps, profile);
     const conv = { fajr: +$("fajr").value, isha: +$("isha").value, asr: +$("asr").value,
       dipOnTwilight: state.dipTw,
@@ -903,7 +948,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     return pages.join("\n\n");
   }
   const hhmmOf = (t) => { const d = new Date(t); return pad(d.getUTCHours()) + pad(d.getUTCMinutes()); };
-  const elOf = (min) => `${Math.floor(min / 60)}:${pad(min % 60)}`;
+  function elOf(min){ return `${Math.floor(min / 60)}:${pad(min % 60)}`; }
   function showOfp(o){
     ofpData = o;
     const tx = Math.max(0, Math.round(+$("taxi").value || 20));
@@ -939,8 +984,13 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     state.offb = o.std || ""; state.taxi = String(taxi);
     state.dep = hhmmOf(air);
     state.arr = flt != null ? hhmmOf(air + flt * MIN) : "";
-    state.wps = pts.map((p, i) => ({ id: p.name, lat: S.fmtLat(p.lat), lon: S.fmtLon(p.lon),
-      eto: i > 0 && i < pts.length - 1 && p.eltm != null ? hhmmOf(air + p.eltm * MIN) : "" }));
+    let lastFl = "";
+    state.wps = pts.map((p, i) => {
+      const fl = i > 0 && i < pts.length - 1 && /^\d{2,3}$/.test(p.fl || "") && p.fl !== lastFl ? p.fl : "";
+      if (fl) lastFl = fl;
+      return { id: p.name, lat: S.fmtLat(p.lat), lon: S.fmtLon(p.lon), fl,
+        eto: i > 0 && i < pts.length - 1 && p.eltm != null ? hhmmOf(air + p.eltm * MIN) : "" };
+    });
     if (o.initialFL) state.fl = String(o.initialFL);
     state.steps = (o.steps || []).map((s) => ({ at: elOf(s.eltm), fl: String(s.fl) }));
     if (o.climbFpm) state.climb = String(o.climbFpm);
