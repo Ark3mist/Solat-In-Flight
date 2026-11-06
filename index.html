@@ -262,7 +262,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
             <button type="button" id="routeDel">Delete</button>
           </div>
           <div class="librow" style="grid-template-columns:minmax(0,1fr) auto">
-            <input id="routeName" placeholder="Route name, e.g. KUL-LHR via IKA">
+            <input id="routeName" placeholder="Name (blank = DEP-ARR)" maxlength="40">
             <button type="button" id="routeSave">Save route</button>
           </div>
           <div class="btnrow">
@@ -430,7 +430,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     const keys = Object.keys(routes).sort();
     if (!keys.length) { box.innerHTML = `<option value="">No saved routes yet</option>`; }
     keys.forEach((k) => { const o = document.createElement("option"); o.value = k;
-      o.textContent = `${k} (${routes[k].wps.map((w) => w.id || "?").join(" ")})`; box.appendChild(o); });
+      o.textContent = k; o.title = routes[k].wps.map((w) => w.id || "?").join(" "); box.appendChild(o); });
     if (sel && routes[sel]) box.value = sel;
     $("routeLoad").disabled = $("routeDel").disabled = !keys.length;
   }
@@ -551,7 +551,9 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   });
   $("routeSave").addEventListener("click", () => {
     const wpsNow = state.wps.map((w) => ({ id: w.id, lat: w.lat, lon: w.lon }));
-    const name = $("routeName").value.trim() || wpsNow.map((w) => w.id).filter(Boolean).join("-");
+    // the name you type; if blank, just DEP-ARR (e.g. "EGLL-WMKK"), never the whole waypoint list
+    const ends = [wpsNow[0], wpsNow[wpsNow.length - 1]].map((w) => w && w.id).filter(Boolean);
+    const name = ($("routeName").value.trim() || ends.join("-")).replace(/\s+/g, " ").slice(0, 40);
     if (!name) { flash("routeMsg", "Give the route a name."); return; }
     if (wpsNow.some((w) => S.parseLat(w.lat) === null || S.parseLon(w.lon) === null)) { flash("routeMsg", "Every waypoint needs valid coordinates before saving."); return; }
     const existed = !!routes[name];
@@ -1234,8 +1236,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     if (o.descentFpm) state.descent = String(o.descentFpm);
     SIMPLE.forEach((k) => { if (state[k] != null) $(k).value = state[k]; });
     renderWps(); store.set("solat.v2", state);
-    const dd = new Date(o.airborne);
-    $("routeName").value = `${o.depIcao || ""}-${o.destIcao || ""} ${o.flight || ""} ${pad(dd.getUTCDate())}${["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"][dd.getUTCMonth()]}`.replace(/\s+/g, " ").trim();
+    $("routeName").value = [o.depIcao, o.destIcao].filter(Boolean).join("-");      // simple: DEP-ARR; type your own if you like
     $("ofpBox").hidden = true;
     flash("routeMsg", `Imported ${pts.length} points with nav-log times. Press "Save route" to keep it.`);
     run();
@@ -1268,7 +1269,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   run();
 
   // ---------- version, data validity, update ----------
-  const APP_VERSION = "2026.11.06h", APP_DATE = Date.UTC(2026, 10, 6);
+  const APP_VERSION = "2026.11.06i", APP_DATE = Date.UTC(2026, 10, 6);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){
