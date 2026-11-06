@@ -273,7 +273,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
         <div class="summary" id="summary">Enter the flight and press Calculate.</div>
         <div class="errors" id="gsWarn" style="margin:0 0 8px"></div>
         <div class="tablewrap"><table id="winTbl" class="cards" hidden>
-          <thead><tr><th>Prayer</th><th>Opens</th><th>Closes</th><th>Prayer time available</th><th>Qibla at opening (MAG TRK up)</th></tr></thead>
+          <thead><tr><th>Prayer</th><th>Opens</th><th>Closes</th><th>Prayer time available</th><th>Qibla from the nose</th></tr></thead>
           <tbody></tbody>
         </table></div>
       </section>
@@ -281,7 +281,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       <section>
         <h2>Timeline</h2>
         <div class="tablewrap"><table id="evTbl" class="cards" hidden>
-          <thead><tr><th>Event</th><th>UTC</th><th>Elapsed</th><th>Position</th><th>FL</th><th>TRK °M</th><th>Qibla °M</th></tr></thead>
+          <thead><tr><th>Event</th><th>UTC</th><th>Elapsed</th><th>Position</th><th>FL</th><th>TRK °M</th><th>Qibla</th></tr></thead>
           <tbody></tbody>
         </table></div>
       </section>
@@ -289,7 +289,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   </div>
 
   <footer>
-    Qibla is the great-circle bearing to the Kaaba, shown magnetic (°M) using the World Magnetic Model 2025 variation at the aircraft's position and level, to match a magnetic track on the ND. Left/right of track is the same in true or magnetic. It is relative to the planned track: drift (heading vs track) is not included. Prayer-window opening times are rounded up to the minute and closing times are rounded down. This is a reference prototype: check it against your authority before relying on it.
+    Qibla is given as a clock position from the aircraft's nose (12 o'clock = straight ahead, 3 = right, 9 = left), from the great-circle bearing to the Kaaba and the planned track. Drift is not included: with a crosswind the nose points a few degrees off the track. QDM and track are magnetic (World Magnetic Model 2025). Prayer-window opening times are rounded up to the minute and closing times are rounded down. This is a reference prototype: check it against your authority before relying on it.
   </footer>
 </main>
 
@@ -651,7 +651,6 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     const v = window.SolatWMM.declination(st.lat, st.lon, (st.alt || 0) * 0.0003048, window.SolatWMM.yearOf(t));
     return { v, trk: st.track - v, q: S.qiblaBearing(st) - v };
   }
-  const fmtVar = (v) => `${Math.abs(v).toFixed(1)}°${v >= 0 ? "E" : "W"}`;
   const LABEL = { Fajr:"Fajr", Sunrise:"Sunrise", Zuhr:"Zuhr", Asr:"Asr", Maghrib:"Maghrib", Isha:"Isha" };
 
   // ---------- render results ----------
@@ -707,8 +706,8 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       wb.insertAdjacentHTML("beforeend",
         `<tr><td><b>${w.name}</b></td><td data-l="Opens">${openTxt}${lt}</td><td data-l="Closes">${closeTxt}</td>` +
         `<td data-l="Prayer time available">${availTxt}</td>` +
-        `<td data-l="Qibla at opening (MAG TRK up)"><div class="qcell">${dialSvg(qm.trk, qm.q, "TRK " + fmtDeg(qm.trk) + "M")}` +
-        `<div class="mono"><b>QIBLA ${fmtDeg(qm.q)}M</b></div><div><span class="mono">${fmtRel(rel)}</span> <span class="s">· ${S.clockCode(rel)} o'clock</span></div><div class="s mono">VAR ${fmtVar(qm.v)}</div></div></td></tr>`);
+        `<td data-l="Qibla from the nose"><div class="qcell">${dialSvg(rel)}` +
+        `<div><b>${S.clockCode(rel)} o'clock</b></div><div class="s">${sideTxt(rel)}</div><div class="s mono">QDM ${fmtDeg(qm.q)}M · TRK ${fmtDeg(qm.trk)}M</div></div></td></tr>`);
     }
     if (!pw.windows.length) wb.innerHTML = `<tr><td colspan="5" class="s">No prayer window overlaps this flight.</td></tr>`;
     $("winTbl").hidden = false;
@@ -726,7 +725,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
         `<tr class="${r.kind === "mark" ? "mark" : ""}"><td>${r.kind === "ev" ? "<b>" + esc(r.label) + "</b>" : esc(r.label)}</td>` +
         `<td class="t" data-l="UTC">${fmtZ(r.t, r.round)}</td><td class="mono" data-l="Elapsed">${fmtT(r.t - route.start)}</td>` +
         `<td class="mono" data-l="Position">${S.fmtPos(r.s.lat, r.s.lon)}${r.kind === "ev" ? `<div class="s">${esc(S.fixRef(r.s))}</div>` : ""}</td><td class="mono" data-l="Level">${fmtFL(r.s.alt)}</td>` +
-        `<td class="mono" data-l="Track °M">${fmtDeg(m.trk)}</td>${r.kind === "ev" ? `<td class="mono" data-l="Qibla °M">${fmtDeg(m.q)} <span class="s">${fmtRel(rel)}</span></td>` : ""}</tr>`);
+        `<td class="mono" data-l="Track °M">${fmtDeg(m.trk)}</td>${r.kind === "ev" ? `<td data-l="Qibla"><b>${S.clockCode(rel)} o'clock</b> <span class="s mono">${fmtRel(rel)}</span></td>` : ""}</tr>`);
     }
     $("evTbl").hidden = false;
     setupGlobe();
@@ -734,27 +733,26 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 
   // ---------- qibla dial ----------
   // Compass dial, reference (TRK or HDG) at the top. Card letters rotate with the reference.
-  function dialSvg(ref, qibla, topLabel){
-    const rel = S.relBearing(qibla, ref), c = 75, r = 58;
+  // Clock dial in the aircraft's frame: the nose is always 12 o'clock.
+  const sideTxt = (rel) => { const a = Math.round(Math.abs(rel)); return a === 0 ? "dead ahead" : a === 180 ? "directly behind" : `${a}° ${rel < 0 ? "left" : "right"} of the nose`; };
+  function dialSvg(rel){
+    const c = 75, r = 58;
     const at = (deg, rad) => { const a = (deg - 90) * Math.PI / 180; return [c + Math.cos(a) * rad, c + Math.sin(a) * rad]; };
-    let ticks = "", card = "";
-    for (let k = 0; k < 36; k++) {
-      const brg = k * 10, d = S.relBearing(brg, ref), major = k % 9 === 0;
-      const [x1, y1] = at(d, major ? r - 9 : (k % 3 ? r - 3 : r - 6)), [x2, y2] = at(d, r);
-      ticks += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="var(--muted)" stroke-width="${major ? 2 : 1}"/>`;
+    let face = "";
+    for (let h = 0; h < 60; h++) {                       // minute ticks, bold at each hour
+      const hr = h % 5 === 0, [x1, y1] = at(h * 6, hr ? r - 7 : r - 3), [x2, y2] = at(h * 6, r);
+      face += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="var(--muted)" stroke-width="${hr ? 2 : 0.8}"/>`;
     }
-    [["N",0],["E",90],["S",180],["W",270]].forEach(([l, b]) => {
-      const [x, y] = at(S.relBearing(b, ref), r - 17);
-      card += `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="${l === "N" ? 700 : 400}" fill="var(--muted)">${l}</text>`;
-    });
-    const [qx, qy] = at(rel, r - 4);
-    return `<svg viewBox="0 -12 150 174" role="img" aria-label="Qibla ${fmtRel(rel)} of ${esc(topLabel)}">
-      <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--line)" stroke-width="2"/>${ticks}${card}
-            <polygon points="${c},${c - r - 2} ${c - 6},${c - r - 11} ${c + 6},${c - r - 11}" fill="var(--plane)"/>
+    for (let h = 1; h <= 12; h++) {
+      const [x, y] = at(h * 30, r - 16);
+      face += `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle" font-size="${h % 3 ? 10 : 12}" font-weight="${h % 3 ? 400 : 700}" fill="var(--muted)">${h}</text>`;
+    }
+    const [qx, qy] = at(rel, r - 3), clk = S.clockCode(rel);
+    return `<svg viewBox="0 0 150 150" role="img" aria-label="Qibla at ${clk} o'clock, ${sideTxt(rel)}">
+      <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--line)" stroke-width="2"/>${face}
       <path d="M${c} ${c-24} l4 12 l12 6 v4 l-12 -3 l-2 11 l4 3 v4 l-6 -2 l-6 2 v-4 l4 -3 l-2 -11 l-12 3 v-4 l12 -6 z" fill="var(--plane)"/>
       <line x1="${c}" y1="${c}" x2="${qx.toFixed(1)}" y2="${qy.toFixed(1)}" stroke="var(--qibla)" stroke-width="3" stroke-linecap="round"/>
-      <circle cx="${qx.toFixed(1)}" cy="${qy.toFixed(1)}" r="5.5" fill="var(--qibla)"/>
-      <text x="${c}" y="${c + r + 15}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="ui-monospace,Menlo,monospace">${esc(topLabel)}</text>
+      <rect x="${(qx - 6).toFixed(1)}" y="${(qy - 6).toFixed(1)}" width="12" height="12" rx="1.5" fill="var(--qibla)" stroke="var(--panel)" stroke-width="1.5"/>
     </svg>`;
   }
 
@@ -812,7 +810,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       const hms = (x) => { const d = new Date(Math.round(x / 1000) * 1000); return `${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}Z`; };
       const evLine = ev ? `<b>${ev.name}</b> line crossed ${hms(ev.raw)} at ${esc(S.fixRef(ev))} · prayer time <b>${fmtZ(ev.t, ev.name === "Sunrise" ? floorMin : ceilMin).slice(3)}</b>${ev.t > ev.raw ? ` (incl. +${Math.round((ev.t - ev.raw) / MIN)} min ihtiyat)` : ""}<br>` : "";
       const gm = magAt(s, t), grel = S.relBearing(gm.q, gm.trk);
-      const qib = `TRK <b>${fmtDeg(gm.trk)}M</b> · Qibla <b>${fmtDeg(gm.q)}M</b> (${fmtRel(grel)}, ${S.clockCode(grel)} o'clock) · VAR ${fmtVar(gm.v)}`;
+      const qib = `Qibla <b>${S.clockCode(grel)} o'clock</b> from the nose (${sideTxt(grel)}) · TRK ${fmtDeg(gm.trk)}M`;
       $("gTime").innerHTML = evLine + `${fmtZ(t, floorMin)} · ${fmtT(t - route.start)} · ${fmtFL(s.alt)} · ${S.fmtPos(s.lat, s.lon)} · ${esc(S.fixRef(s))}<br>${qib}<br>${pr}${nx}<br><span class="sub">${sky}</span>`;
     });
   }
@@ -959,7 +957,12 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     try { showOfp(window.SolatOFP.parse(text)); $("ofpMsg").textContent = ""; }
     catch (e) { $("ofpMsg").textContent = "Could not read it: " + e.message; }
   }
-  $("ofpOpen").addEventListener("click", () => { $("ofpBox").hidden = false; });
+  $("ofpOpen").addEventListener("click", () => {
+    const sec = $("ofpOpen").closest("section");
+    if (sec.classList.contains("min")) sec.querySelector(":scope > h2 .minbtn").click();   // restore a minimised Route box
+    $("ofpBox").hidden = false;
+    $("ofpBox").scrollIntoView({ block: "nearest", behavior: "smooth" });
+  });
   $("ofpClose").addEventListener("click", () => { $("ofpBox").hidden = true; });
   $("ofpPick").addEventListener("click", () => $("ofpFile").click());
   $("ofpPasteBtn").addEventListener("click", () => { $("ofpPaste").hidden = false; $("ofpText").focus(); });
