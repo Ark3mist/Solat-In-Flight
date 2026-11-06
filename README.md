@@ -23,10 +23,10 @@ What it does:
    - Magnetic variation comes from the World Magnetic Model 2025 (NOAA/BGS, public domain, bundled as `wmm.js`, valid to 2030). It is computed at the aircraft's position and level, and matches the reference implementation to 0.01°.
    - The clock position uses the planned track as the nose direction. Drift is not included, so with a crosswind the true answer can be a few degrees off.
 
-6. **Route library:**
-   - **My waypoints:** save a name and its coordinates once; typing that name in the route fills in the position.
-   - **Saved routes:** save, load and delete routes.
-   - **Export backup / Import:** move your library between devices. It is stored in the browser, so each device keeps its own copy.
+6. **Now box:** altitude in metres (shown in feet), heading °M and the time (device clock, or HHMM you type).
+   - It shows at once which prayer is open, the time left, the next prayer, the qibla and the sun as clock positions from the nose, and when and where the next sunrise or sunset happens.
+   - The aircraft is assumed to hold the altitude you entered from now on; the position comes from the planned route.
+   - **Saved routes** (in Route): save, load and delete; **Export / Import backup** moves them between devices.
 7. **Prayer time available** is measured from opening (or take-off) until the next prayer, along the moving route. It is compared with someone staying at the position where the window opened: flying east shortens a window and flying west lengthens it.
 
 8. **Globe with a time slider:**
@@ -60,5 +60,9 @@ python3 solat_route.py --from KUL --to LHR --dep 2026-11-01T15:30Z --duration 14
 You can pick the convention with `--convention workbook|jakim|mwl`.
 
 For a review of the original Excel workbook (v3.7) and the reasons for this design, see [`docs/excel-analysis.md`](docs/excel-analysis.md).
+
+**Version and updates:** the header shows the version date, when you last checked for an update, and when the magnetic data (WMM2025) expires (31 Dec 2029). *Check for update* compares with `version.json` online; the sun and moon formulas do not expire.
+
+**Phone layout:** Flight, Now, Route, Globe, Prayer windows, Timeline. Route, Prayer windows and Timeline always open minimised.
 
 > Status: reference prototype. Validate it against an authoritative source before you use it operationally.

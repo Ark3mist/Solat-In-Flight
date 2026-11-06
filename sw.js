@@ -1,5 +1,5 @@
 // Caches the app so it opens with no connection (after one online visit).
-const CACHE = "solat-flight-v15";
+const CACHE = "solat-flight-v16";
 const FILES = ["./", "index.html", "solat.js", "world.js", "globe.js", "world50.js", "ofp.js", "wmm.js", "vendor/pdfjs/pdf.min.js", "vendor/pdfjs/pdf.worker.min.js", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
@@ -16,6 +16,7 @@ self.addEventListener("activate", (e) => {
 // Network first (so updates arrive when online), cache when offline.
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
+  if (new URL(e.request.url).pathname.endsWith("/version.json")) return;   // always ask the network
   e.respondWith(
     fetch(e.request)
       .then((r) => { const copy = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); return r; })

@@ -140,6 +140,13 @@
     return (geo - par * Math.cos(geo)) * R2D;
   }
 
+  // Sun azimuth (degrees true, clockwise from north) and geometric altitude.
+  function sunAzimuth(t, lat, lon) {
+    const p = sunAltHa(t, lat, lon), H = p.ha * D2R, f = lat * D2R, d = p.dec * D2R;
+    const az = Math.atan2(Math.sin(H), Math.cos(H) * Math.sin(f) - Math.tan(d) * Math.cos(f)) * R2D + 180;
+    return { az: ((az % 360) + 360) % 360, alt: p.alt };
+  }
+
   // Apparent horizon depression from height (incl. standard refraction).
   const dipDeg = (ft) => 0.0347 * Math.sqrt(Math.max(ft, 0) * 0.3048);
 
@@ -375,7 +382,7 @@
   }
 
   root.Solat = { fixRef, CONVENTIONS, DEFAULT_IHTIYAT, STATIONS, EVENTS, KAABA, MIN, HOUR, DAY,
-    parseLat, parseLon, station, fmtLat, fmtLon, fmtPos, sunPosition, sunAltHa, dipDeg, moonPosition, moonAlt, prevNewMoon,
+    parseLat, parseLon, station, fmtLat, fmtLon, fmtPos, sunPosition, sunAltHa, dipDeg, moonPosition, moonAlt, prevNewMoon, sunAzimuth,
     gcNm, gcInterp, bearing, qiblaBearing, relBearing, clockCode,
     makeProfile, makeRoute, findEvents, prayerWindows, situationAt };
 })(typeof window !== "undefined" ? window : globalThis);

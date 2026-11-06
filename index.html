@@ -97,6 +97,21 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .ok{color:var(--accent);font-size:12px;margin-top:6px;min-height:1em}
 .qcell{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;min-width:120px}
 .qcell svg{width:120px;height:auto;display:block}
+.nowres{margin-top:10px}
+.nowgrid{display:grid;grid-template-columns:132px minmax(0,1fr);gap:12px;align-items:center}
+.nowgrid svg{width:132px;height:auto;display:block}
+.nowpray{padding:10px;border-radius:8px;background:var(--soft);margin-bottom:10px;font-size:15px}
+.nowpray .big{font-size:22px;font-weight:700;color:var(--accent)}
+.nowkv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;font-size:13px;margin:0}
+.nowkv dt{color:var(--muted)} .nowkv dd{margin:0}
+.s{font-size:12px;color:var(--muted)}
+.ver{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:12px;color:var(--muted)}
+.ver .warn{color:var(--warn);font-weight:600} .ver .bad{color:var(--err);font-weight:600}
+@media (max-width:860px){
+  .grid{display:flex;flex-direction:column}
+  .col{display:contents}
+  #flightSec{order:1} #nowSec{order:2} #routeSec{order:3} #calcSec{order:4} #globeSec{order:5} #winSec{order:6} #tlSec{order:7}
+}
 .globewrap{position:relative;max-width:min(100%,480px);margin:0 auto}
 #globe{width:100%;aspect-ratio:1/1;display:block;touch-action:none;cursor:grab}
 #globe:active{cursor:grabbing}
@@ -145,13 +160,13 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 <main>
   <header>
     <h1>Solat In Flight</h1>
-    <span class="sub">Offline · sun computed directly (NOAA/Meeus) <button class="link" id="installBtn" type="button" hidden>⤓ Install app</button></span>
+    <div class="ver" id="verBox"><span id="verTxt"></span><span id="verMag"></span><button class="link" id="updBtn" type="button">Check for update</button><span id="updMsg"></span><button class="link" id="installBtn" type="button" hidden>⤓ Install app</button></div>
   </header>
 
   <div class="grid">
     <!-- ========== INPUTS ========== -->
     <div class="col">
-      <section>
+      <section id="flightSec">
         <h2>Flight</h2>
         <div class="r3">
           <div><label for="date">Off-block date (UTC)</label><input id="date" type="date"></div>
@@ -168,7 +183,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
         <select id="conv"></select>
       </section>
 
-      <section>
+      <section id="routeSec">
         <h2>Route <span><button class="link" id="ofpOpen" type="button">Import OFP</button> &nbsp; <button class="link" id="llToggle" type="button" aria-pressed="false">Lat/Lon</button> &nbsp; <button class="link" id="addWp" type="button">+ Add</button></span></h2>
         <div id="ofpBox" class="ofp" hidden>
           <div class="hint" style="margin-top:0">Load the briefing package (PDF) or paste its text. It is read <b>on this device only</b>: nothing is uploaded, and it works offline. The app reads the coordinates list, the nav log (ELTM and FL) and the header times.</div>
@@ -187,7 +202,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
         </div>
         <div class="wp wphead"><span></span><span>Ident</span><span class="ll">Lat</span><span class="ll">Lon</span><span>FL</span><span>ETA</span><span></span></div>
         <div id="wps"></div>
-        <div class="hint">Lat/Lon as <span class="mono">N0244.6</span> / <span class="mono">E10141.9</span> or decimal. Airports from the built-in list fill in automatically. ETA (HHMM UTC) is optional on waypoints; without it the time is spread by distance. Times roll past 0000Z automatically. FL is the cruise level from that fix on (blank = same as before). Changing an FL changes the rest of that level segment; changing an ETA moves every later ETA. Both recalculate straight away.</div>
+        <div class="hint">Lat/Lon as <span class="mono">N0244.6</span> / <span class="mono">E10141.9</span> or decimal. Airports from the built-in list fill in automatically. ETA (HHMM UTC) is optional on waypoints; without it the time is spread by distance. Times roll past 0000Z automatically. FL is the cruise level from that fix on (blank = same as before; if no fix has an FL, FL350 is assumed). Changing an FL changes the rest of that level segment; changing an ETA moves every later ETA. Both recalculate straight away.</div>
         <div class="lib">
           <label for="routeSel">Saved routes</label>
           <div class="librow">
@@ -199,49 +214,16 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
             <input id="routeName" placeholder="Route name, e.g. KUL-LHR via IKA">
             <button type="button" id="routeSave">Save route</button>
           </div>
+          <div class="btnrow">
+            <button type="button" id="libExport">Export backup</button>
+            <button type="button" id="libImportBtn">Import backup</button>
+            <input type="file" id="libImport" accept="application/json,.json" hidden>
+          </div>
           <div class="ok" id="routeMsg"></div>
         </div>
       </section>
 
-      <section>
-        <details id="fixDetails">
-          <summary>My waypoints <span id="fixCount"></span></summary>
-          <div class="hint">Saved waypoints fill in their coordinates when you type the name in the route, just like airports.</div>
-          <div class="fixrow">
-            <input id="fxId" class="mono" placeholder="NAME" aria-label="Waypoint name">
-            <input id="fxLat" class="mono" placeholder="N3525.0" aria-label="Latitude">
-            <input id="fxLon" class="mono" placeholder="E05109.0" aria-label="Longitude">
-            <button type="button" id="fxAdd">Save</button>
-          </div>
-          <div class="btnrow">
-            <button type="button" id="fxFromRoute">Save all route waypoints</button>
-            <button type="button" id="libExport">Export backup</button>
-            <button type="button" id="libImportBtn">Import</button>
-            <input type="file" id="libImport" accept="application/json,.json" hidden>
-          </div>
-          <div class="ok" id="fixMsg"></div>
-          <div class="fixlist" id="fixList"></div>
-        </details>
-      </section>
-
-      <section>
-        <h2>Vertical profile <button class="link" id="addStep" type="button">+ Add step</button></h2>
-        <div class="r3">
-          <div><label for="fl">Initial FL</label><input id="fl" class="mono" inputmode="numeric" value="350"></div>
-          <div><label for="elevO">Origin elev ft</label><input id="elevO" inputmode="numeric" value="70"></div>
-          <div><label for="elevD">Dest elev ft</label><input id="elevD" inputmode="numeric" value="83"></div>
-        </div>
-        <div class="r3">
-          <div><label for="climb">Climb fpm</label><input id="climb" inputmode="numeric" value="1500"></div>
-          <div><label for="stepRate">Step fpm</label><input id="stepRate" inputmode="numeric" value="1000"></div>
-          <div><label for="descent">Descent fpm</label><input id="descent" inputmode="numeric" value="1500"></div>
-        </div>
-        <div id="stepsHead" class="step wphead" hidden><span>Start at T+ (hh:mm)</span><span>New FL</span><span></span></div>
-        <div id="steps"></div>
-        <div class="hint">Altitude matters because the horizon dips as you climb, which brings sunrise earlier and Maghrib later. When the route has FLs, the initial FL and steps here are filled from them.</div>
-      </section>
-
-      <section>
+      <section id="calcSec">
         <details>
           <summary>Advanced</summary>
           <div class="r3">
@@ -263,6 +245,16 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 
     <!-- ========== OUTPUTS ========== -->
     <div class="col">
+      <section id="nowSec">
+        <h2>Now <span class="sub" id="nowClock"></span></h2>
+        <div class="r3">
+          <div><label for="nowAlt">Altitude (m)</label><input id="nowAlt" class="mono" inputmode="numeric" placeholder="planned" maxlength="6"><div class="s mono" id="nowAltFt"></div></div>
+          <div><label for="nowHdg">Heading °M</label><input id="nowHdg" class="mono" inputmode="numeric" placeholder="track" maxlength="3"></div>
+          <div><label for="nowTime">Time UTC</label><input id="nowTime" class="mono" inputmode="numeric" placeholder="device" maxlength="5"><div class="s" id="nowTimeSrc"></div></div>
+        </div>
+        <div id="nowRes" class="nowres"><span class="s">Import an OFP or press Calculate first.</span></div>
+      </section>
+
       <section id="globeSec" hidden>
         <h2>Globe <label class="chk" style="margin:0"><input type="checkbox" id="gFollow" checked> Follow aircraft</label></h2>
         <div class="globewrap"><canvas id="globe" aria-label="Globe showing the route, day and night, and prayer lines"></canvas>
@@ -278,17 +270,17 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
         <details><summary>How to read the globe</summary><div class="hint">Coloured lines show where the sun is at each prayer's angle at the slider time, for the aircraft's current altitude (ihtiyat is added to the time, not drawn). As the slider moves, watch the aircraft cross them. Shading: day, then twilight (to 18°), then night. The sun and moon sit over the point where each is overhead; the moon is drawn in its current phase, lit side towards the sun. An arrow on the edge means it is out of view in that direction. Drag to rotate; pinch, scroll or double-tap to zoom. Tap a prayer above to jump to the moment the aircraft crosses its line: the crossing is where the line meets the <b>aircraft</b>, not where it meets the route at other times.</div></details>
       </section>
 
-      <section>
+      <section id="winSec">
         <h2>Prayer windows</h2>
         <div class="summary" id="summary">Enter the flight and press Calculate.</div>
         <div class="errors" id="gsWarn" style="margin:0 0 8px"></div>
         <div class="tablewrap"><table id="winTbl" class="cards" hidden>
-          <thead><tr><th>Prayer</th><th>Opens</th><th>Closes</th><th>Prayer time available</th><th>Qibla from the nose</th></tr></thead>
+          <thead><tr><th>Prayer</th><th>Opens</th><th>Closes</th><th>Prayer time available</th><th>Qibla and sun from the nose</th></tr></thead>
           <tbody></tbody>
         </table></div>
       </section>
 
-      <section>
+      <section id="tlSec">
         <h2>Timeline</h2>
         <div class="tablewrap"><table id="evTbl" class="cards" hidden>
           <thead><tr><th>Event</th><th>UTC</th><th>Elapsed</th><th>Position</th><th>FL</th><th>TRK °M</th><th>Qibla</th></tr></thead>
@@ -299,7 +291,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   </div>
 
   <footer>
-    Qibla is given as a clock position from the aircraft's nose (12 o'clock = straight ahead, 3 = right, 9 = left), from the great-circle bearing to the Kaaba and the planned track. Drift is not included: with a crosswind the nose points a few degrees off the track. QDM and track are magnetic (World Magnetic Model 2025). Prayer-window opening times are rounded up to the minute and closing times are rounded down. This is a reference prototype: check it against your authority before relying on it.
+    The sun on each dial is drawn just outside the ring: filled when above the visible horizon, hollow when below. Qibla is given as a clock position from the aircraft's nose (12 o'clock = straight ahead, 3 = right, 9 = left), from the great-circle bearing to the Kaaba and the planned track. Drift is not included: with a crosswind the nose points a few degrees off the track. QDM and track are magnetic (World Magnetic Model 2025). Prayer-window opening times are rounded up to the minute and closing times are rounded down. This is a reference prototype: check it against your authority before relying on it.
     <details id="appCheck" style="margin-top:10px"><summary>App install check</summary>
       <div class="hint">If your phone only offers a shortcut, this shows which requirement is failing. Copy it and send it if you need help.</div>
       <ul id="appCheckList" class="mono" style="font-size:12px;padding-left:18px;margin:6px 0"></ul>
@@ -356,18 +348,6 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     return S.station(id);
   }
   function flash(id, msg){ $(id).textContent = msg; clearTimeout(flash[id]); flash[id] = setTimeout(() => $(id).textContent = "", 4000); }
-  function renderFixes(){
-    const box = $("fixList"); box.innerHTML = "";
-    const keys = Object.keys(fixes).sort();
-    $("fixCount").textContent = keys.length ? `(${keys.length})` : "";
-    box.hidden = !keys.length;
-    keys.forEach((k) => {
-      const row = document.createElement("div");
-      row.innerHTML = `<span><b>${esc(k)}</b></span><span>${esc(fixes[k].lat)} ${esc(fixes[k].lon)}</span><button class="x" type="button" aria-label="Delete ${esc(k)}">✕</button>`;
-      row.querySelector("button").addEventListener("click", () => { delete fixes[k]; store.set("solat.fixes", fixes); renderFixes(); refreshDatalist(); });
-      box.appendChild(row);
-    });
-  }
   function saveFix(id, latS, lonS){
     id = String(id || "").trim().toUpperCase();
     const lat = S.parseLat(latS), lon = S.parseLon(lonS);
@@ -447,27 +427,14 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       box.appendChild(row);
     });
   }
-  function renderSteps(){
-    const box = $("steps"); box.innerHTML = "";
-    $("stepsHead").hidden = !state.steps.length;
-    state.steps.forEach((s, i) => {
-      const row = document.createElement("div"); row.className = "step";
-      row.innerHTML = `<input class="mono" value="${esc(s.at)}" data-k="at" placeholder="05:00" aria-label="Elapsed time">` +
-        `<input class="mono" value="${esc(s.fl)}" data-k="fl" placeholder="370" inputmode="numeric" aria-label="Flight level">` +
-        `<button class="x" type="button" aria-label="Remove step">✕</button>`;
-      row.querySelectorAll("input").forEach((inp) => inp.addEventListener("change", () => { s[inp.dataset.k] = inp.value.trim(); save(); }));
-      row.querySelector("button").addEventListener("click", () => { state.steps.splice(i, 1); renderSteps(); save(); });
-      box.appendChild(row);
-    });
-  }
-  const SIMPLE = ["date","offb","taxi","dep","arr","gs","conv","fl","elevO","elevD","climb","stepRate","descent","tz","ihZ","ihM"];
+  const SIMPLE = ["date","offb","taxi","dep","arr","gs","conv","tz","ihZ","ihM"];   // levels and rates live in state (route FLs / OFP)
   function readSimple(){ SIMPLE.forEach((k) => state[k] = $(k).value.trim()); state.dipTw = $("dipTw").checked; }
   function save(){ readSimple(); store.set("solat.v2", state); }
 
   SIMPLE.forEach((k) => { if (state[k] != null) $(k).value = state[k]; });
   $("dipTw").checked = !!state.dipTw;
   applyConv();
-  renderWps(); renderSteps();
+  renderWps();
   $("conv").addEventListener("change", () => { applyConv(); save(); });
   // Off-block + taxi -> airborne; a new airborne time moves all ETAs with it.
   function setAirborne(newDep){
@@ -498,7 +465,6 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
   setLL(state.showLL);
   $("llToggle").addEventListener("click", () => { setLL(!state.showLL); save(); });
   $("addWp").addEventListener("click", () => { setLL(true); state.wps.splice(state.wps.length - 1, 0, { id:"", lat:"", lon:"", eto:"" }); renderWps(); save(); });
-  $("addStep").addEventListener("click", () => { state.steps.push({ at:"", fl:"" }); renderSteps(); save(); });
 
   $("routeSave").addEventListener("click", () => {
     const wpsNow = state.wps.map((w) => ({ id: w.id, lat: w.lat, lon: w.lon }));
@@ -521,22 +487,6 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     delete routes[k]; store.set("solat.routes", routes); renderRoutes(); flash("routeMsg", `Deleted "${k}".`);
   });
 
-  $("fxAdd").addEventListener("click", () => {
-    const err = saveFix($("fxId").value, $("fxLat").value, $("fxLon").value);
-    if (err) { flash("fixMsg", err); return; }
-    store.set("solat.fixes", fixes); renderFixes(); refreshDatalist();
-    flash("fixMsg", `Saved ${$("fxId").value.trim().toUpperCase()}.`);
-    $("fxId").value = $("fxLat").value = $("fxLon").value = "";
-  });
-  $("fxFromRoute").addEventListener("click", () => {
-    let n = 0; const errs = [];
-    state.wps.forEach((w) => {
-      if (!w.id || S.station(w.id)) return;          // airports are built in already
-      const e = saveFix(w.id, w.lat, w.lon); if (e) errs.push(e); else n++;
-    });
-    store.set("solat.fixes", fixes); renderFixes(); refreshDatalist();
-    flash("fixMsg", errs.length ? errs.join(" ") : `Saved ${n} waypoint${n === 1 ? "" : "s"} from the route.`);
-  });
   $("libExport").addEventListener("click", () => {
     const blob = new Blob([JSON.stringify({ app: "solat-in-flight", version: 1, fixes, routes }, null, 2)], { type: "application/json" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
@@ -557,15 +507,17 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
         nr++;
       }
       store.set("solat.fixes", fixes); store.set("solat.routes", routes);
-      renderFixes(); refreshDatalist(); renderRoutes();
-      flash("fixMsg", `Imported ${nf} waypoints and ${nr} routes.`);
-    } catch (e) { flash("fixMsg", "Import failed: " + e.message); }
+      refreshDatalist(); renderRoutes();
+      flash("routeMsg", `Imported ${nf} waypoints and ${nr} routes.`);
+    } catch (e) { flash("routeMsg", "Import failed: " + e.message); }
     $("libImport").value = "";
   });
-  refreshDatalist(); renderFixes(); renderRoutes();
+  refreshDatalist(); renderRoutes();
 
   // ---------- minimise / restore any box (remembered per device) ----------
   const minState = store.get("solat.min") || {};
+  // On a phone these always open minimised (tap + to open).
+  const PHONE = matchMedia("(max-width: 860px)").matches, PHONE_MIN = ["routeSec", "winSec", "tlSec"];
   document.querySelectorAll("main section").forEach((sec) => {
     const h = sec.querySelector(":scope > h2"); if (!h) return;
     const key = sec.id || h.firstChild.textContent.trim();
@@ -578,7 +530,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       b.setAttribute("aria-label", (m ? "Restore " : "Minimise ") + h.firstChild.textContent.trim());
       b.title = m ? "Restore" : "Minimise";
     };
-    set(!!minState[key]);
+    set(PHONE && PHONE_MIN.includes(sec.id) ? true : !!minState[key]);
     b.addEventListener("click", () => {
       const m = !sec.classList.contains("min"); set(m);
       minState[key] = m; store.set("solat.min", minState);
@@ -666,9 +618,8 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     }
     if (fromFixes) {
       steps.push(...fromFixes.steps);
-      state.fl = String(fromFixes.initialFt / 100); $("fl").value = state.fl;
+      state.fl = String(fromFixes.initialFt / 100);
       state.steps = fromFixes.steps.map((x) => ({ at: elOf(Math.round((x.t - start) / MIN)), fl: String(x.ft / 100) }));
-      renderSteps();
     } else state.steps.forEach((s, i) => {
       if (!s.at && !s.fl) return;
       const e = elapsed(s.at), ft = flToFt(s.fl);
@@ -738,6 +689,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       const q = qp ? { qibla: qp.qibla, track: qp.track } : { qibla: se.qibla, track: se.track };
       const qm = magAt(qp || se, qp ? route.start : se.t);
       const rel = S.relBearing(q.qibla, q.track);
+      const sunO = sunRel(qp ? route.start : se.t, qp || se, q.track);
       // Time from opening (or take-off) to the next prayer, along the moving route,
       // compared with staying at the opening position.
       const from = Math.max(w.start, route.start);
@@ -757,8 +709,8 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       wb.insertAdjacentHTML("beforeend",
         `<tr><td><b>${w.name}</b></td><td data-l="Opens">${openTxt}${lt}</td><td data-l="Closes">${closeTxt}</td>` +
         `<td data-l="Prayer time available">${availTxt}</td>` +
-        `<td data-l="Qibla from the nose"><div class="qcell">${dialSvg(rel)}` +
-        `<div><b>${S.clockCode(rel)} o'clock</b></div><div class="s">${sideTxt(rel)}</div><div class="s mono">QDM ${fmtDeg(qm.q)}M · TRK ${fmtDeg(qm.trk)}M</div></div></td></tr>`);
+        `<td data-l="Qibla from the nose"><div class="qcell">${dialSvg(rel, sunO)}` +
+        `<div><b>${S.clockCode(rel)} o'clock</b></div><div class="s">${sideTxt(rel)}</div><div class="s">☀ ${sunTxt(sunO)}</div><div class="s mono">QDM ${fmtDeg(qm.q)}M · TRK ${fmtDeg(qm.trk)}M</div></div></td></tr>`);
     }
     if (!pw.windows.length) wb.innerHTML = `<tr><td colspan="5" class="s">No prayer window overlaps this flight.</td></tr>`;
     $("winTbl").hidden = false;
@@ -780,14 +732,22 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     }
     $("evTbl").hidden = false;
     setupGlobe();
+    nowCache = null; nowCalc();
   }
 
   // ---------- qibla dial ----------
   // Compass dial, reference (TRK or HDG) at the top. Card letters rotate with the reference.
   // Clock dial in the aircraft's frame: the nose is always 12 o'clock.
+  // Sun position relative to a true reference direction, and whether it is above the visible horizon.
+  function sunRel(t, st, refTrue){
+    const z = S.sunAzimuth(t, st.lat, st.lon), dip = S.dipDeg(st.alt || 0);
+    const vis = z.alt + 0.833 + dip;      // upper limb against the visible (dipped) horizon, with refraction
+    return { rel: S.relBearing(z.az, refTrue), az: z.az, alt: z.alt, vis, up: vis > 0 };
+  }
+  const sunTxt = (o) => `${S.clockCode(o.rel)} o'clock, ${Math.abs(o.vis) < 0.5 ? "on the horizon" : `${Math.abs(o.vis).toFixed(0)}° ${o.up ? "above" : "below"} the horizon`}`;
   const sideTxt = (rel) => { const a = Math.round(Math.abs(rel)); return a === 0 ? "dead ahead" : a === 180 ? "directly behind" : `${a}° ${rel < 0 ? "left" : "right"} of the nose`; };
-  function dialSvg(rel){
-    const c = 75, r = 58;
+  function dialSvg(rel, sun){
+    const c = 75, r = 56;
     const at = (deg, rad) => { const a = (deg - 90) * Math.PI / 180; return [c + Math.cos(a) * rad, c + Math.sin(a) * rad]; };
     let face = "";
     for (let h = 0; h < 60; h++) {                       // minute ticks, bold at each hour
@@ -803,9 +763,84 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
       <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--line)" stroke-width="2"/>${face}
       <path d="M${c} ${c-24} l4 12 l12 6 v4 l-12 -3 l-2 11 l4 3 v4 l-6 -2 l-6 2 v-4 l4 -3 l-2 -11 l-12 3 v-4 l12 -6 z" fill="var(--plane)"/>
       <line x1="${c}" y1="${c}" x2="${qx.toFixed(1)}" y2="${qy.toFixed(1)}" stroke="var(--qibla)" stroke-width="3" stroke-linecap="round"/>
-      <rect x="${(qx - 6).toFixed(1)}" y="${(qy - 6).toFixed(1)}" width="12" height="12" rx="1.5" fill="var(--qibla)" stroke="var(--panel)" stroke-width="1.5"/>
+      <rect x="${(qx - 6).toFixed(1)}" y="${(qy - 6).toFixed(1)}" width="12" height="12" rx="1.5" fill="var(--qibla)" stroke="var(--panel)" stroke-width="1.5"/>${sun ? sunMark(sun) : ""}
     </svg>`;
+    // sun just outside the ring: filled when above the horizon, hollow when below
+    function sunMark(o){
+      const [x, y] = at(o.rel, r + 9.5), up = o.up;
+      let rays = "";
+      if (up) for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; rays += `<line x1="${(x + Math.cos(a) * 7).toFixed(1)}" y1="${(y + Math.sin(a) * 7).toFixed(1)}" x2="${(x + Math.cos(a) * 9).toFixed(1)}" y2="${(y + Math.sin(a) * 9).toFixed(1)}" stroke="#f59e0b" stroke-width="1.4" stroke-linecap="round"/>`; }
+      return `<g aria-label="Sun ${up ? "above" : "below"} the horizon">${rays}<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="${up ? "#fbbf24" : "none"}" stroke="#f59e0b" stroke-width="1.6" ${up ? "" : 'stroke-dasharray="2 1.6"'}/></g>`;
+    }
   }
+
+  // ---------- Now ----------
+  let nowCache = null;
+  const ft = (m) => m * 3.28084;
+  const durNow = (ms) => ms < MIN ? "under 1 min" : fmtDur(ms);
+  function nowTime(){
+    const v = toMin($("nowTime").value);
+    if (v === null || !result) return Date.now();
+    // the day that puts this HHMM closest to the flight
+    const { start, end } = result.route, mid = (start + end) / 2, d0 = Math.floor(start / DAY) * DAY;
+    return [d0 - DAY, d0, d0 + DAY, d0 + 2 * DAY].map((d) => d + v * MIN).sort((a, b) => Math.abs(a - mid) - Math.abs(b - mid))[0];
+  }
+  function nowCalc(){
+    const manual = toMin($("nowTime").value) !== null;
+    $("nowTimeSrc").textContent = manual ? "set by you" : "device clock";
+    const altM = parseFloat($("nowAlt").value);
+    const altFt = isFinite(altM) && altM >= 0 ? ft(altM) : null;
+    $("nowAltFt").textContent = altFt !== null ? `= ${Math.round(altFt).toLocaleString("en")} ft` : "";
+    const t = Math.floor(nowTime() / MIN) * MIN, d = new Date(t);
+    $("nowClock").textContent = `${pad(d.getUTCDate())}/${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}Z`;
+    if (!result) return;
+    const { route, conv } = result;
+    // Windows from now on, with the aircraft held at the altitude you entered.
+    const key = `${t}|${altFt}`;
+    if (!nowCache || nowCache.key !== key) {
+      let r2 = route, wins = result.windows;
+      if (altFt !== null) {
+        const base = route.profile;
+        const prof = Object.assign({}, base, { altitude: (x) => (x >= t ? altFt : base.altitude(x)) });
+        r2 = S.makeRoute(route.wps.map((w) => ({ name: w.name, lat: w.lat, lon: w.lon, eto: w.eto })), prof);
+        wins = S.prayerWindows(r2, conv).windows;
+      }
+      nowCache = { key, r2, wins };
+    }
+    const { r2, wins } = nowCache;
+    const s = S.situationAt(r2, wins, t);
+    const altNow = s.alt;
+    const v = window.SolatWMM.declination(s.lat, s.lon, altNow * 0.0003048, window.SolatWMM.yearOf(t));
+    const hIn = $("nowHdg").value.trim(), hM = hIn === "" ? null : ((+hIn % 360) + 360) % 360;
+    const refT = hM !== null && isFinite(hM) ? hM + v : s.track, refName = hM !== null && isFinite(hM) ? "heading" : "planned track";
+    const qrel = S.relBearing(S.qiblaBearing(s), refT);
+    const sun = sunRel(t, s, refT);
+    const phase = t < route.start ? `Before take-off (at ${esc(route.wps[0].name)})` : t > route.end ? `After landing (at ${esc(route.wps[route.wps.length - 1].name)})` : "Airborne";
+    let pray;
+    if (s.current) {
+      pray = `<div class="big">${s.current.name}</div><div><b>${durNow(s.current.end - t)}</b> left · closes ${fmtZ(s.current.end, floorMin)}${s.current.problem ? ` <span class="pill warn">check</span>` : ""}</div>`;
+    } else pray = `<div class="big" style="color:var(--muted)">No prayer now</div>`;
+    if (s.next) pray += `<div>Next <b>${s.next.name}</b> at ${fmtZ(s.next.start, ceilMin)}, in ${durNow(s.next.start - t)}</div>`;
+    // next sunrise / sunset on the route, and where it happens relative to the nose
+    const ev = result.events.filter((e) => (e.name === "Sunrise" || e.name === "Maghrib") && e.raw > t).sort((a, b) => a.raw - b.raw)[0];
+    let rs = "";
+    if (ev) {
+      const o = sunRel(ev.raw, ev, ev.track), vM = window.SolatWMM.declination(ev.lat, ev.lon, ev.alt * 0.0003048, window.SolatWMM.yearOf(ev.raw));
+      rs = `<dt>Sun${ev.name === "Sunrise" ? "rise" : "set"}</dt><dd>${fmtZ(ev.raw, floorMin)} at ${fmtDeg(o.az - vM)}M, <b>${S.clockCode(o.rel)} o'clock</b> <span class="s">(on the planned track)</span></dd>`;
+    }
+    $("nowRes").innerHTML = `<div class="nowpray">${pray}<div class="s">${phase}</div></div>
+      <div class="nowgrid"><div>${dialSvg(qrel, sun)}</div>
+        <dl class="nowkv">
+          <dt>Qibla</dt><dd><b>${S.clockCode(qrel)} o'clock</b> <span class="s">${sideTxt(qrel)}</span></dd>
+          <dt>Sun</dt><dd>☀ ${sunTxt(sun)}</dd>${rs}
+          <dt>Position</dt><dd class="mono">${S.fmtPos(s.lat, s.lon)} <span class="s">${esc(S.fixRef(s))}</span></dd>
+          <dt>Altitude</dt><dd class="mono">${altFt !== null ? `${Math.round(altFt).toLocaleString("en")} ft` : `${fmtFL(altNow)} <span class="s">(planned)</span>`}</dd>
+          <dt>Reference</dt><dd class="mono">${refName === "heading" ? `HDG ${fmtDeg(hM)}M` : `TRK ${fmtDeg(s.track - v)}M <span class="s">(planned)</span>`}</dd>
+        </dl></div>`;
+  }
+  ["nowAlt", "nowHdg", "nowTime"].forEach((k) => $(k).addEventListener("input", () => nowCalc()));
+  setInterval(() => { if (toMin($("nowTime").value) === null) nowCalc(); }, 20000);
+  nowCalc();
 
   // ---------- globe ----------
   const globe = window.SolatGlobe.create($("globe"), {
@@ -1002,7 +1037,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
     if (o.climbFpm) state.climb = String(o.climbFpm);
     if (o.descentFpm) state.descent = String(o.descentFpm);
     SIMPLE.forEach((k) => { if (state[k] != null) $(k).value = state[k]; });
-    renderWps(); renderSteps(); store.set("solat.v2", state);
+    renderWps(); store.set("solat.v2", state);
     const dd = new Date(o.airborne);
     $("routeName").value = `${o.depIcao || ""}-${o.destIcao || ""} ${o.flight || ""} ${pad(dd.getUTCDate())}${["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"][dd.getUTCMonth()]}`.replace(/\s+/g, " ").trim();
     $("ofpBox").hidden = true;
@@ -1035,6 +1070,37 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 
   $("go").addEventListener("click", run);
   run();
+
+  // ---------- version, data validity, update ----------
+  const APP_VERSION = "2026.11.06", APP_DATE = Date.UTC(2026, 10, 6);
+  const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
+  const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  function showVersion(){
+    const last = store.get("solat.lastUpdateCheck");
+    $("verTxt").innerHTML = `Version ${dFmt(APP_DATE)}${last ? ` · checked ${dFmt(last)}` : ""}`;
+    const left = MAG_EXPIRES - Date.now();
+    $("verMag").innerHTML = left < 0 ? `<span class="bad">Magnetic data expired ${dFmt(MAG_EXPIRES)}: update</span>`
+      : left < 180 * DAY ? `<span class="warn">Magnetic data expires ${dFmt(MAG_EXPIRES)}: update soon</span>`
+      : `Magnetic data valid to ${dFmt(MAG_EXPIRES)}`;
+  }
+  async function checkUpdate(manual){
+    if (!navigator.onLine) { if (manual) $("updMsg").textContent = "Offline: connect to check."; return; }
+    if (manual) $("updMsg").textContent = "Checking…";
+    try {
+      const j = await (await fetch("version.json?t=" + Date.now(), { cache: "no-store" })).json();
+      store.set("solat.lastUpdateCheck", Date.now()); showVersion();
+      if (j.version && j.version !== APP_VERSION) {
+        $("updMsg").innerHTML = `<b>New version ${esc(j.date || j.version)}</b> <button class="link" type="button" id="updNow">Update now</button>`;
+        $("updNow").addEventListener("click", async () => {
+          $("updMsg").textContent = "Updating…";
+          try { const reg = await navigator.serviceWorker.getRegistration(); if (reg) await reg.update(); } catch (e) {}
+          location.reload();
+        });
+      } else if (manual) $("updMsg").textContent = "You have the latest version.";
+    } catch (e) { if (manual) $("updMsg").textContent = "Could not check (" + e.message + ")."; }
+  }
+  $("updBtn").addEventListener("click", () => checkUpdate(true));
+  showVersion(); setTimeout(() => checkUpdate(false), 1500);
 
   // Chrome/Android: offer a real install (opens full screen, no address bar) instead of a bookmark shortcut.
   let installEvt = null;
