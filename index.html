@@ -77,7 +77,15 @@ label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
 input,select{width:100%;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:7px 8px;min-width:0}
 input.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;text-transform:uppercase}
 .r2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.r3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.r3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.r3.r3d{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,.75fr)}
+@media (max-width:370px){.r3.r3d{grid-template-columns:1fr 1fr}.r3.r3d>div:first-child{grid-column:1/-1}}
+.r3 label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r3 input{height:38px}
+/* iOS Safari draws date fields with its own size and centred text: make them match the other boxes */
+input[type=date]{-webkit-appearance:none;appearance:none;display:block;height:38px;line-height:22px;text-align:left;font-size:15px;padding:7px 6px}
+input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;min-height:22px}
+input[type=date]::-webkit-datetime-edit{padding:0}
 button{font:inherit;border:1px solid var(--line);border-radius:6px;padding:7px 10px;background:var(--field);color:var(--ink);cursor:pointer}
 button.primary{font-weight:600;border:0;padding:11px 16px;background:var(--accent);color:var(--accent-ink);width:100%}
 button.link.danger{color:var(--err)}
@@ -274,8 +282,8 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   <div class="view" data-view="flight" hidden>
       <section id="flightSec">
         <h2>Flight</h2>
-        <div class="r3">
-          <div><label for="date">Off-block date (UTC)</label><input id="date" type="date"></div>
+        <div class="r3 r3d">
+          <div><label for="date">Date (UTC)</label><input id="date" type="date"></div>
           <div><label for="offb">Off-block UTC</label><input id="offb" class="mono" inputmode="numeric" placeholder="1025" maxlength="5"></div>
           <div><label for="taxi">Taxi-out min</label><input id="taxi" class="mono" inputmode="numeric" value="20" maxlength="3"></div>
         </div>
