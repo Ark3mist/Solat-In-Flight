@@ -182,6 +182,48 @@
       const latLo = view.lat - vaDeg, latHi = view.lat + vaDeg;
       const lonSpan = vaDeg >= 89 || Math.abs(view.lat) + vaDeg >= 89 ? 180 : vaDeg / Math.cos((Math.abs(view.lat) + vaDeg) * D2R);
 
+      // Clip a land ring to the visible hemisphere. A stretch that runs behind the globe is
+      // replaced by the matching arc of the rim, swept the way the hidden coast actually goes,
+      // so the fill never cuts a chord across the sea.
+      function clipRing(v, n){
+        const P = new Float64Array(n * 3);
+        let start = -1;
+        for (let i = 0; i < n; i++) {
+          const x = v[3 * i], y = v[3 * i + 1], z = v[3 * i + 2];
+          P[3 * i] = x * E[0] + y * E[1] + z * E[2]; P[3 * i + 1] = x * Nn[0] + y * Nn[1] + z * Nn[2]; P[3 * i + 2] = x * C[0] + y * C[1] + z * C[2];
+          if (start < 0 && P[3 * i + 2] >= 0) start = i;
+        }
+        if (start < 0) return;                                   // wholly behind the globe
+        const ang = (X, Y) => Math.atan2(-Y, X);                 // screen angle of a rim point
+        const wrap = (a) => a - 2 * Math.PI * Math.round(a / (2 * Math.PI));
+        const cross = (a, b) => {                                // where edge a->b meets the horizon (Z = 0)
+          const za = P[3 * a + 2], zb = P[3 * b + 2], t = za / (za - zb);
+          const X = P[3 * a] + t * (P[3 * b] - P[3 * a]), Y = P[3 * a + 1] + t * (P[3 * b + 1] - P[3 * a + 1]), m = Math.hypot(X, Y) || 1;
+          return [X / m, Y / m];
+        };
+        g.moveTo(cx + P[3 * start] * R, cy - P[3 * start + 1] * R);
+        let hidden = false, a0 = 0, last = 0, sweep = 0;
+        for (let k = 1; k <= n; k++) {
+          const i = (start + k) % n, p = (start + k - 1) % n, Z = P[3 * i + 2];
+          if (!hidden && Z < 0) {                                // leaving the visible side
+            const [X, Y] = cross(p, i);
+            g.lineTo(cx + X * R, cy - Y * R);
+            hidden = true; a0 = last = ang(X, Y); sweep = 0;
+          }
+          if (hidden) {
+            let X, Y;
+            if (Z >= 0) [X, Y] = cross(p, i); else { X = P[3 * i]; Y = P[3 * i + 1]; }
+            const a = ang(X, Y); sweep += wrap(a - last); last = a;
+            if (Z >= 0) {                                        // back on the visible side
+              g.arc(cx, cy, R, a0, a0 + sweep, sweep < 0);
+              hidden = false;
+            }
+          }
+          if (!hidden) g.lineTo(cx + P[3 * i] * R, cy - P[3 * i + 1] * R);
+        }
+        g.closePath();
+      }
+
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.clearRect(0, 0, N, N);
       g.save();
@@ -195,16 +237,7 @@
         // cull rings entirely off screen
         const ang = Math.acos(Math.max(-1, Math.min(1, dot(ring.c, C))));
         if (ang - ring.cap > va) continue;
-        const v = ring.v;
-        for (let i = 0; i < ring.n; i++) {
-          const x = v[3 * i], y = v[3 * i + 1], z = v[3 * i + 2];
-          let X = x * E[0] + y * E[1] + z * E[2], Y = x * Nn[0] + y * Nn[1] + z * Nn[2];
-          const Z = x * C[0] + y * C[1] + z * C[2];
-          if (Z < 0) { const m = Math.hypot(X, Y) || 1; X /= m; Y /= m; }   // pin to the horizon
-          const sx = cx + X * R, sy = cy - Y * R;
-          if (i === 0) g.moveTo(sx, sy); else g.lineTo(sx, sy);
-        }
-        g.closePath();
+        clipRing(ring.v, ring.n);
       }
       g.fillStyle = colors.land; g.fill("evenodd");
       g.strokeStyle = colors.coast; g.lineWidth = Math.max(0.6, 0.7 * lw); g.stroke();
