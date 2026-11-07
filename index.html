@@ -6,6 +6,7 @@
 <title>Solat In Flight</title>
 <meta name="description" content="Prayer times, prayer windows and qibla along a flight route, computed offline from the sun's position.">
 <meta name="theme-color" content="#0f1720">
+<script>try{var t=JSON.parse(localStorage.getItem("solat.theme"));if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Solat Flight">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -47,6 +48,13 @@ main{max-width:880px;margin:0 auto;padding:12px 16px calc(84px + env(safe-area-i
 .tabbar button[aria-current=page] svg{transform:scale(1.08)}
 .tabbar .star[aria-current=page]{background:var(--soft)}
 .empty{text-align:center;padding:28px 16px}
+.byline{display:block;font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:1px}
+.brand{text-align:center;color:var(--muted);font-size:13px;font-weight:600;letter-spacing:.04em;padding:18px 0 6px}
+.brand span{font-weight:400;font-size:12px;letter-spacing:.06em}
+.brand b{color:var(--ink);font-weight:700;letter-spacing:.02em}
+.seg{display:inline-grid;grid-auto-flow:column;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:7px 14px;background:var(--field);color:var(--muted)}
+.seg button[aria-checked=true]{background:var(--accent);color:var(--accent-ink);font-weight:700}
 .empty .primary{width:auto;padding:10px 18px}
 .setlist{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 14px;align-items:center;margin:0 0 10px}
 .setlist dt{color:var(--muted);font-size:13px} .setlist dd{margin:0}
@@ -225,7 +233,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
 <body>
 <main>
   <header class="appbar">
-    <h1>Solat In Flight <span id="tabTitle" class="tabtitle"></span></h1>
+    <h1>Solat In Flight <span id="tabTitle" class="tabtitle"></span><small class="byline">by LipasTerbang™</small></h1>
     <span id="updBadge" class="updbadge" hidden>Update available</span>
     <button type="button" id="installBtn" class="installbtn" hidden>⤓ Install</button>
   </header>
@@ -261,8 +269,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
           <div><label for="gs">Avg GS kt</label><input id="gs" class="mono" inputmode="numeric" value="430"></div>
         </div>
         <div class="hint">Airborne = off-block + taxi. Changing off-block, taxi, airborne or any waypoint ETA moves every later ETA (and landing) by the same amount and recalculates. Leave Landing blank to estimate it from distance ÷ GS.</div>
-        <label for="conv">Convention</label>
-        <select id="conv"></select>
+        <div class="s" id="convNote" style="margin-top:8px"></div>
       </section>
 
       <section id="routeSec">
@@ -306,27 +313,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
       </section>
 
       <section id="calcSec">
-        <details>
-          <summary>Advanced</summary>
-          <div class="r3">
-            <div><label for="fajr">Fajr angle °</label><input id="fajr" type="number" step="0.5"></div>
-            <div><label for="isha">Isha angle °</label><input id="isha" type="number" step="0.5"></div>
-            <div><label for="asr">Asr</label><select id="asr"><option value="1">Shafi'i</option><option value="2">Hanafi</option></select></div>
-          </div>
-          <div class="r3">
-            <div><label for="ihF">Fajr +min</label><input id="ihF" type="number" value="1"></div>
-            <div><label for="ihZ">Zuhr +min</label><input id="ihZ" type="number" value="2"></div>
-            <div><label for="ihA">Asr +min</label><input id="ihA" type="number" value="1"></div>
-          </div>
-          <div class="r3">
-            <div><label for="ihM">Maghrib +min</label><input id="ihM" type="number" value="1"></div>
-            <div><label for="ihI">Isha +min</label><input id="ihI" type="number" value="1"></div>
-            <div><label for="tz">Local offset</label><input id="tz" class="mono" placeholder="+08:00"></div>
-          </div>
-          <div class="hint">Ihtiyat (safety minutes) set by the convention. JAKIM's values reproduce the e-Solat timetable within 1 min on about 91% of days.</div>
-          <label class="chk"><input id="dipTw" type="checkbox" checked> Apply altitude dip to Fajr &amp; Isha (a juristic choice)</label>
-        </details>
-        <button class="primary" id="go" type="button" style="margin-top:12px">Calculate</button>
+        <button class="primary" id="go" type="button">Calculate</button>
         <div class="errors" id="errors"></div>
       </section>
   </div>
@@ -412,11 +399,48 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     </details>
       </section>
 
+      <section id="prefSec">
+        <h2>Display and defaults</h2>
+        <label for="themeSel">Appearance</label>
+        <div class="seg" id="themeSeg" role="radiogroup" aria-label="Appearance">
+          <button type="button" data-theme="device" role="radio">Device</button><button type="button" data-theme="light" role="radio">Light</button><button type="button" data-theme="dark" role="radio">Dark</button>
+        </div>
+        <div class="r2" style="margin-top:6px">
+          <div><label for="defTaxi">Default taxi-out (min)</label><input id="defTaxi" class="mono" inputmode="numeric" maxlength="3" value="20"></div>
+          <div class="hint" style="margin-top:26px">Used for every OFP import: airborne = off-block + taxi.</div>
+        </div>
+      </section>
+
+      <section id="advSec">
+        <h2>Advanced settings</h2>
+        <label for="conv">Convention</label>
+        <select id="conv"></select>
+        <div class="r3">
+            <div><label for="fajr">Fajr angle °</label><input id="fajr" type="number" step="0.5"></div>
+            <div><label for="isha">Isha angle °</label><input id="isha" type="number" step="0.5"></div>
+            <div><label for="asr">Asr</label><select id="asr"><option value="1">Shafi'i</option><option value="2">Hanafi</option></select></div>
+          </div>
+          <div class="r3">
+            <div><label for="ihF">Fajr +min</label><input id="ihF" type="number" value="1"></div>
+            <div><label for="ihZ">Zuhr +min</label><input id="ihZ" type="number" value="2"></div>
+            <div><label for="ihA">Asr +min</label><input id="ihA" type="number" value="1"></div>
+          </div>
+          <div class="r3">
+            <div><label for="ihM">Maghrib +min</label><input id="ihM" type="number" value="1"></div>
+            <div><label for="ihI">Isha +min</label><input id="ihI" type="number" value="1"></div>
+            <div><label for="tz">Local offset</label><input id="tz" class="mono" placeholder="+08:00"></div>
+          </div>
+          <div class="hint">Ihtiyat (safety minutes) are set by the convention and can be changed. JAKIM's values reproduce the e-Solat timetable within 1 min on 96–100% of days.</div>
+          <label class="chk"><input id="dipTw" type="checkbox" checked> Apply altitude dip to Fajr &amp; Isha (a juristic choice)</label>
+        <div class="hint">Changes apply straight away to every tab.</div>
+      </section>
+
       <section id="aboutSec">
         <h2>About the calculation</h2>
         <p class="hint" style="margin:0">The sun on each dial is drawn just outside the ring: filled when above the visible horizon, hollow when below. Qibla is given as a clock position from the aircraft's nose (12 o'clock = straight ahead, 3 = right, 9 = left), from the great-circle bearing to the Kaaba and the planned track. Drift is not included: with a crosswind the nose points a few degrees off the track. QDM and track are magnetic (World Magnetic Model 2025). Prayer-window opening times are rounded up to the minute and closing times are rounded down. This is a reference prototype: check it against your authority before relying on it.</p>
-        <p class="hint">More settings will come here.</p>
       </section>
+
+      <div class="brand">Solat In Flight<br><span>by <b>LipasTerbang</b>™</span></div>
   </div>
 </main>
 
@@ -1260,7 +1284,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   function elOf(min){ return `${Math.floor(min / 60)}:${pad(min % 60)}`; }
   function showOfp(o){
     ofpData = o;
-    const tx = Math.max(0, Math.round(+$("taxi").value || 20));
+    const tx = defTaxi();
     const real = o.points.filter((p) => !p.pseudo);
     const ok = real.length >= 2 && o.airborne;
     let h = "";
@@ -1286,7 +1310,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     const o = ofpData; if (!o) return;
     const withPseudo = $("ofpPseudo") && $("ofpPseudo").checked;
     const pts = o.points.filter((p, i) => withPseudo || !p.pseudo || i === 0 || i === o.points.length - 1);
-    const taxi = Math.max(0, Math.round(+$("taxi").value || 20));
+    const taxi = defTaxi(); $("taxi").value = taxi;
     const air = (o.offBlock != null ? o.offBlock : o.airborne - (o.taxiMin || 0) * MIN) + taxi * MIN;
     const flt = o.fltMin != null ? o.fltMin : o.landing ? (o.landing - o.airborne) / MIN : null;
     state.date = new Date(o.offBlock != null ? o.offBlock : air).toISOString().slice(0, 10);
@@ -1312,6 +1336,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     $("ofpBox").hidden = true;
     flash("routeMsg", `Imported ${pts.length} points with nav-log times. Press "Save route" to keep it.`);
     run();
+    if (result) showTab("globe");
   }
   async function handleText(text){
     try { showOfp(window.SolatOFP.parse(text)); $("ofpMsg").textContent = ""; }
@@ -1340,6 +1365,27 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   $("go").addEventListener("click", run);
   run();
 
+  // ---------- settings: appearance, default taxi, live recalculation ----------
+  function defTaxi(){ const v = Math.round(+$("defTaxi").value); return isFinite(v) && v >= 0 && v <= 120 ? v : 20; }
+  $("defTaxi").value = store.get("solat.defTaxi") ?? 20;
+  $("defTaxi").addEventListener("change", () => { $("defTaxi").value = defTaxi(); store.set("solat.defTaxi", defTaxi()); });
+  function setTheme(t){
+    if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+    store.set("solat.theme", t);
+    document.querySelectorAll("#themeSeg button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.theme === t)));
+    const dark = t === "dark" || (t === "device" && matchMedia("(prefers-color-scheme: dark)").matches);
+    document.querySelector('meta[name="theme-color"]').setAttribute("content", dark ? "#0f1720" : "#f5f6f8");
+    if (typeof drawGlobe === "function") drawGlobe();
+    if (typeof nowCalc === "function") nowCalc();
+  }
+  document.querySelectorAll("#themeSeg button").forEach((b) => b.addEventListener("click", () => setTheme(b.dataset.theme)));
+  setTheme(store.get("solat.theme") || "device");
+  // convention / angles / ihtiyat / dip: save and recalculate at once
+  function convNote(){ const c = S.CONVENTIONS[$("conv").value]; $("convNote").innerHTML = `Convention: <b>${esc(c ? c.name : "custom")}</b> · change it in Settings`; }
+  ["fajr", "isha", "asr", "ihF", "ihZ", "ihA", "ihM", "ihI", "tz", "dipTw"].forEach((k) => $(k).addEventListener("change", () => { save(); autoRun(); cmpCalc(); }));
+  $("conv").addEventListener("change", () => { convNote(); autoRun(); cmpCalc(); });
+  convNote();
+
   // ---------- tabs (bottom bar) ----------
   const TABS = { flight: "Flight", now: "Now", globe: "Globe", timeline: "Timeline", settings: "Settings" };
   const tabScroll = {};
@@ -1362,11 +1408,11 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   }));
   document.querySelectorAll("[data-goto]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.goto)));
   window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (TABS[h] && h !== curTab) showTab(h); });
-  showTab(TABS[location.hash.slice(1)] ? location.hash.slice(1) : store.get("solat.tab") || "flight", true);
+  showTab("globe", true);          // the app always opens on the globe
   $("updBadge").addEventListener("click", () => showTab("settings"));
 
   // ---------- version, data validity, update ----------
-  const APP_VERSION = "2026.11.07", APP_DATE = Date.UTC(2026, 10, 7);
+  const APP_VERSION = "2026.11.07b", APP_DATE = Date.UTC(2026, 10, 7);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){

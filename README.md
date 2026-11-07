@@ -75,9 +75,11 @@ For a review of the original Excel workbook (v3.7) and the reasons for this desi
 - **Now:** the Now box (current prayer, qibla and sun from the nose, ground times below) and the City-Pair.
 - **Globe:** the globe, slider and prayer-line chips.
 - **Timeline:** prayer windows and the timeline.
-- **Settings:** version, magnetic-data expiry, update check, install, and notes on the calculation.
+- **Settings:** version, magnetic-data expiry, update check and install; appearance (Device / Light / Dark) and the default taxi-out time used for OFP imports; **Advanced settings** (convention, Fajr/Isha angles, Asr, ihtiyat per prayer, local offset, dip on twilight), which recalculate at once; notes on the calculation.
 
-The app remembers the last tab; a link can open one directly, e.g. `…/Solat-In-Flight/#globe`.
+The app always opens on the Globe, and jumps to it after an OFP import.
+
+
 
 **Validation:** against the JAKIM e-Solat 2026 timetables (5 zones, 1,825 zone-days), the JAKIM preset (Fajr 18°, Isha 18°, ihtiyat Fajr +1, Zuhr +2, Asr +1, Maghrib +1, Isha +1) is within 1 min on 96–100% of days and never more than 2 min out. The qibla agrees with JAKIM to within 0.07°. See [`docs/jakim-validation.md`](docs/jakim-validation.md).
 
