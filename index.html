@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Solat In Flight</title>
+<title>SolAir · Solat in the air</title>
 <meta name="description" content="Prayer times, prayer windows and qibla along a flight route, computed offline from the sun's position.">
 <meta name="theme-color" content="#0f1720">
 <script>try{var t=JSON.parse(localStorage.getItem("solat.theme"));if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Solat Flight">
+<meta name="apple-mobile-web-app-title" content="SolAir">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -246,13 +246,13 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
 <body>
 <main>
   <header class="appbar">
-    <h1>Solat In Flight <span id="tabTitle" class="tabtitle"></span><small class="byline">by LipasTerbang™</small></h1>
+    <h1>SolAir <span id="tabTitle" class="tabtitle"></span><small class="byline">by LipasTerbang™</small></h1>
     <span id="updBadge" class="updbadge" hidden>Update available</span>
     <button type="button" id="installBtn" class="installbtn" hidden>⤓ Install</button>
   </header>
 
   <div class="installbar" id="installBar" hidden>
-    <span>Install <b>Solat In Flight</b> on this device: it opens full screen and works with no connection.</span>
+    <span>Install <b>SolAir</b> on this device: it opens full screen and works with no connection.</span>
     <button type="button" id="installBarGo" class="primary">Install</button>
     <button type="button" id="installBarX" class="x" aria-label="Not now">✕</button>
   </div>
@@ -469,12 +469,12 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
 
       <section id="legalSec">
         <h2>Official app and copyright</h2>
-        <p class="hint" style="margin:0 0 6px">The only official copy is <b>ark3mist.github.io/Solat-In-Flight</b>. If you see Solat In Flight anywhere else, it is not from LipasTerbang and its prayer times may be wrong. You are on: <b class="mono" id="hereUrl"></b> <span id="hereOk"></span></p>
+        <p class="hint" style="margin:0 0 6px">The only official copy is <b>ark3mist.github.io/Solat-In-Flight</b>. If you see SolAir anywhere else, it is not from LipasTerbang and its prayer times may be wrong. You are on: <b class="mono" id="hereUrl"></b> <span id="hereOk"></span></p>
         <p class="hint" style="margin:0 0 6px">© 2026 LipasTerbang. All rights reserved. Free to use; copying, modifying or republishing the code, calculations or design needs written permission. Report an unofficial copy through Feedback.</p>
         <details><summary class="hint">Open-source credits</summary><p class="hint" style="margin:6px 0 0">PDF.js (Apache 2.0) · airport data from airportsdata by Mike Borsetti (MIT) · land outlines from Natural Earth (public domain) via world-atlas by Michael Bostock (ISC) · World Magnetic Model 2025, NOAA NCEI / BGS (public domain).</p></details>
       </section>
 
-      <div class="brand">Solat In Flight<br><span>by <b>LipasTerbang</b>™</span><br><span style="font-size:11px">© 2026 LipasTerbang</span></div>
+      <div class="brand">SolAir<br><span style="font-size:12px;letter-spacing:.04em">Solat in the air</span><br><span>by <b>LipasTerbang</b>™</span><br><span style="font-size:11px">© 2026 LipasTerbang</span></div>
   </div>
 </main>
 
@@ -759,7 +759,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     const file = $("libImport").files[0]; if (!file) return;
     try {
       const d = JSON.parse(await file.text());
-      if (!d || d.app !== "solat-in-flight") throw new Error("Not a Solat In Flight backup file.");
+      if (!d || d.app !== "solat-in-flight") throw new Error("Not a SolAir backup file.");
       let nf = 0, nr = 0;
       for (const [k, v] of Object.entries(d.fixes || {})) if (!saveFix(k, v.lat, v.lon)) nf++;
       for (const [k, v] of Object.entries(d.routes || {})) {
@@ -1484,14 +1484,14 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   $("fbSend").addEventListener("click", () => {
     const msg = $("fbText").value.trim();
     if (!msg) { $("fbText").focus(); $("fbText").placeholder = "Please write a message first."; return; }
-    const lines = [msg, "", "—", `App: Solat In Flight ${APP_VERSION}`, `Device: ${navigator.userAgent}`, `Screen: ${screen.width}×${screen.height}, ${matchMedia("(display-mode: standalone)").matches ? "installed app" : "browser"}`];
+    const lines = [msg, "", "—", `App: SolAir ${APP_VERSION}`, `Device: ${navigator.userAgent}`, `Screen: ${screen.width}×${screen.height}, ${matchMedia("(display-mode: standalone)").matches ? "installed app" : "browser"}`];
     if ($("fbFlight").checked) {
       const W = state.wps, c = currentConv();
       lines.push(`Flight: ${W[0].id}–${W[W.length - 1].id} ${state.date} off-block ${state.offb || "—"} airborne ${state.dep} landing ${state.arr || "auto"}, ${W.length} points`,
         `Convention: ${$("conv").value} (Fajr ${c.fajr}°, Isha ${c.ishaMin ? "Maghrib+" + c.ishaMin + "min" : c.isha + "°"}, Asr ${c.asr === 2 ? "Hanafi" : "Shafi'i"}, ihtiyat F${c.ihtiyat.Fajr} Z${c.ihtiyat.Zuhr} A${c.ihtiyat.Asr} M${c.ihtiyat.Maghrib} I${c.ihtiyat.Isha}, dip on twilight ${c.dipOnTwilight ? "on" : "off"})`);
       if (result) lines.push("Events: " + result.events.map((e) => `${e.name} ${new Date(e.t).toISOString().slice(11, 16)}Z`).join(", "));
     }
-    const subj = encodeURIComponent(`Solat In Flight feedback: ${$("fbType").value}`);
+    const subj = encodeURIComponent(`SolAir feedback: ${$("fbType").value}`);
     const mk = (L) => `mailto:${FEEDBACK_TO}?subject=${subj}&body=${encodeURIComponent(L.join("\n"))}`;
     // some mail apps reject very long links: drop the event list first, then shorten the message
     let L = lines.slice(); if (mk(L).length > 1900) L = L.filter((x) => !x.startsWith("Events:"));
@@ -1533,7 +1533,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     $("hereOk").innerHTML = ok ? '<span style="color:var(--accent)">✓ official</span>' : '<span style="color:var(--err)">⚠ not the official address</span>';
   })();
   // Version MAJOR-HOTFIX-YY: MAJOR = major change, HOTFIX = 01, 02, 03… (back to 01 after a major change), YY = year of the update.
-  const APP_VERSION = "1-01-26", APP_DATE = Date.UTC(2026, 10, 7);
+  const APP_VERSION = "1-02-26", APP_DATE = Date.UTC(2026, 10, 7);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){

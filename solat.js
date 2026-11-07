@@ -1,4 +1,4 @@
-/* Solat In Flight — solver (v2). No dependencies, works offline.
+/* SolAir — solver (v2). No dependencies, works offline.
  * All times are epoch milliseconds UTC. Angles in degrees unless noted. */
 (function (root) {
   "use strict";

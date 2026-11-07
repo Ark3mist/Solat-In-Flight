@@ -1,4 +1,6 @@
-# Solat In Flight
+# SolAir · Solat in the air
+
+*Formerly Solat In Flight. By LipasTerbang™.*
 
 This tool computes Islamic prayer times along a flight route, from the sun's position as seen from the moving aircraft.
 

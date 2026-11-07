@@ -1,4 +1,4 @@
-/* Solat In Flight — briefing package (OFP) parser. Runs locally; nothing is
+/* SolAir — briefing package (OFP) parser. Runs locally; nothing is
  * uploaded. Input is the OFP as plain text (from the PDF text layer or pasted).
  *
  * Reads:

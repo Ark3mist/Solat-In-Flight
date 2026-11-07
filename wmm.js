@@ -1,4 +1,4 @@
-/* Solat In Flight — magnetic variation from the World Magnetic Model 2025
+/* SolAir — magnetic variation from the World Magnetic Model 2025
  * (NOAA NCEI / BGS, public domain), valid 2025.0–2030.0. Offline, no deps.
  * SolatWMM.declination(lat, lon, altKm, decimalYear) -> degrees, east positive.
  * Typical accuracy of the model itself is about 0.3–0.5° away from the poles. */

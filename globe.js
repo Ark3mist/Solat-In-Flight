@@ -1,4 +1,4 @@
-/* Solat In Flight — globe view. Orthographic projection on a <canvas>, no
+/* SolAir — globe view. Orthographic projection on a <canvas>, no
  * dependencies, works offline. Needs solat.js and world.js loaded first;
  * world50.js (1:50m coastline) is loaded on demand when zoomed in.
  *

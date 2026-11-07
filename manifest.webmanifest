@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "Solat In Flight",
-  "short_name": "Solat Flight",
+  "name": "SolAir · Solat in the air",
+  "short_name": "SolAir",
   "description": "Prayer times, prayer windows and qibla along a flight route, offline.",
   "start_url": "./index.html",
   "scope": "./",
