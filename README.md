@@ -103,4 +103,8 @@ Asr is Shafi'i by default (Hanafi selectable). Umm al-Qura's Isha is counted 90 
 
 **Validation:** against the JAKIM e-Solat 2026 timetables (5 zones, 1,825 zone-days), the JAKIM preset (Fajr 18°, Isha 18°, ihtiyat Fajr +1, Zuhr +2, Asr +1, Maghrib +1, Isha +1) is within 1 min on 96–100% of days and never more than 2 min out. The qibla agrees with JAKIM to within 0.07°. See [`docs/jakim-validation.md`](docs/jakim-validation.md).
 
+## Copyright and licence
+
+© 2026 LipasTerbang. All rights reserved. Free to use at the official address, https://ark3mist.github.io/Solat-In-Flight/. Copying, modifying or republishing the code, calculations or design needs written permission; see [`LICENSE`](LICENSE). Any copy elsewhere is unofficial and may give wrong prayer times. Third-party components keep their own licences (listed in `LICENSE`).
+
 > Status: reference prototype. Validate it against an authoritative source before you use it operationally.

@@ -1,0 +1,37 @@
+Solat In Flight
+Copyright (c) 2026 LipasTerbang. All rights reserved.
+
+"LipasTerbang" and "Solat In Flight" are trademarks of LipasTerbang.
+
+YOU MAY, free of charge:
+  - use the app at its official address, https://ark3mist.github.io/Solat-In-Flight/,
+    and install it on your own devices;
+  - view the source code, and fork this repository on GitHub, only as GitHub's
+    Terms of Service allow for public repositories;
+  - share links to the official address.
+
+YOU MAY NOT, without written permission from LipasTerbang:
+  - copy, modify, translate or adapt the source code, the calculations, the text
+    or the graphics, in whole or in part;
+  - publish, host, distribute or sell this app or any modified version of it,
+    on a website, in an app store or in any other form;
+  - use the names "LipasTerbang" or "Solat In Flight", or the logo, for any other
+    app, website or service, or in a way that suggests that a copy or a modified
+    version comes from or is endorsed by LipasTerbang.
+
+Only the official address publishes prayer times on behalf of LipasTerbang. Any other
+copy is unofficial and may give wrong prayer times.
+
+NO WARRANTY. The app is provided "as is", without warranty of any kind. Prayer times
+are computed estimates; check them against your religious authority. LipasTerbang is
+not liable for any claim or loss arising from use of the app.
+
+To ask for permission or to report an unofficial copy: thrulensimage@gmail.com
+
+------------------------------------------------------------------------------------
+Third-party components keep their own licences, which this notice does not change:
+  - PDF.js (vendor/pdfjs), Apache License 2.0 - see vendor/pdfjs/LICENSE
+  - Airport data (airports.js), from airportsdata by Mike Borsetti, MIT License
+  - Land outlines (world.js, world50.js), Natural Earth (public domain) via
+    world-atlas by Michael Bostock, ISC License
+  - World Magnetic Model 2025 (wmm.js), NOAA NCEI / BGS, public domain

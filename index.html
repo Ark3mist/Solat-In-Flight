@@ -467,7 +467,14 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
         <p class="hint" style="margin:0">The sun on each dial is drawn just outside the ring: filled when above the visible horizon, hollow when below. Qibla is given as a clock position from the aircraft's nose (12 o'clock = straight ahead, 3 = right, 9 = left), from the great-circle bearing to the Kaaba and the planned track. Drift is not included: with a crosswind the nose points a few degrees off the track. QDM and track are magnetic (World Magnetic Model 2025). Prayer-window opening times are rounded up to the minute and closing times are rounded down. This is a reference prototype: check it against your authority before relying on it.</p>
       </section>
 
-      <div class="brand">Solat In Flight<br><span>by <b>LipasTerbang</b>™</span></div>
+      <section id="legalSec">
+        <h2>Official app and copyright</h2>
+        <p class="hint" style="margin:0 0 6px">The only official copy is <b>ark3mist.github.io/Solat-In-Flight</b>. If you see Solat In Flight anywhere else, it is not from LipasTerbang and its prayer times may be wrong. You are on: <b class="mono" id="hereUrl"></b> <span id="hereOk"></span></p>
+        <p class="hint" style="margin:0 0 6px">© 2026 LipasTerbang. All rights reserved. Free to use; copying, modifying or republishing the code, calculations or design needs written permission. Report an unofficial copy through Feedback.</p>
+        <details><summary class="hint">Open-source credits</summary><p class="hint" style="margin:6px 0 0">PDF.js (Apache 2.0) · airport data from airportsdata by Mike Borsetti (MIT) · land outlines from Natural Earth (public domain) via world-atlas by Michael Bostock (ISC) · World Magnetic Model 2025, NOAA NCEI / BGS (public domain).</p></details>
+      </section>
+
+      <div class="brand">Solat In Flight<br><span>by <b>LipasTerbang</b>™</span><br><span style="font-size:11px">© 2026 LipasTerbang</span></div>
   </div>
 </main>
 
@@ -1518,7 +1525,14 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   $("updBadge").addEventListener("click", () => showTab("settings"));
 
   // ---------- version, data validity, update ----------
-  const APP_VERSION = "2026.11.07f", APP_DATE = Date.UTC(2026, 10, 7);
+  // Is this the official copy?
+  (function(){
+    const OFFICIAL = "ark3mist.github.io", here = location.host ? location.host + location.pathname.replace(/index\.html$/, "") : "local file";
+    $("hereUrl").textContent = here;
+    const ok = location.host === OFFICIAL && /^\/Solat-In-Flight\//i.test(location.pathname);
+    $("hereOk").innerHTML = ok ? '<span style="color:var(--accent)">✓ official</span>' : '<span style="color:var(--err)">⚠ not the official address</span>';
+  })();
+  const APP_VERSION = "2026.11.07g", APP_DATE = Date.UTC(2026, 10, 7);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){
