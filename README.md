@@ -72,7 +72,7 @@ For a review of the original Excel workbook (v3.7) and the reasons for this desi
 
 **Airports:** `airports.js` holds about 7,950 airports with IATA codes (every airline-served airport), offline, each with ICAO code, name, city, country, position and IANA time zone. In the Route, type a code (IATA or ICAO), a city, an airport name or a country into the Ident box and pick from the list; for DEP/ARR, typing a city and leaving the box takes the best match. Common alternative names work (Madinah, Makkah → Jeddah, Saigon, Bombay…). The 41 workbook airports keep the workbook coordinates. Source: the [airportsdata](https://github.com/mborsetti/airportsdata) package (MIT); regenerate with `tools/build_airports.py`.
 
-**Version and updates:** the header shows the version date, when you last checked for an update, and when the magnetic data (WMM2025) expires (31 Dec 2029). *Check for update* compares with `version.json` online; the sun and moon formulas do not expire.
+**Version and updates:** versions are numbered `MAJOR-HOTFIX-YY`, e.g. `1-01-26`: MAJOR goes up for a major change (and HOTFIX goes back to 01), HOTFIX counts each smaller update (01, 02, 03…), YY is the year of the update. The version is set in `APP_VERSION` (index.html) and `version.json`, which must match. Settings shows the version, its date, when you last checked for an update, and when the magnetic data (WMM2025) expires (31 Dec 2029). *Check for update* compares with `version.json` online; the sun and moon formulas do not expire.
 
 **App layout:** a bottom bar with five tabs, on every screen size:
 - **Flight:** flight times, Route (OFP import, FLs, ETAs, Clear, saved routes) and Calculate.

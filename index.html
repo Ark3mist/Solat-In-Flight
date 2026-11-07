@@ -405,7 +405,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
         <dl class="setlist">
           <dt>Version</dt><dd id="verTxt"></dd>
           <dt>Magnetic data</dt><dd id="verMag"></dd>
-          <dt>Updates</dt><dd><button type="button" id="updBtn">Check for update</button> <span id="updMsg" class="s"></span></dd>
+          <dt>Updates</dt><dd><button type="button" id="updBtn">Check for update</button> <span class="s">current <b class="mono" id="updCur"></b></span> <span id="updMsg" class="s"></span></dd>
           <dt>Install</dt><dd><button type="button" id="installBtn2">⤓ Install app</button></dd>
         </dl>
     <details id="appCheck" style="margin-top:10px"><summary>App install check</summary>
@@ -1532,12 +1532,13 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     const ok = location.host === OFFICIAL && /^\/Solat-In-Flight\//i.test(location.pathname);
     $("hereOk").innerHTML = ok ? '<span style="color:var(--accent)">✓ official</span>' : '<span style="color:var(--err)">⚠ not the official address</span>';
   })();
-  const APP_VERSION = "2026.11.07h", APP_DATE = Date.UTC(2026, 10, 7);
+  // Version MAJOR-HOTFIX-YY: MAJOR = major change, HOTFIX = 01, 02, 03… (back to 01 after a major change), YY = year of the update.
+  const APP_VERSION = "1-01-26", APP_DATE = Date.UTC(2026, 10, 7);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){
     const last = store.get("solat.lastUpdateCheck");
-    $("verTxt").innerHTML = `${dFmt(APP_DATE)}${last ? `<span class="s"> · last checked ${dFmt(last)}</span>` : ""}`;
+    $("verTxt").innerHTML = `<b class="mono">${APP_VERSION}</b> <span class="s">· ${dFmt(APP_DATE)}</span>${last ? `<span class="s"> · last checked ${dFmt(last)}</span>` : ""}`;
     const left = MAG_EXPIRES - Date.now();
     $("verMag").innerHTML = left < 0 ? `<span class="bad">Expired ${dFmt(MAG_EXPIRES)}: update</span>`
       : left < 180 * DAY ? `<span class="warn">Expires ${dFmt(MAG_EXPIRES)}: update soon</span>`
@@ -1551,7 +1552,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
       const j = await (await fetch("version.json?t=" + Date.now(), { cache: "no-store" })).json();
       store.set("solat.lastUpdateCheck", Date.now()); showVersion();
       if (j.version && j.version !== APP_VERSION) {
-        $("updMsg").innerHTML = `<b>New version ${esc(j.date || j.version)}</b> <button class="link" type="button" id="updNow">Update now</button>`;
+        $("updMsg").innerHTML = `<b>New version <span class="mono">${esc(j.version)}</span></b>${j.date ? ` <span class="s">(${esc(j.date)})</span>` : ""} <button class="link" type="button" id="updNow">Update now</button>`;
         $("updBadge").hidden = false;
         $("updNow").addEventListener("click", async () => {
           $("updMsg").textContent = "Updating…";
@@ -1569,6 +1570,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
       } else if (manual) $("updMsg").textContent = "You have the latest version.";
     } catch (e) { if (manual) $("updMsg").textContent = "Could not check (" + e.message + ")."; }
   }
+  $("updCur").textContent = APP_VERSION;
   $("updBtn").addEventListener("click", () => checkUpdate(true));
   showVersion(); setTimeout(() => checkUpdate(false), 1500);
 
