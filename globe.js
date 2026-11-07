@@ -83,6 +83,8 @@
 
   // Points where a prayer starts at time t (observer at altFt), within a latitude band.
   function prayerLine(name, t, conv, altFt, latMin = -89.5, latMax = 89.5, step = 0.5) {
+    // Isha as a fixed interval after sunset: where Maghrib was ishaMin minutes ago
+    if (name === "Isha" && conv.ishaMin > 0) return prayerLine("Maghrib", t - conv.ishaMin * S.MIN, Object.assign({}, conv, { ishaMin: 0 }), altFt, latMin, latMax, step);
     const ih = ((conv.ihtiyat || S.DEFAULT_IHTIYAT)[name] || 0) * S.MIN;
     const ss = subsolar(t - ih);
     const dec = ss.lat * D2R, dip = S.dipDeg(altFt), twDip = conv.dipOnTwilight ? dip : 0;

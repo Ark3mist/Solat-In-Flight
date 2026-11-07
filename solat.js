@@ -6,15 +6,19 @@
   const MIN = 60000, HOUR = 3600000, DAY = 86400000;
   const KAABA = { lat: 21.4225, lon: 39.8262 };
 
+  // Ihtiyat (safety minutes) for the other methods: the method itself has none, the app adds
+  // 1 min after noon and after sunset, as many timetables do.
+  const SMALL_IHTIYAT = { Fajr: 0, Sunrise: 0, Zuhr: 1, Asr: 0, Maghrib: 1, Isha: 0 };
   const CONVENTIONS = {
     // JAKIM: fitted to the published e-Solat 2026 timetables (5 zones, 1,825 zone-days): Fajr and Isha
-    // at 18° with whole-minute ihtiyat reproduce them within 1 min on ~91% of days, never more than 2 min.
+    // at 18° with whole-minute ihtiyat reproduce them within 1 min on 96-100% of days, never more than 2 min.
     // (JAKIM's Imsak, 10 min before Fajr, falls at about 20°.)
     jakim:    { name: "JAKIM e-Solat (Fajr 18°, Isha 18°, ihtiyat)", fajr: 18, isha: 18, asr: 1,
                 ihtiyat: { Fajr: 1, Sunrise: 0, Zuhr: 2, Asr: 1, Maghrib: 1, Isha: 1 } },
-    workbook: { name: "Excel v3.7 (Fajr 18°, Isha 18°)", fajr: 18, isha: 18, asr: 1 },
-    mwl:      { name: "MWL (Fajr 18°, Isha 17°)", fajr: 18, isha: 17, asr: 1 },
-    fajr20:   { name: "Fajr 20°, Isha 18° (older setting)", fajr: 20, isha: 18, asr: 1 },
+    uaq:      { name: "Umm al-Qura University, Makkah (Fajr 18.5°, Isha = Maghrib + 90 min)", fajr: 18.5, isha: null, ishaMin: 90, asr: 1, ihtiyat: SMALL_IHTIYAT },
+    karachi:  { name: "University of Islamic Sciences, Karachi (Fajr 18°, Isha 18°)", fajr: 18, isha: 18, asr: 1, ihtiyat: SMALL_IHTIYAT },
+    egypt:    { name: "Egyptian General Authority of Survey (Fajr 19.5°, Isha 17.5°)", fajr: 19.5, isha: 17.5, asr: 1, ihtiyat: SMALL_IHTIYAT },
+    mwl:      { name: "Muslim World League (Fajr 18°, Isha 17°)", fajr: 18, isha: 17, asr: 1, ihtiyat: SMALL_IHTIYAT },
   };
   const DEFAULT_IHTIYAT = { Fajr: 0, Sunrise: 0, Zuhr: 2, Asr: 0, Maghrib: 1, Isha: 0 };
 
@@ -317,22 +321,31 @@
   function findEvents(route, conv, t0 = route.start, t1 = route.end, stepMs = MIN) {
     const ihtiyat = conv.ihtiyat || DEFAULT_IHTIYAT;
     const fns = eventFunctions(conv, route), out = [];
-    for (const name of EVENTS) {
-      const g = fns[name];
-      let tp = t0, gp = g(tp);
-      for (let t = t0 + stepMs; ; t += stepMs) {
-        const tc = Math.min(t, t1), gv = g(tc);
+    const push = (name, raw) => { const s = route.state(raw); out.push({ name, t: raw + (ihtiyat[name] || 0) * MIN, raw, ...s, qibla: qiblaBearing(s) }); };
+    // instants in [a, b] where g crosses zero upwards
+    function scan(g, a, b) {
+      const hits = [];
+      let tp = a, gp = g(tp);
+      for (let t = a + stepMs; ; t += stepMs) {
+        const tc = Math.min(t, b), gv = g(tc);
         // upward crossing; the |jump| test rejects the +-180 deg hour-angle wrap
         if (gp < 0 && gv >= 0 && Math.abs(gv - gp) < 90) {
           let lo = tp, hi = tc;
           for (let k = 0; k < 30; k++) { const mid = (lo + hi) / 2; if (g(mid) < 0) lo = mid; else hi = mid; }
-          const s = route.state(hi);
-          out.push({ name, t: hi + (ihtiyat[name] || 0) * MIN, raw: hi, ...s, qibla: qiblaBearing(s) });
+          hits.push(hi);
         }
         tp = tc; gp = gv;
-        if (tc >= t1) break;
+        if (tc >= b) break;
       }
+      return hits;
     }
+    // Isha as a fixed interval after sunset (Umm al-Qura: 90 min) instead of a twilight angle
+    const ishaAfter = conv.ishaMin > 0 ? conv.ishaMin * MIN : 0;
+    for (const name of EVENTS) {
+      if (name === "Isha" && ishaAfter) continue;
+      for (const hit of scan(fns[name], t0, t1)) push(name, hit);
+    }
+    if (ishaAfter) for (const m of scan(fns.Maghrib, t0 - ishaAfter, t1)) if (m + ishaAfter >= t0 && m + ishaAfter <= t1) push("Isha", m + ishaAfter);
     return out.sort((a, b) => a.t - b.t);
   }
 

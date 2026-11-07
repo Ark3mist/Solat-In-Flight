@@ -417,7 +417,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
         <select id="conv"></select>
         <div class="r3">
             <div><label for="fajr">Fajr angle °</label><input id="fajr" type="number" step="0.5"></div>
-            <div><label for="isha">Isha angle °</label><input id="isha" type="number" step="0.5"></div>
+            <div><label for="isha" id="ishaLbl">Isha angle °</label><input id="isha" type="number" step="0.5"></div>
             <div><label for="asr">Asr</label><select id="asr"><option value="1">Shafi'i</option><option value="2">Hanafi</option></select></div>
           </div>
           <div class="r3">
@@ -478,6 +478,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     steps: [], tz: "", dipTw: true, ihF: "1", ihZ: "2", ihA: "1", ihM: "1", ihI: "1",
   };
   let state = Object.assign({}, DEFAULT, store.get("solat.v2") || {});
+  if (!S.CONVENTIONS[state.conv]) state.conv = "jakim";        // methods no longer offered
 
   for (const [k,c] of Object.entries(S.CONVENTIONS)) {
     const o = document.createElement("option"); o.value = k; o.textContent = c.name; $("conv").appendChild(o);
@@ -520,7 +521,11 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
 
   function applyConv(){
     const c = S.CONVENTIONS[$("conv").value] || S.CONVENTIONS.jakim, ih = Object.assign({}, S.DEFAULT_IHTIYAT, c.ihtiyat || {});
-    $("fajr").value = c.fajr; $("isha").value = c.isha; $("asr").value = c.asr;
+    $("fajr").value = c.fajr; $("asr").value = c.asr;
+    // Umm al-Qura: Isha is a fixed time after Maghrib, not an angle
+    const byMin = c.ishaMin > 0;
+    $("isha").dataset.mode = byMin ? "min" : "deg"; $("isha").value = byMin ? c.ishaMin : c.isha; $("isha").step = byMin ? "5" : "0.5";
+    $("ishaLbl").textContent = byMin ? "Isha: min after Maghrib" : "Isha angle °";
     [["ihF","Fajr"],["ihZ","Zuhr"],["ihA","Asr"],["ihM","Maghrib"],["ihI","Isha"]].forEach(([id, n]) => $(id).value = ih[n]);
   }
 
@@ -815,7 +820,8 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   }
 
   function currentConv(){
-    return { fajr: +$("fajr").value, isha: +$("isha").value, asr: +$("asr").value, dipOnTwilight: state.dipTw,
+    const byMin = $("isha").dataset.mode === "min";
+    return { fajr: +$("fajr").value, isha: byMin ? null : +$("isha").value, ishaMin: byMin ? +$("isha").value : 0, asr: +$("asr").value, dipOnTwilight: state.dipTw,
       ihtiyat: Object.assign({}, S.DEFAULT_IHTIYAT, { Fajr: +state.ihF || 0, Zuhr: +state.ihZ || 0, Asr: +state.ihA || 0, Maghrib: +state.ihM || 0, Isha: +state.ihI || 0 }) };
   }
 
@@ -852,7 +858,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     const avgGs = route.distNm / ((route.end - route.start) / HOUR);
     $("summary").textContent = `${first.name} ${fmtZ(route.start, floorMin)} → ${last.name} ${fmtZ(route.end, floorMin)} · ` +
       `${Math.round(route.distNm)} nm · ${fmtDur(route.end - route.start)}${estimated ? " (estimated)" : ""} · avg GS ${Math.round(avgGs)} kt · max ${fmtFL(prof.maxFt)} · ` +
-      `Fajr ${conv.fajr}° Isha ${conv.isha}° ${conv.asr === 2 ? "Hanafi" : "Shafi'i"} Asr`;
+      `Fajr ${conv.fajr}° Isha ${conv.ishaMin ? `Maghrib + ${conv.ishaMin} min` : conv.isha + "°"} ${conv.asr === 2 ? "Hanafi" : "Shafi'i"} Asr`;
     $("gsWarn").innerHTML = (avgGs > 650 || avgGs < 250)
       ? `<span class="pill warn">check times</span> ${fmtDur(route.end - route.start)} for ${Math.round(route.distNm)} nm means an average ground speed of <b>${Math.round(avgGs)} kt</b>, which is not realistic. Prayer times follow from the times you enter, so check the airborne and landing times, or leave Landing blank to estimate it.`
       : "";
@@ -901,8 +907,11 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     // timeline: prayer events + profile marks + waypoints
     const rows = [];
     for (const e of pw.events) rows.push({ t: e.t, kind: "ev", label: LABEL[e.name], s: e, round: e.name === "Sunrise" ? floorMin : ceilMin });
-    for (const m of prof.marks) { const s = route.state(m.t); rows.push({ t: m.t, kind: "mark", label: m.kind, s, round: floorMin }); }
-    route.wps.forEach((w, i) => { const s = route.state(w.eto); rows.push({ t: w.eto, kind: "mark", label: (i === 0 ? "Airborne " : i === route.wps.length-1 ? "Landing " : "Over ") + w.name, s, round: floorMin }); });
+    // only the milestones: airborne, top of climb, top of descent, landing (no waypoints, no step climbs)
+    for (const m of prof.marks) if (m.kind === "Top of climb" || m.kind === "Top of descent") { const s = route.state(m.t); rows.push({ t: m.t, kind: "mark", label: m.kind === "Top of climb" ? "TOC" : "TOD", s, round: floorMin }); }
+    const W0 = route.wps[0], W1 = route.wps[route.wps.length - 1];
+    rows.push({ t: W0.eto, kind: "mark", label: "Airborne " + W0.name, s: route.state(W0.eto), round: floorMin });
+    rows.push({ t: W1.eto, kind: "mark", label: "Landing " + W1.name, s: route.state(W1.eto), round: floorMin });
     rows.sort((a, b) => a.t - b.t);
     const eb = $("evTbl").querySelector("tbody"); eb.innerHTML = "";
     for (const r of rows) {
@@ -1412,7 +1421,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   $("updBadge").addEventListener("click", () => showTab("settings"));
 
   // ---------- version, data validity, update ----------
-  const APP_VERSION = "2026.11.07b", APP_DATE = Date.UTC(2026, 10, 7);
+  const APP_VERSION = "2026.11.07c", APP_DATE = Date.UTC(2026, 10, 7);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){

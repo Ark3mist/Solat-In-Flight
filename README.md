@@ -81,6 +81,20 @@ The app always opens on the Globe, and jumps to it after an OFP import.
 
 
 
+**Conventions** (Settings → Advanced settings):
+
+| Method | Fajr | Isha | Ihtiyat (min) |
+|---|---|---|---|
+| JAKIM e-Solat (default) | 18° | 18° | Fajr +1, Zuhr +2, Asr +1, Maghrib +1, Isha +1 |
+| Umm al-Qura University, Makkah | 18.5° | Maghrib + 90 min | Zuhr +1, Maghrib +1 |
+| University of Islamic Sciences, Karachi | 18° | 18° | Zuhr +1, Maghrib +1 |
+| Egyptian General Authority of Survey | 19.5° | 17.5° | Zuhr +1, Maghrib +1 |
+| Muslim World League | 18° | 17° | Zuhr +1, Maghrib +1 |
+
+Asr is Shafi'i by default (Hanafi selectable). Umm al-Qura's Isha is counted 90 min from the aircraft's own sunset. Every value can be changed.
+
+**Timeline** lists only the milestones: airborne, TOC, each prayer, TOD and landing.
+
 **Validation:** against the JAKIM e-Solat 2026 timetables (5 zones, 1,825 zone-days), the JAKIM preset (Fajr 18°, Isha 18°, ihtiyat Fajr +1, Zuhr +2, Asr +1, Maghrib +1, Isha +1) is within 1 min on 96–100% of days and never more than 2 min out. The qibla agrees with JAKIM to within 0.07°. See [`docs/jakim-validation.md`](docs/jakim-validation.md).
 
 > Status: reference prototype. Validate it against an authoritative source before you use it operationally.
