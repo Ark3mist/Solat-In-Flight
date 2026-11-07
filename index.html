@@ -653,6 +653,8 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
           if (!st && (first || last) && v.length >= 3) { const a = S.searchAirports(v, 1)[0]; if (a) return pickApt(i, a.iata); }
           w.id = v;
           if (st) { w.lat = S.fmtLat(st.lat); w.lon = S.fmtLon(st.lon); save(); renderWps(); autoRun(); return; }
+          // unknown DEP/ARR: drop the old airport's position rather than keep it under a new name
+          if ((first || last) && v) { w.lat = w.lon = ""; save(); renderWps(); flash("routeMsg", `"${v}" is not a known airport: type a city or code and pick from the list, or enter Lat/Long.`); return; }
           save(); return;
         }
         w[k] = v;
@@ -1477,7 +1479,8 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     $("ofpFile").value = "";
   });
 
-  $("go").addEventListener("click", run);
+  // Calculate: show the result on the Globe; stay on Flight if there is an error to fix
+  $("go").addEventListener("click", () => { run(); if (result && !$("errors").textContent.trim()) showTab("globe"); });
   run();
 
   // ---------- settings: appearance, default taxi, live recalculation ----------
