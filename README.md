@@ -70,7 +70,14 @@ For a review of the original Excel workbook (v3.7) and the reasons for this desi
 
 **Version and updates:** the header shows the version date, when you last checked for an update, and when the magnetic data (WMM2025) expires (31 Dec 2029). *Check for update* compares with `version.json` online; the sun and moon formulas do not expire.
 
-**Phone layout:** Flight, Now, Route, Globe, Prayer windows, Timeline. Route, Prayer windows and Timeline always open minimised.
+**App layout:** a bottom bar with five tabs, on every screen size:
+- **Flight:** flight times, Route (OFP import, FLs, ETAs, saved routes), Advanced and Calculate.
+- **Now:** the Now box (current prayer, qibla and sun from the nose, ground times below) and the City-Pair.
+- **Globe:** the globe, slider and prayer-line chips.
+- **Timeline:** prayer windows and the timeline.
+- **Settings:** version, magnetic-data expiry, update check, install, and notes on the calculation.
+
+The app remembers the last tab; a link can open one directly, e.g. `…/Solat-In-Flight/#globe`.
 
 **Validation:** against the JAKIM e-Solat 2026 timetables (5 zones, 1,825 zone-days), the JAKIM preset (Fajr 18°, Isha 18°, ihtiyat Fajr +1, Zuhr +2, Asr +1, Maghrib +1, Isha +1) is within 1 min on 96–100% of days and never more than 2 min out. The qibla agrees with JAKIM to within 0.07°. See [`docs/jakim-validation.md`](docs/jakim-validation.md).
 
