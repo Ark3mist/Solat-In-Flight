@@ -127,6 +127,9 @@ tr.mark td{color:var(--muted);font-size:13px}
 .gcnote{border:1px solid var(--warn);border-left-width:4px;border-radius:8px;padding:8px 10px;margin:0 0 10px;font-size:13px;line-height:1.4}
 .gcnote b{color:var(--warn)} .gcnote summary{cursor:pointer}
 .gcnote[hidden]{display:none}
+.gsinfo{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--soft);font-size:13px;line-height:1.45}
+.gsinfo[hidden]{display:none}
+.gsinfo .big{font-size:15px}
 .pill.warn{background:transparent;color:var(--warn);border:1px solid var(--warn)}
 .summary{font-size:13px;color:var(--muted);margin-bottom:8px}
 footer{margin-top:16px;font-size:12px;color:var(--muted)}
@@ -282,6 +285,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
           <div><label for="gs">Avg GS kt</label><input id="gs" class="mono" inputmode="numeric" value="430"></div>
         </div>
         <div class="hint">Airborne = off-block + taxi. Changing off-block, taxi, airborne or any waypoint ETA moves every later ETA (and landing) by the same amount and recalculates. Leave Landing blank to estimate it from distance ÷ GS.</div>
+        <div class="gsinfo" id="gsInfo" hidden></div>
         <div class="s" id="convNote" style="margin-top:8px"></div>
       </section>
 
@@ -672,6 +676,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   $("dipTw").checked = !!state.dipTw;
   applyConv();
   renderWps();
+  showGsInfo();
   $("conv").addEventListener("change", () => { applyConv(); save(); });
   // Off-block + taxi -> airborne; a new airborne time moves all ETAs with it.
   function setAirborne(newDep){
@@ -721,7 +726,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     if (!(await ask(`<b>Clear the route?</b>\n\nThis removes ${n > 0 ? `all ${n} waypoint${n === 1 ? "" : "s"} with their FLs and ETAs` : "the waypoints"}, and keeps only DEP (${esc(W[0].id || "—")}) and ARR (${esc(W[W.length - 1].id || "—")}).\nSaved routes are not affected.`, "Clear", true))) return;
     const keep = (w) => ({ id: w.id, lat: w.lat, lon: w.lon, eto: "", fl: "" });
     state.wps = [keep(W[0]), keep(W[W.length - 1])];
-    state.steps = []; $("routeName").value = "";
+    state.steps = []; state.ofpGs = null; showGsInfo(); $("routeName").value = "";
     renderWps(); save(); flash("routeMsg", "Route cleared: only DEP and ARR are left.");
     autoRun();
   });
@@ -740,6 +745,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   $("routeLoad").addEventListener("click", () => {
     const r = routes[$("routeSel").value]; if (!r) return;
     state.wps = r.wps.map((w) => ({ id: w.id, lat: w.lat, lon: w.lon, eto: "" }));
+    state.ofpGs = null; showGsInfo();
     renderWps(); save(); flash("routeMsg", `Loaded "${$("routeSel").value}". Waypoint ETAs cleared; times come from airborne/landing.`);
   });
   $("routeDel").addEventListener("click", async () => {
@@ -1375,6 +1381,16 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   }
   const hhmmOf = (t) => { const d = new Date(t); return pad(d.getUTCHours()) + pad(d.getUTCMinutes()); };
   function elOf(min){ return `${Math.floor(min / 60)}:${pad(min % 60)}`; }
+  // Planned average ground speed: OFP ground distance over the planned flight time.
+  function ofpGs(o){ const t = o.eetMin || o.fltMin; return o.grdDist && t ? Math.round(o.grdDist / (t / 60)) : null; }
+  function showGsInfo(){
+    const g = state.ofpGs, el = $("gsInfo");
+    el.hidden = !g;
+    if (!g) return;
+    el.innerHTML = `<div class="big">OFP average ground speed <b class="mono">${g.gs} kt</b></div>` +
+      `<div class="s">${g.grd} nm ground distance${g.air ? ` (${g.air} nm air)` : ""} in ${elOf(g.min)} flight time${g.wc ? `, average wind ${esc(g.wc)}` : ""}.</div>` +
+      `<div style="margin-top:6px"><b>For the most accurate prayer times</b>, update the Route in flight: overwrite each waypoint's ETA with the actual time over (ATO) and change the FL when the level changes. Every later time moves with it and the prayers recalculate.</div>`;
+  }
   function showOfp(o){
     ofpData = o;
     const tx = defTaxi();
@@ -1387,6 +1403,8 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
         <dt>Off-block</dt><dd>${o.offBlock ? fmtZ(o.offBlock, floorMin) : "?"} <span class="s">(STD)</span></dd>
         <dt>Airborne</dt><dd>${o.offBlock ? fmtZ(o.offBlock + tx * MIN, floorMin) : "?"} <span class="s">(+ taxi ${tx} min${o.taxiMin != null && o.taxiMin !== tx ? `; OFP plans ${o.taxiMin}` : ""})</span></dd>
         <dt>Landing</dt><dd>${o.offBlock && o.fltMin != null ? fmtZ(o.offBlock + (tx + o.fltMin) * MIN, floorMin) : "?"} <span class="s">(airborne + flight time ${o.fltMin != null ? elOf(o.fltMin) : "?"})</span></dd>
+        <dt>Distance</dt><dd>${o.grdDist ? `${o.grdDist} nm ground${o.airDist ? ` · ${o.airDist} nm air` : ""}` : "?"}</dd>
+        <dt>Avg ground speed</dt><dd>${ofpGs(o) ? `<b>${ofpGs(o)} kt</b> <span class="s">(${o.grdDist} nm ÷ ${elOf(o.eetMin || o.fltMin)} flight time)</span>` : "?"}</dd>
         <dt>Waypoints</dt><dd>${real.length} fixes <span class="s">+ ${o.points.length - real.length} SETP/ETP/T-O-C/T-O-D points</span></dd>
         <dt>Levels</dt><dd>${o.initialFL ? "FL" + o.initialFL : "?"}${(o.steps || []).map((s) => ` → FL${s.fl} from ${esc(s.at)} (T+${elOf(s.eltm)})`).join("")}</dd>
         <dt>Climb / descent</dt><dd>${o.climbFpm || "?"} / ${o.descentFpm || "?"} fpm <span class="s">(from T-O-C / T-O-D)</span></dd>
@@ -1419,12 +1437,15 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
       return { id: p.name, lat: S.fmtLat(p.lat), lon: S.fmtLon(p.lon), fl,
         eto: i > 0 && i < pts.length - 1 && p.eltm != null ? hhmmOf(air + p.eltm * MIN) : "" };
     });
+    const gs = ofpGs(o);
+    state.ofpGs = gs ? { gs, grd: o.grdDist, air: o.airDist || null, min: o.eetMin || o.fltMin, wc: o.avgWc || null } : null;
+    if (gs) state.gs = String(gs);
     if (o.initialFL) state.fl = String(o.initialFL);
     state.steps = (o.steps || []).map((s) => ({ at: elOf(s.eltm), fl: String(s.fl) }));
     if (o.climbFpm) state.climb = String(o.climbFpm);
     if (o.descentFpm) state.descent = String(o.descentFpm);
     SIMPLE.forEach((k) => { if (state[k] != null) $(k).value = state[k]; });
-    renderWps(); store.set("solat.v2", state);
+    renderWps(); store.set("solat.v2", state); showGsInfo();
     $("routeName").value = [o.depIcao, o.destIcao].filter(Boolean).join("-");      // simple: DEP-ARR; type your own if you like
     $("ofpBox").hidden = true;
     flash("routeMsg", `Imported ${pts.length} points with nav-log times. Press "Save route" to keep it.`);
@@ -1533,7 +1554,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     $("hereOk").innerHTML = ok ? '<span style="color:var(--accent)">✓ official</span>' : '<span style="color:var(--err)">⚠ not the official address</span>';
   })();
   // Version MAJOR-HOTFIX-YY: MAJOR = major change, HOTFIX = 01, 02, 03… (back to 01 after a major change), YY = year of the update.
-  const APP_VERSION = "1-02-26", APP_DATE = Date.UTC(2026, 10, 7);
+  const APP_VERSION = "1-03-26", APP_DATE = Date.UTC(2026, 10, 7);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){

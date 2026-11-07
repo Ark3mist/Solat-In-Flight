@@ -2,7 +2,8 @@
  * uploaded. Input is the OFP as plain text (from the PDF text layer or pasted).
  *
  * Reads:
- *   - header: date, DEP/DEST ICAO + scheduled times, BLK/FLT time, taxi time
+ *   - header: date, DEP/DEST ICAO + scheduled times, BLK/FLT time, taxi time,
+ *     ground/air distance and EET (for the average ground speed)
  *   - COORDINATES INFORMATION: waypoint names with lat/long
  *   - nav log (WPT | FL | ... | TIME ELTM): flight level + elapsed time per point
  *     (the RECLEARANCE FLIGHT LOG is skipped)
@@ -31,6 +32,13 @@
     if (m) out.date = { d: +m[1], mo: MONTHS[m[2]], y: m[3].length === 2 ? 2000 + +m[3] : +m[3] };
     m = /(\d{1,2}):(\d{2})\s*HRS\s+(\d{1,2}):(\d{2})\s*HRS/.exec(all);
     if (m) { out.blkMin = +m[1] * 60 + +m[2]; out.fltMin = +m[3] * 60 + +m[4]; }
+    // ground / air distance and planned en-route time, for the average ground speed
+    m = /GRD\s*DIST:?\s*(\d{2,5})/.exec(all); if (m) out.grdDist = +m[1];
+    m = /AIR\s*DIST:?\s*(\d{2,5})/.exec(all) || /\bESAD\s+(\d{2,5})/.exec(all); if (m) out.airDist = +m[1];
+    m = /AVG\s*W\/C:?\s*([PM])\s?(\d{1,3})/.exec(all);
+    if (m) out.avgWc = (m[1] === "P" ? "+" : "−") + +m[2] + " kt " + (m[1] === "P" ? "tailwind" : "headwind");
+    m = /DIST\/EET\s+(\d{2,5})\/(\d{1,2}):(\d{2})/.exec(all);
+    if (m) { if (out.grdDist == null) out.grdDist = +m[1]; out.eetMin = +m[2] * 60 + +m[3]; }
     m = /\bTAXI\s+[A-Z]{3,4}\s+\d+\s+(\d{1,2}):(\d{2})/.exec(all);
     if (m) out.taxiMin = +m[1] * 60 + +m[2];
     m = /\b(MAS|[A-Z]{2,3})\s?(\d{1,4})\s+OFP\b/.exec(all) || /^\s*([A-Z0-9]{2})\s?(\d{1,4})\/\d{2}[A-Z]{3}\d{2}/m.exec(all);
