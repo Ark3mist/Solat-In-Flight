@@ -1,5 +1,5 @@
 // Caches the app so it opens with no connection (after one online visit).
-const CACHE = "solat-flight-v37";
+const CACHE = "solat-flight-v38";
 const FILES = ["./", "index.html", "airports.js", "solat.js", "world.js", "globe.js", "world50.js", "ofp.js", "wmm.js", "vendor/pdfjs/pdf.min.js", "vendor/pdfjs/pdf.worker.min.js", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
@@ -17,6 +17,7 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   if (new URL(e.request.url).pathname.endsWith("/version.json")) return;   // always ask the network
+  if (new URL(e.request.url).origin !== location.origin) return;           // analytics and other sites: not cached
   e.respondWith(
     // revalidate with the server every time (GitHub Pages lets browsers reuse files for 10 min otherwise)
     (new URL(e.request.url).origin === location.origin ? fetch(e.request.url, { cache: "no-cache", credentials: "same-origin" }) : fetch(e.request))

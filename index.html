@@ -475,6 +475,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
         <h2>Official app and copyright</h2>
         <p class="hint" style="margin:0 0 6px">The only official copy is <b>ark3mist.github.io/Solat-In-Flight</b>. If you see SolAir anywhere else, it is not from LipasTerbang and its prayer times may be wrong. You are on: <b class="mono" id="hereUrl"></b> <span id="hereOk"></span></p>
         <p class="hint" style="margin:0 0 6px">© 2026 LipasTerbang. All rights reserved. Free to use; copying, modifying or republishing the code, calculations or design needs written permission. Report an unofficial copy through Feedback.</p>
+        <p class="hint" style="margin:0 0 6px"><b>Privacy:</b> your flights, routes and OFPs stay on this device and are never uploaded. The official app counts visits anonymously with Cloudflare Web Analytics (no cookies, no personal data, nothing about your flight).</p>
         <details><summary class="hint">Open-source credits</summary><p class="hint" style="margin:6px 0 0">PDF.js (Apache 2.0) · airport data from airportsdata by Mike Borsetti (MIT) · land outlines from Natural Earth (public domain) via world-atlas by Michael Bostock (ISC) · World Magnetic Model 2025, NOAA NCEI / BGS (public domain).</p></details>
       </section>
 
@@ -1554,7 +1555,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     $("hereOk").innerHTML = ok ? '<span style="color:var(--accent)">✓ official</span>' : '<span style="color:var(--err)">⚠ not the official address</span>';
   })();
   // Version MAJOR-HOTFIX-YY: MAJOR = major change, HOTFIX = 01, 02, 03… (back to 01 after a major change), YY = year of the update.
-  const APP_VERSION = "1-03-26", APP_DATE = Date.UTC(2026, 10, 7);
+  const APP_VERSION = "1-04-26", APP_DATE = Date.UTC(2026, 10, 7);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){
@@ -1681,6 +1682,19 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   }
   $("appCheck").addEventListener("toggle", () => { if ($("appCheck").open) appCheck(); });
   $("appCheckRun").addEventListener("click", appCheck);
+})();
+</script>
+<script>
+// Cloudflare Web Analytics: anonymous visit counts (no cookies, no personal data, no route or OFP data).
+// Runs only on the official address and only when online; blocked by ad blockers, which is fine.
+// Token: Cloudflare dashboard → Analytics & Logs → Web Analytics → site ark3mist.github.io → JS snippet.
+(function(){
+  const CF_WEB_ANALYTICS_TOKEN = "";
+  if (!CF_WEB_ANALYTICS_TOKEN || location.hostname !== "ark3mist.github.io" || !navigator.onLine) return;
+  const s = document.createElement("script");
+  s.type = "module"; s.src = "https://static.cloudflareinsights.com/beacon.min.js";
+  s.setAttribute("data-cf-beacon", JSON.stringify({ token: CF_WEB_ANALYTICS_TOKEN, spa: false }));
+  document.body.appendChild(s);
 })();
 </script>
 </body>
