@@ -52,7 +52,7 @@ What it does:
    - PDF reading uses [pdf.js](https://github.com/mozilla/pdf.js) 3.11.174 (Apache-2.0, bundled in `vendor/pdfjs`), loaded only when you choose a PDF.
    - The parser has been tested against one Lido-style OFP layout. Other layouts may need parser changes.
 
-Every box has a **−** button to minimise it (remembered per device); *My waypoints* and *Advanced* fold open and closed on their own.
+Every box has a **−** button to minimise it (remembered per device).
 
 Windows already open at take-off, or still open at landing, are completed using the aircraft on the ground at the origin or destination. If a closing angle is never reached on the track (a high-latitude summer night), the window is flagged.
 
@@ -71,7 +71,7 @@ For a review of the original Excel workbook (v3.7) and the reasons for this desi
 **Version and updates:** the header shows the version date, when you last checked for an update, and when the magnetic data (WMM2025) expires (31 Dec 2029). *Check for update* compares with `version.json` online; the sun and moon formulas do not expire.
 
 **App layout:** a bottom bar with five tabs, on every screen size:
-- **Flight:** flight times, Route (OFP import, FLs, ETAs, saved routes), Advanced and Calculate.
+- **Flight:** flight times, Route (OFP import, FLs, ETAs, Clear, saved routes) and Calculate.
 - **Now:** the Now box (current prayer, qibla and sun from the nose, ground times below) and the City-Pair.
 - **Globe:** the globe, slider and prayer-line chips.
 - **Timeline:** prayer windows and the timeline.
