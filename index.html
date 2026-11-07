@@ -81,12 +81,15 @@ input.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;text
 button{font:inherit;border:1px solid var(--line);border-radius:6px;padding:7px 10px;background:var(--field);color:var(--ink);cursor:pointer}
 button.primary{font-weight:600;border:0;padding:11px 16px;background:var(--accent);color:var(--accent-ink);width:100%}
 button.link.danger{color:var(--err)}
+#routeSec h2>span{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;justify-content:flex-end}
+.ofpbtn{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:999px;padding:7px 14px;background:var(--accent);color:var(--accent-ink);font-size:13px;font-weight:700;letter-spacing:.02em;text-transform:none;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.ofpbtn svg{width:16px;height:16px}
 button.link{border:0;background:none;color:var(--accent);padding:4px 0;font-size:13px;font-weight:600}
 button.x{padding:4px 8px;color:var(--muted)}
 .wp{display:grid;grid-template-columns:22px minmax(0,1fr) 50px 56px 24px;gap:4px;align-items:center;margin-bottom:4px}
 .wp .ll{display:none}
-section.showll .wp{grid-template-columns:20px minmax(48px,64px) minmax(0,1fr) minmax(0,1.08fr) 40px 50px 22px;gap:3px}
-section.showll .wp input{font-size:12px;padding:5px 3px}
+section.showll .wp{grid-template-columns:22px minmax(56px,1fr) 82px 90px 50px 60px 24px;gap:4px}
+section.showll .wp input[data-k=lat],section.showll .wp input[data-k=lon]{font-size:12px;padding:5px 4px;color:var(--muted)}
 section.showll .wp .ll{display:block}
 .wp input[data-k=fl]{text-align:center;padding:5px 2px}
 .wp input.moved{border-color:var(--accent);background:var(--soft)}
@@ -215,8 +218,8 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
 .avail{font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:16px}
 @media (max-width:560px){
   .wp{grid-template-columns:18px minmax(0,1fr) 46px 50px 20px;gap:3px}
-  section.showll .wp{grid-template-columns:16px minmax(40px,1fr) minmax(58px,1.1fr) minmax(64px,1.2fr) 34px 42px 18px;gap:2px}
-  section.showll .wp input{font-size:11px;padding:5px 2px}
+  section.showll .wp{grid-template-columns:16px minmax(40px,1fr) 62px 68px 42px 50px 18px;gap:3px}
+  section.showll .wp input[data-k=lat],section.showll .wp input[data-k=lon]{font-size:11px;padding:5px 2px;letter-spacing:-.02em}
   .wp input{padding:5px 3px;font-size:12px}
   .wp input[data-k=eto]{padding:5px 1px}
   .wp .tag{font-size:10px}
@@ -273,7 +276,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
       </section>
 
       <section id="routeSec">
-        <h2>Route <span><button class="link" id="ofpOpen" type="button">Import OFP</button> &nbsp; <button class="link" id="llToggle" type="button" aria-pressed="false">Lat/Lon</button> &nbsp; <button class="link" id="addWp" type="button">+ Add</button> &nbsp; <button class="link danger" id="clearRoute" type="button">Clear</button></span></h2>
+        <h2>Route <span><button class="ofpbtn" id="ofpOpen" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3"/></svg>Import OFP</button> <button class="link" id="llToggle" type="button" aria-pressed="false">Lat/Long</button> <button class="link" id="addWp" type="button">+ Add</button> <button class="link danger" id="clearRoute" type="button">Clear</button></span></h2>
         <div id="ofpBox" class="ofp" hidden>
           <div class="hint" style="margin-top:0">Load the briefing package (PDF) or paste its text. It is read <b>on this device only</b>: nothing is uploaded, and it works offline. The app reads the coordinates list, the nav log (ELTM and FL) and the header times.</div>
           <div class="btnrow">
@@ -289,9 +292,9 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
           <div class="ok" id="ofpMsg"></div>
           <div id="ofpPreview"></div>
         </div>
-        <div class="wp wphead"><span></span><span>Ident</span><span class="ll">Lat</span><span class="ll">Lon</span><span>FL</span><span>ETA</span><span></span></div>
+        <div class="wp wphead"><span></span><span>Ident</span><span class="ll">Lat</span><span class="ll">Long</span><span>FL</span><span>ETA</span><span></span></div>
         <div id="wps"></div>
-        <div class="hint">Lat/Lon as <span class="mono">N0244.6</span> / <span class="mono">E10141.9</span> or decimal. Airports from the built-in list fill in automatically. ETA (HHMM UTC) is optional on waypoints; without it the time is spread by distance. Times roll past 0000Z automatically. FL is the cruise level from that fix on (blank = same as before; if no fix has an FL, FL350 is assumed). Changing an FL changes the rest of that level segment; changing an ETA moves every later ETA. Both recalculate straight away.</div>
+        <div class="hint">Lat/Long as <span class="mono">N0244.6</span> / <span class="mono">E10141.9</span> or decimal. Airports from the built-in list fill in automatically. ETA (HHMM UTC) is optional on waypoints; without it the time is spread by distance. Times roll past 0000Z automatically. FL is the cruise level from that fix on (blank = same as before; if no fix has an FL, FL350 is assumed). Changing an FL changes the rest of that level segment; changing an ETA moves every later ETA. Both recalculate straight away.</div>
         <div class="lib">
           <label for="routeSel">Saved routes</label>
           <div class="librow">
@@ -433,6 +436,17 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
           <div class="hint">Ihtiyat (safety minutes) are set by the convention and can be changed. JAKIM's values reproduce the e-Solat timetable within 1 min on 96–100% of days.</div>
           <label class="chk"><input id="dipTw" type="checkbox" checked> Apply altitude dip to Fajr &amp; Isha (a juristic choice)</label>
         <div class="hint">Changes apply straight away to every tab.</div>
+      </section>
+
+      <section id="fbSec">
+        <h2>Feedback</h2>
+        <label for="fbType">Type</label>
+        <select id="fbType"><option>Suggestion</option><option>Problem / bug</option><option>Wrong prayer time</option><option>OFP import</option><option>Other</option></select>
+        <label for="fbText">Message</label>
+        <textarea id="fbText" rows="4" placeholder="What happened, or what would help? For a wrong time, say the flight, date, prayer and the time you expected." style="width:100%;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:8px"></textarea>
+        <label class="chk"><input type="checkbox" id="fbFlight" checked> Attach the current flight (route, times, convention), no personal data</label>
+        <button type="button" class="primary" id="fbSend" style="margin-top:8px">Send by email</button>
+        <div class="hint">Opens your email app with the message addressed to the LipasTerbang team; nothing is sent until you press send there. Offline, it waits in your outbox.</div>
       </section>
 
       <section id="aboutSec">
@@ -1395,6 +1409,26 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   $("conv").addEventListener("change", () => { convNote(); autoRun(); cmpCalc(); });
   convNote();
 
+  // ---------- feedback (by email) ----------
+  const FEEDBACK_TO = "thrulensimage@gmail.com";
+  $("fbSend").addEventListener("click", () => {
+    const msg = $("fbText").value.trim();
+    if (!msg) { $("fbText").focus(); $("fbText").placeholder = "Please write a message first."; return; }
+    const lines = [msg, "", "—", `App: Solat In Flight ${APP_VERSION}`, `Device: ${navigator.userAgent}`, `Screen: ${screen.width}×${screen.height}, ${matchMedia("(display-mode: standalone)").matches ? "installed app" : "browser"}`];
+    if ($("fbFlight").checked) {
+      const W = state.wps, c = currentConv();
+      lines.push(`Flight: ${W[0].id}–${W[W.length - 1].id} ${state.date} off-block ${state.offb || "—"} airborne ${state.dep} landing ${state.arr || "auto"}, ${W.length} points`,
+        `Convention: ${$("conv").value} (Fajr ${c.fajr}°, Isha ${c.ishaMin ? "Maghrib+" + c.ishaMin + "min" : c.isha + "°"}, Asr ${c.asr === 2 ? "Hanafi" : "Shafi'i"}, ihtiyat F${c.ihtiyat.Fajr} Z${c.ihtiyat.Zuhr} A${c.ihtiyat.Asr} M${c.ihtiyat.Maghrib} I${c.ihtiyat.Isha}, dip on twilight ${c.dipOnTwilight ? "on" : "off"})`);
+      if (result) lines.push("Events: " + result.events.map((e) => `${e.name} ${new Date(e.t).toISOString().slice(11, 16)}Z`).join(", "));
+    }
+    const subj = encodeURIComponent(`Solat In Flight feedback: ${$("fbType").value}`);
+    const mk = (L) => `mailto:${FEEDBACK_TO}?subject=${subj}&body=${encodeURIComponent(L.join("\n"))}`;
+    // some mail apps reject very long links: drop the event list first, then shorten the message
+    let L = lines.slice(); if (mk(L).length > 1900) L = L.filter((x) => !x.startsWith("Events:"));
+    while (mk(L).length > 1900 && L[0].length > 200) L[0] = L[0].slice(0, L[0].length - 100) + "…";
+    location.href = mk(L);
+  });
+
   // ---------- tabs (bottom bar) ----------
   const TABS = { flight: "Flight", now: "Now", globe: "Globe", timeline: "Timeline", settings: "Settings" };
   const tabScroll = {};
@@ -1421,7 +1455,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   $("updBadge").addEventListener("click", () => showTab("settings"));
 
   // ---------- version, data validity, update ----------
-  const APP_VERSION = "2026.11.07c", APP_DATE = Date.UTC(2026, 10, 7);
+  const APP_VERSION = "2026.11.07d", APP_DATE = Date.UTC(2026, 10, 7);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){

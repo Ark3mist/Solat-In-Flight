@@ -20,7 +20,7 @@ What it does:
    - Changing off-block, taxi, airborne or any waypoint ETA moves every later ETA and the landing time by the same amount (moved fields are highlighted) and recalculates the prayer times at once.
    - **FL per fix:** the cruise level from that fix on (blank = unchanged). The initial FL and step climbs in the vertical profile are built from these, with each change starting at the fix before. Changing an FL replaces the rest of that level segment (up to the next planned level change) and recalculates. The OFP import fills them from the nav log.
    - **Clear** (with a confirmation) removes every waypoint and keeps only DEP and ARR.
-   - **Lat/Lon** columns are hidden by default; the *Lat/Lon* button shows them (and *+ Add* opens them for the new fix).
+   - **Lat/Long** columns are hidden by default; the *Lat/Long* button shows them, in compact fixed widths so FL and ETA stay readable (*+ Add* opens them for the new fix).
 3. **Prayer times** are the zero crossings of `sun_altitude(t, position(t)) − threshold(altitude(t))` along the time axis, refined by bisection.
 4. **Vertical profile** covers climb, the initial FL, step climbs or descents at T+hh:mm, and a descent line to the destination elevation. Horizon dip is applied at the altitude of the moment.
 5. **Output** shows each prayer window: when it opens and closes (UTC), the time available, and the **qibla as a clock position from the aircraft's nose** (12 o'clock = ahead, 3 = right, 9 = left), on a clock dial, so passengers can use it too. QDM and track in °M are shown as small print.
@@ -76,6 +76,8 @@ For a review of the original Excel workbook (v3.7) and the reasons for this desi
 - **Globe:** the globe, slider and prayer-line chips.
 - **Timeline:** prayer windows and the timeline.
 - **Settings:** version, magnetic-data expiry, update check and install; appearance (Device / Light / Dark) and the default taxi-out time used for OFP imports; **Advanced settings** (convention, Fajr/Isha angles, Asr, ihtiyat per prayer, local offset, dip on twilight), which recalculate at once; notes on the calculation.
+
+**Feedback** (Settings): type, message and, if you tick it, the current flight (route ends, times, convention, event times; no personal data). *Send by email* opens your mail app addressed to the LipasTerbang team; nothing is sent until you press send there.
 
 The app always opens on the Globe, and jumps to it after an OFP import.
 
