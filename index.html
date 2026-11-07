@@ -98,6 +98,13 @@ button.link[aria-pressed=true]{text-decoration:underline}
 .wp input[data-k=eto]{text-align:center;padding:5px 2px;letter-spacing:-.02em}
 .wp input[data-k=eto].moved{border-color:var(--accent);background:var(--soft)}
 .wp button.x{padding:2px 4px}
+.sug{margin:-2px 0 6px 26px;border:1px solid var(--line);border-radius:8px;background:var(--panel);overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.sug button{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;padding:7px 9px;color:var(--fg);font-weight:400}
+.sug button:last-child{border-bottom:0}
+.sug button:hover,.sug button:focus{background:var(--soft)}
+.sug b{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+.sug span{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sug small{grid-column:2;color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #wps{max-height:min(62vh,560px);overflow-y:auto;overscroll-behavior:contain;padding-right:2px}
 .wp .tag{font-size:11px;color:var(--muted);text-align:center}
 .wphead{font-size:11px;color:var(--muted);margin-bottom:4px}
@@ -466,6 +473,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   <button type="button" data-tab="settings"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span></button>
 </nav>
 
+<script src="airports.js"></script>
 <script src="solat.js"></script>
 <script src="world.js"></script>
 <script src="globe.js"></script>
@@ -558,6 +566,37 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   function autoRun(){ clearTimeout(autoT); autoT = setTimeout(() => { try { build(); } catch(e){ return; } run(); }, 150); }
   // Cruise FL in force at fix i: its own, or the last one set before it.
   function effFL(i){ for (let j = i; j > 0; j--) if (state.wps[j].fl) return state.wps[j].fl; return ""; }
+  // ---------- airport search under the Ident box ----------
+  function aptTitle(id){
+    const a = S.airport(id); return a ? ` title="${esc(`${a.iata}${a.icao ? " / " + a.icao : ""} · ${a.name}, ${a.city}, ${a.country}`)}"` : "";
+  }
+  let sugBox = null, picking = false;
+  function hideSug(){ if (sugBox) { sugBox.remove(); sugBox = null; } }
+  function showSug(i, inp, row){
+    const v = inp.value.trim(); hideSug(); picking = false;
+    if (v.length < 2) return;
+    const V = v.toUpperCase(), mine = Object.keys(fixes).filter((k) => k.startsWith(V)).slice(0, 3);
+    const apts = S.searchAirports(v, 6);
+    if (!mine.length && !apts.length) return;
+    sugBox = document.createElement("div"); sugBox.className = "sug"; sugBox.setAttribute("role", "listbox");
+    const item = (code, line1, line2, fn) => {
+      const b = document.createElement("button"); b.type = "button"; b.setAttribute("role", "option");
+      b.innerHTML = `<b>${esc(code)}</b><span>${esc(line1)}</span>${line2 ? `<small>${esc(line2)}</small>` : ""}`;
+      b.addEventListener("pointerdown", (e) => { e.preventDefault(); picking = true; });   // keep focus until the pick lands
+      b.addEventListener("click", () => { picking = false; fn(); });
+      sugBox.appendChild(b);
+    };
+    mine.forEach((k) => item(k, "My waypoint", `${fixes[k].lat} ${fixes[k].lon}`, () => pickApt(i, k)));
+    apts.forEach((a) => item(a.iata, `${a.city}${a.city && a.country ? ", " : ""}${a.country}`, `${a.name}${a.icao ? " · " + a.icao : ""}`, () => pickApt(i, a.iata)));
+    row.after(sugBox);
+  }
+  function pickApt(i, code){
+    picking = false; hideSug();
+    const w = state.wps[i], st = lookup(code); if (!w || !st) return;
+    w.id = code; w.lat = S.fmtLat(st.lat); w.lon = S.fmtLon(st.lon);
+    save(); renderWps(); autoRun();
+  }
+
   function renderWps(changedAt = -1, moved = 0, flMoved = []){
     const box = $("wps"); box.innerHTML = "";
     state.wps.forEach((w, i) => {
@@ -565,7 +604,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
       const row = document.createElement("div"); row.className = "wp";
       row.innerHTML =
         `<span class="tag">${first ? "DEP" : last ? "ARR" : i}</span>` +
-        `<input class="mono" list="stations" value="${esc(w.id)}" data-k="id" aria-label="Ident">` +
+        `<input class="mono" value="${esc(w.id)}" data-k="id" aria-label="${first ? "Departure airport" : last ? "Arrival airport" : "Ident"}" autocomplete="off" autocapitalize="characters" spellcheck="false"${first || last ? ' placeholder="City/code"' : ""}${aptTitle(w.id)}>` +
         `<input class="mono ll" value="${esc(w.lat)}" data-k="lat" aria-label="Latitude" placeholder="N0000.0">` +
         `<input class="mono ll" value="${esc(w.lon)}" data-k="lon" aria-label="Longitude" placeholder="E00000.0">` +
         `<input class="mono" value="${first || last ? "" : esc(w.fl || "")}" data-k="fl" ${first||last ? "disabled title='Ground'" : ""} aria-label="Flight level" placeholder="${first || last ? "GND" : effFL(i) || "CLB"}" inputmode="numeric" maxlength="3">` +
@@ -588,13 +627,22 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
           if (d) shiftAfter(i, d);
           save(); renderWps(i, d); autoRun(); return;
         }
-        w[k] = v;
         if (k === "id") {
-          const st = lookup(w.id);
-          if (st) { w.lat = S.fmtLat(st.lat); w.lon = S.fmtLon(st.lon); renderWps(); }
+          if (picking) return;                     // a suggestion is being chosen
+          hideSug();
+          let st = lookup(v);
+          // DEP/ARR typed as a city or airport name: take the best match
+          if (!st && (first || last) && v.length >= 3) { const a = S.searchAirports(v, 1)[0]; if (a) return pickApt(i, a.iata); }
+          w.id = v;
+          if (st) { w.lat = S.fmtLat(st.lat); w.lon = S.fmtLon(st.lon); save(); renderWps(); autoRun(); return; }
+          save(); return;
         }
+        w[k] = v;
         save();
       }));
+      const idIn = row.querySelector("[data-k=id]");
+      idIn.addEventListener("input", () => showSug(i, idIn, row));
+      idIn.addEventListener("blur", () => setTimeout(hideSug, 150));
       if (flMoved.includes(i)) row.querySelector("[data-k=fl]").classList.add("moved");
       if (moved && i > changedAt) { const e = row.querySelector("[data-k=eto]"); if (e.value) { e.classList.add("moved"); e.title = `Moved ${moved > 0 ? "+" : ""}${moved} min`; } }
       const rm = row.querySelector("button.x");
@@ -1455,7 +1503,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   $("updBadge").addEventListener("click", () => showTab("settings"));
 
   // ---------- version, data validity, update ----------
-  const APP_VERSION = "2026.11.07d", APP_DATE = Date.UTC(2026, 10, 7);
+  const APP_VERSION = "2026.11.07e", APP_DATE = Date.UTC(2026, 10, 7);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){

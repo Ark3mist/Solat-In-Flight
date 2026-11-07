@@ -31,7 +31,7 @@
     JED: "N2140.9 E03909.4", HKG: "N2218.5 E11354.9", SIN: "N0121.6 E10359.4",
     PVG: "N3108.7 E12147.6", DEL: "N2834.1 E07706.7", AKL: "S3700.5 E17447.5",
     SYD: "S3356.8 E15110.6", MNL: "N1430.6 E12100.8", TPE: "N2504.8 E12113.9",
-    ADL: "S3456.7 E13831.8", PEK: "N4004.4 E11653.9", DOH: "N2516.5 E05136.5",
+    ADL: "S3456.7 E13831.8", PEK: "N4004.8 E11635.1", DOH: "N2516.5 E05136.5",
     BKI: "N0555.9 E11603.1", ICN: "N3727.8 E12626.4", PEN: "N0517.7 E10016.3",
     PER: "S3156.4 E11558.0", DWC: "N2455.1 E05510.5", BOM: "N1905.5 E07252.0",
     KCH: "N0129.1 E11020.7", HAN: "N2113.3 E10548.3", NRT: "N3545.9 E14023.1",
@@ -71,12 +71,59 @@
     if (m && Math.abs(+m[2]) <= 180) return m[1] === "W" ? -Math.abs(+m[2]) : +m[2];
     return null;
   }
+  // Workbook airports first; any other airport comes from the offline database (airports.js).
   function station(code) {
     let c = String(code || "").trim().toUpperCase(); if (ICAO[c]) c = ICAO[c];
     const s = STATIONS[c];
-    if (!s) return null;
+    if (!s) { const a = airport(c); return a ? { lat: a.lat, lon: a.lon, code: a.iata, tz: a.tz, name: a.name, city: a.city } : null; }
     const [a, b] = s.split(" ");
     return { lat: parseLat(a), lon: parseLon(b), code: c, tz: TZ[c] || null };
+  }
+
+  // ---- airport database (airports.js, ~8000 airline airports) ----------------
+  let APT = null;
+  const fold = (x) => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  function aptDb() {
+    if (APT) return APT;
+    const src = root.SolatAirports; if (!src) return null;
+    let region = null;
+    try { region = new Intl.DisplayNames(["en"], { type: "region" }); } catch (e) {}
+    const list = [], byCode = {};
+    for (const line of src.data.split("\n")) {
+      const f = line.split("|");
+      let country = f[4]; try { if (region) country = region.of(f[4]) || f[4]; } catch (e) {}
+      const a = { icao: f[0], iata: f[1], name: f[2], city: f[3], cc: f[4], country, lat: +f[5], lon: +f[6], tz: src.tz[+f[7]] };
+      a.key = fold(`${a.city} ${a.name} ${a.country}`);
+      list.push(a); byCode[a.iata] = a; if (a.icao && !byCode[a.icao]) byCode[a.icao] = a;
+    }
+    return APT = { list, byCode };
+  }
+  // Common names the database spells differently (Makkah has no airport: Jeddah serves it).
+  const ALIAS = { madinah: "medina", "al madinah": "medina", makkah: "jeddah", mecca: "jeddah", "kl": "kuala lumpur",
+    saigon: "ho chi minh", bombay: "mumbai", madras: "chennai", calcutta: "kolkata", peking: "beijing", canton: "guangzhou",
+    "jogja": "yogyakarta", jogjakarta: "yogyakarta", "kota bharu": "kota baharu" };
+  function airport(code) {
+    const db = aptDb(); if (!db) return null;
+    return db.byCode[String(code || "").trim().toUpperCase()] || null;
+  }
+  // Search by IATA, ICAO, city, airport name or country. Best matches first.
+  function searchAirports(q, n = 8) {
+    const db = aptDb(); q = fold(q).trim(); if (!db || !q) return [];
+    q = ALIAS[q] || q;
+    const Q = q.toUpperCase(), words = q.split(/[\s,]+/).filter(Boolean), big = (a) => STATIONS[a.iata] ? 1 : 0;
+    const hits = [];
+    for (const a of db.list) {
+      let s = 0;
+      if (a.iata === Q || a.icao === Q) s = 100;
+      else if (q.length >= 2 && (a.iata.startsWith(Q) || a.icao.startsWith(Q))) s = 60;
+      if (words.every((w) => a.key.includes(w))) {
+        const c = fold(a.city), nm = fold(a.name), parts = c.split(/,\s*/);
+        s = Math.max(s, parts.includes(q) ? 90 : parts.some((p) => p.startsWith(q)) ? 80 : nm.startsWith(q) ? 70
+          : words.every((w) => new RegExp("(^|[^a-z])" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).test(a.key)) ? 50 : q.length >= 3 ? 30 : 0);
+      }
+      if (s) hits.push([s + big(a) * 5 + (/intl/i.test(a.name) ? 2 : 0), a]);
+    }
+    return hits.sort((x, y) => y[0] - x[0] || x[1].iata.localeCompare(y[1].iata)).slice(0, n).map((h) => h[1]);
   }
   function fmtLat(v) { return fmtDM(v, 2, "N", "S"); }
   function fmtLon(v) { return fmtDM(v, 3, "E", "W"); }
@@ -416,7 +463,7 @@
     return `${fix} ${near ? "−" : "+"}${nm} nm`;
   }
 
-  root.Solat = { fixRef, ICAO, TZ, CONVENTIONS, DEFAULT_IHTIYAT, STATIONS, EVENTS, KAABA, MIN, HOUR, DAY,
+  root.Solat = { fixRef, ICAO, TZ, airport, searchAirports, CONVENTIONS, DEFAULT_IHTIYAT, STATIONS, EVENTS, KAABA, MIN, HOUR, DAY,
     parseLat, parseLon, station, fmtLat, fmtLon, fmtPos, sunPosition, sunAltHa, dipDeg, moonPosition, moonAlt, prevNewMoon, sunAzimuth,
     gcNm, gcInterp, bearing, qiblaBearing, relBearing, clockCode,
     makeProfile, makeRoute, findEvents, prayerWindows, situationAt };

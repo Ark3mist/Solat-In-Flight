@@ -66,7 +66,9 @@ You can pick the convention with `--convention workbook|jakim|mwl`.
 
 For a review of the original Excel workbook (v3.7) and the reasons for this design, see [`docs/excel-analysis.md`](docs/excel-analysis.md).
 
-**City-Pair:** the Route's DEP and ARR airports (always taken from the Route) and a date, which follows the flight date unless you change it. Shows each prayer in local time (with daylight saving) and UTC, the real-time gap between them, which prayer is in force now at each, daylight length and qibla. The built-in list now includes ICAO codes and time zones, plus CDG, IST, FRA, MCT, CMB and MLE.
+**City-Pair:** the Route's DEP and ARR airports (always taken from the Route) and a date, which follows the flight date unless you change it. Shows each prayer in local time (with daylight saving) and UTC, the real-time gap between them, which prayer is in force now at each, daylight length and qibla. Works for any airport in the database below, with its own time zone.
+
+**Airports:** `airports.js` holds about 7,950 airports with IATA codes (every airline-served airport), offline, each with ICAO code, name, city, country, position and IANA time zone. In the Route, type a code (IATA or ICAO), a city, an airport name or a country into the Ident box and pick from the list; for DEP/ARR, typing a city and leaving the box takes the best match. Common alternative names work (Madinah, Makkah → Jeddah, Saigon, Bombay…). The 41 workbook airports keep the workbook coordinates. Source: the [airportsdata](https://github.com/mborsetti/airportsdata) package (MIT); regenerate with `tools/build_airports.py`.
 
 **Version and updates:** the header shows the version date, when you last checked for an update, and when the magnetic data (WMM2025) expires (31 Dec 2029). *Check for update* compares with `version.json` online; the sun and moon formulas do not expire.
 
