@@ -1217,9 +1217,16 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   let nowCache = null, altUnit = store.get("solat.altUnit") === "ft" ? "ft" : "m";
   const ft = (m) => m * 3.28084;
   const durNow = (ms) => ms < MIN ? "under 1 min" : fmtDur(ms);
+  let nowMapped = false;    // device clock placed on the loaded flight's day
   function nowTime(){
-    const v = toMin($("nowTime").value);
-    if (v === null || !result) return Date.now();
+    let v = toMin($("nowTime").value); nowMapped = false;
+    if (!result) return Date.now();
+    if (v === null) {
+      const real = Date.now();
+      // on or around the flight: the real time; on another day: the same clock time on the flight's day
+      if (real >= result.route.start - 12 * HOUR && real <= result.route.end + 12 * HOUR) return real;
+      nowMapped = true; v = Math.floor((real % DAY) / MIN);
+    }
     // the day that puts this HHMM closest to the flight
     const { start, end } = result.route, mid = (start + end) / 2, d0 = Math.floor(start / DAY) * DAY;
     return [d0 - DAY, d0, d0 + DAY, d0 + 2 * DAY].map((d) => d + v * MIN).sort((a, b) => Math.abs(a - mid) - Math.abs(b - mid))[0];
@@ -1232,7 +1239,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     const altFt = isFinite(altIn) && altIn >= 0 ? (altUnit === "m" ? ft(altIn) : altIn) : null;
     $("nowAltFt").textContent = altFt === null ? "" : altUnit === "m"
       ? `= ${Math.round(altFt).toLocaleString("en")} ft` : `= ${Math.round(altFt / 3.28084).toLocaleString("en")} m`;
-    const t = Math.floor(nowTime() / MIN) * MIN, d = new Date(t);
+    const t = Math.floor(nowTime() / MIN) * MIN, d = new Date(manual ? t : Date.now());
     $("nowClock").textContent = `${pad(d.getUTCDate())}/${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}Z · ${pad(d.getHours())}:${pad(d.getMinutes())} device`;
     jamakCalc(t);
     if (!result) return;
@@ -1263,7 +1270,9 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     const NEXT_EV = { Fajr: "sunrise", Zuhr: "Asr", Asr: "Maghrib", Maghrib: "Isha", Isha: "Fajr" };
     const tagP = (n) => `<span class="pname" style="--pc:${(window.SolatGlobe.LINES.find((L) => L.name === n) || {}).color || ""}">${n}</span>`;
     const devT = (x) => { const e = new Date(x); return `${pad(e.getHours())}:${pad(e.getMinutes())}`; };
-    let pray = `<div class="lbl">Current prayer · ${manual ? "at the time you set" : "now"}</div>`;
+    const dayTxt = (x) => new Date(x).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+    let pray = `<div class="lbl">Current prayer · ${manual ? "at the time you set" : nowMapped ? `${fmtZ(t, floorMin).slice(3)} on the flight's day` : "now"}</div>`;
+    if (nowMapped) pray += `<div class="s">Today is ${dayTxt(Date.now())} but the loaded flight is on ${dayTxt(route.start)}, so your clock time is shown on the flight's day.</div>`;
     if (cur) {
       pray += `<div class="cur">${tagP(cur.name)}<span class="ptb">${fmtZ(cur.start, ceilMin).slice(3)}</span>` +
         `<span>to <b class="mono">${fmtZ(cur.end, floorMin).slice(3)}</b> <span class="s">(${cur.problem ? "next event" : NEXT_EV[cur.name]})</span></span></div>` +
