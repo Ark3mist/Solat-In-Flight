@@ -195,6 +195,11 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .ftl .on{background:var(--pteal-soft);border-color:var(--pteal);border-top-color:var(--pc,var(--pteal))}
 .ftl .on span{font-weight:800}
 .ftl .end{border-top-color:var(--ink)}
+.ftclick{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ftclick h4{display:flex;justify-content:space-between;align-items:baseline}
+.ftgo{color:var(--pteal);font-weight:700;letter-spacing:0;text-transform:none;font-size:12px}
+.ftl div{cursor:pointer}
+.ftl div:hover{border-color:var(--pteal)}
 .s{font-size:12px;color:var(--muted)}
 .installbtn{font-weight:600;border:1px solid var(--accent);color:var(--accent);background:var(--panel);padding:6px 12px;border-radius:999px}
 .installbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:10px 12px;margin-bottom:12px;border:1px solid var(--accent);border-radius:10px;background:var(--soft);font-size:14px}
@@ -1351,13 +1356,13 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     const nowm = t >= route.start && t <= route.end ? `<svg class="plane" style="left:${pct(t)}%" viewBox="0 0 24 24" aria-label="Aircraft now"><path fill="currentColor" d="M22 12c0-.6-.5-1-1.1-1H15L10.2 3.5H8.6L11 11H5.6L4 8.8H2.6l1 3.2-1 3.2H4l1.6-2.2H11l-2.4 7.5h1.6L15 13h5.9c.6 0 1.1-.4 1.1-1z"/></svg>` : "";
     const cur = S.situationAt(route, windows, t).current;
     const open0 = windows.filter((w) => w.openAtDeparture).map((w) => w.name).join(", ");
-    const cells = [`<div class="end${t > route.start ? " past" : ""}"><span>DEP${open0 ? ` · ${open0}` : ""}</span><b>${hm(route.start, floorMin)}</b></div>`];
+    const cells = [`<div data-ft="dep" class="end${t > route.start ? " past" : ""}"><span>DEP${open0 ? ` · ${open0}` : ""}</span><b>${hm(route.start, floorMin)}</b></div>`];
     for (const e of events) {
       const isCur = cur && cur.startEvent === e;
-      cells.push(`<div style="--pc:${col(e.name)}" class="${isCur ? "on" : e.raw <= t ? "past" : ""}"><span>${e.name === "Sunrise" ? "Syuruk" : e.name}</span><b>${hm(e.t, e.name === "Sunrise" ? floorMin : ceilMin)}</b></div>`);
+      cells.push(`<div data-ft="${events.indexOf(e)}" style="--pc:${col(e.name)}" class="${isCur ? "on" : e.raw <= t ? "past" : ""}"><span>${e.name === "Sunrise" ? "Syuruk" : e.name}</span><b>${hm(e.t, e.name === "Sunrise" ? floorMin : ceilMin)}</b></div>`);
     }
-    cells.push(`<div class="end${t > route.end ? " past" : ""}"><span>${estimated ? "ETA" : "ARR"}</span><b>${hm(route.end, floorMin)}</b></div>`);
-    return `<div class="ground"><h4>Flight timeline · UTC</h4><div class="ftwrap"><div class="ftbar">${segs}</div>${nowm}</div><div class="ftl" id="nowFtl">${cells.join("")}</div></div>`;
+    cells.push(`<div data-ft="arr" class="end${t > route.end ? " past" : ""}"><span>${estimated ? "ETA" : "ARR"}</span><b>${hm(route.end, floorMin)}</b></div>`);
+    return `<div class="ground ftclick" role="button" tabindex="0" aria-label="Show on the globe"><h4>Flight timeline · UTC <span class="ftgo">Show on globe ›</span></h4><div class="ftwrap"><div class="ftbar">${segs}</div>${nowm}</div><div class="ftl" id="nowFtl">${cells.join("")}</div></div>`;
   }
   setInterval(nowCalc, 20000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) nowCalc(); });
@@ -1446,6 +1451,20 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     if (e) jumpTo(e.raw, e); else jumpTo(Math.max(result.route.start, Math.min(result.route.end, w.start)), null, null);
   }
   $("winTbl").addEventListener("click", (ev) => { const c = ev.target.closest("td.availcell"); if (c) showWindow(c); });
+  // Solat box flight timeline: a prayer jumps to its crossing, DEP/ARR to take-off/landing,
+  // anywhere else to the time now (held within the flight)
+  function flightLineJump(target){
+    if (!result) return;
+    const { route, events } = result, cell = target.closest("[data-ft]");
+    showTab("globe");
+    if (cell && cell.dataset.ft === "dep") return jumpTo(route.start);
+    if (cell && cell.dataset.ft === "arr") return jumpTo(route.end);
+    if (cell) { const e = events[+cell.dataset.ft]; if (e) return jumpTo(e.raw, e); }
+    const t = Math.floor(nowTime() / MIN) * MIN;
+    jumpTo(Math.max(route.start, Math.min(route.end, t)));
+  }
+  $("nowRes").addEventListener("click", (ev) => { if (ev.target.closest(".ftclick")) flightLineJump(ev.target); });
+  $("nowRes").addEventListener("keydown", (ev) => { if (ev.target.closest(".ftclick") && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); flightLineJump(ev.target); } });
   $("winTbl").addEventListener("keydown", (ev) => { const c = ev.target.closest("td.availcell");
     if (c && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); showWindow(c); } });
   $("gFollow").addEventListener("change", () => globe.setFollow($("gFollow").checked));
@@ -1715,7 +1734,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     $("hereOk").innerHTML = ok ? '<span style="color:var(--accent)">✓ official</span>' : '<span style="color:var(--err)">⚠ not the official address</span>';
   })();
   // Version MAJOR-HOTFIX-YY: MAJOR = major change, HOTFIX = 01, 02, 03… (back to 01 after a major change), YY = year of the update.
-  const APP_VERSION = "1-08-26", APP_DATE = Date.UTC(2026, 10, 8);
+  const APP_VERSION = "1-09-26", APP_DATE = Date.UTC(2026, 10, 8);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){
