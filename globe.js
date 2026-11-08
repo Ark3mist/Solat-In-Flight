@@ -185,43 +185,62 @@
       // Clip a land ring to the visible hemisphere. A stretch that runs behind the globe is
       // replaced by the matching arc of the rim, swept the way the hidden coast actually goes,
       // so the fill never cuts a chord across the sea.
-      function clipRing(v, n){
+      // Clip land rings to the visible hemisphere. Each ring is split into its visible runs; the runs
+      // of all rings are then joined along the rim, always turning the same way (the rings share one
+      // orientation, lakes the opposite), which is the standard spherical polygon clip. Joining across
+      // all rings matters: a lake or a continent that wraps behind the globe would otherwise fill the
+      // whole disc.
+      const TAU = 2 * Math.PI;
+      function clipRing(v, n, segs){
         const P = new Float64Array(n * 3);
-        let start = -1;
+        let i0 = -1, anyVis = false;
         for (let i = 0; i < n; i++) {
           const x = v[3 * i], y = v[3 * i + 1], z = v[3 * i + 2];
           P[3 * i] = x * E[0] + y * E[1] + z * E[2]; P[3 * i + 1] = x * Nn[0] + y * Nn[1] + z * Nn[2]; P[3 * i + 2] = x * C[0] + y * C[1] + z * C[2];
-          if (start < 0 && P[3 * i + 2] >= 0) start = i;
+          if (P[3 * i + 2] < 0) { if (i0 < 0) i0 = i; } else anyVis = true;
         }
-        if (start < 0) return;                                   // wholly behind the globe
-        const ang = (X, Y) => Math.atan2(-Y, X);                 // screen angle of a rim point
-        const wrap = (a) => a - 2 * Math.PI * Math.round(a / (2 * Math.PI));
-        const cross = (a, b) => {                                // where edge a->b meets the horizon (Z = 0)
+        if (!anyVis) return;                                     // wholly behind the globe
+        if (i0 < 0) {                                            // wholly in front: draw as it is
+          g.moveTo(cx + P[0] * R, cy - P[1] * R);
+          for (let i = 1; i < n; i++) g.lineTo(cx + P[3 * i] * R, cy - P[3 * i + 1] * R);
+          g.closePath(); return;
+        }
+        const cross = (a, b) => {                                // where edge a->b meets the horizon, on the rim
           const za = P[3 * a + 2], zb = P[3 * b + 2], t = za / (za - zb);
           const X = P[3 * a] + t * (P[3 * b] - P[3 * a]), Y = P[3 * a + 1] + t * (P[3 * b + 1] - P[3 * a + 1]), m = Math.hypot(X, Y) || 1;
-          return [X / m, Y / m];
+          return [X / m, -Y / m];                                // screen-oriented unit vector
         };
-        g.moveTo(cx + P[3 * start] * R, cy - P[3 * start + 1] * R);
-        let hidden = false, a0 = 0, last = 0, sweep = 0;
+        let cur = null;
         for (let k = 1; k <= n; k++) {
-          const i = (start + k) % n, p = (start + k - 1) % n, Z = P[3 * i + 2];
-          if (!hidden && Z < 0) {                                // leaving the visible side
-            const [X, Y] = cross(p, i);
-            g.lineTo(cx + X * R, cy - Y * R);
-            hidden = true; a0 = last = ang(X, Y); sweep = 0;
-          }
-          if (hidden) {
-            let X, Y;
-            if (Z >= 0) [X, Y] = cross(p, i); else { X = P[3 * i]; Y = P[3 * i + 1]; }
-            const a = ang(X, Y); sweep += wrap(a - last); last = a;
-            if (Z >= 0) {                                        // back on the visible side
-              g.arc(cx, cy, R, a0, a0 + sweep, sweep < 0);
-              hidden = false;
-            }
-          }
-          if (!hidden) g.lineTo(cx + P[3 * i] * R, cy - P[3 * i + 1] * R);
+          const i = (i0 + k) % n, p = (i0 + k - 1) % n, vis = P[3 * i + 2] >= 0, pvis = P[3 * p + 2] >= 0;
+          if (vis && !pvis) { const c = cross(p, i); cur = { pts: [c[0], c[1], P[3 * i], -P[3 * i + 1]], aIn: Math.atan2(c[1], c[0]) }; }
+          else if (vis) cur.pts.push(P[3 * i], -P[3 * i + 1]);
+          else if (pvis) { const c = cross(p, i); cur.pts.push(c[0], c[1]); cur.aOut = Math.atan2(c[1], c[0]); segs.push(cur); cur = null; }
         }
-        g.closePath();
+      }
+      function rejoin(segs){
+        const used = new Array(segs.length).fill(false);
+        const ahead = (from, to) => { let d = (to - from) % TAU; return d < 0 ? d + TAU : d; };
+        for (let s0 = 0; s0 < segs.length; s0++) {
+          if (used[s0]) continue;
+          let s = s0;
+          g.moveTo(cx + segs[s0].pts[0] * R, cy + segs[s0].pts[1] * R);
+          for (let guard = 0; guard <= segs.length; guard++) {
+            used[s] = true;
+            const q = segs[s].pts;
+            for (let j = 2; j < q.length; j += 2) g.lineTo(cx + q[j] * R, cy + q[j + 1] * R);
+            let best = s0, bd = Infinity;                        // the next run entering the rim, going clockwise
+            for (let j = 0; j < segs.length; j++) {
+              if (used[j] && j !== s0) continue;
+              const d = ahead(segs[s].aOut, segs[j].aIn);
+              if (d < bd) { bd = d; best = j; }
+            }
+            g.arc(cx, cy, R, segs[s].aOut, segs[s].aOut + bd, false);
+            if (best === s0) break;
+            s = best;
+          }
+          g.closePath();
+        }
       }
 
       g.setTransform(1, 0, 0, 1, 0, 0);
@@ -233,12 +252,16 @@
       // ---- land (vector) ----
       const rings = land(view.zoom, redraw);
       g.beginPath();
+      const segs = [];
       for (const ring of rings) {
-        // cull rings entirely off screen
+        // cull rings that cannot reach the visible hemisphere (a ring off screen but still in front
+        // must stay, so the rim joins see every crossing)
         const ang = Math.acos(Math.max(-1, Math.min(1, dot(ring.c, C))));
-        if (ang - ring.cap > va) continue;
-        clipRing(ring.v, ring.n);
+        if (ang - ring.cap > Math.PI / 2) continue;                       // wholly behind
+        if (ang - ring.cap > va && ang + ring.cap < Math.PI / 2) continue;  // off screen, wholly in front
+        clipRing(ring.v, ring.n, segs);
       }
+      rejoin(segs);
       g.fillStyle = colors.land; g.fill("evenodd");
       g.strokeStyle = colors.coast; g.lineWidth = Math.max(0.6, 0.7 * lw); g.stroke();
 
@@ -492,6 +515,7 @@
       zoomBy(f) { setZoom(view.zoom * f); },
       setZoom,
       reset() { view.zoom = 1; view.follow = true; opts.onFollowChange && opts.onFollowChange(true); changed(); redraw(); },
+      setView(lat, lon) { unfollow(); view.lat = lat; view.lon = lon; redraw(); },
       get view() { return { ...view }; },
     };
   }
