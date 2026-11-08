@@ -158,19 +158,15 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .qcell{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;min-width:120px}
 .qcell svg{width:120px;height:auto;display:block}
 .nowres{margin-top:10px}
-.altlbl{display:flex;align-items:center;justify-content:space-between;gap:4px}
-.unit{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
-.unit button{border:0;border-radius:0;padding:1px 7px;font-size:11px;background:var(--field);color:var(--muted)}
-.unit button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);font-weight:700}
 .nowgrid{display:grid;grid-template-columns:132px minmax(0,1fr);gap:12px;align-items:center}
 .nowgrid svg{width:132px;height:auto;display:block}
+@media (max-width:380px){.nowgrid{grid-template-columns:1fr;justify-items:center}.nowgrid .nowkv{width:100%}}
 .nowpray{padding:10px;border-radius:8px;background:var(--soft);margin-bottom:10px;font-size:15px}
 .nowpray .big{font-size:22px;font-weight:700;color:var(--accent)}
 .nowpray .cur{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:4px 0 6px}
 .nowpray .cur .pname{font-size:24px}
 .ptb{font-family:ui-monospace,Menlo,monospace;font-size:20px;font-weight:800;background:var(--pteal);color:#fff;padding:1px 8px;border-radius:7px}
 .nowpray .lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-#nowReset{margin-top:2px;font-size:12px}
 .nowkv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;font-size:13px;margin:0}
 .nowkv dt{color:var(--muted)} .nowkv dd{margin:0}
 .cmpin{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) minmax(0,1.2fr);gap:8px;align-items:end}
@@ -187,9 +183,10 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 @media (max-width:560px){.cmpin{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)} .cmpin>div:last-child{grid-column:1/-1}}
 .ground{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
 .ground h4{margin:0 0 6px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-.ftbar{position:relative;height:8px;border-radius:4px;background:var(--line);margin:2px 0 8px;overflow:hidden}
+.ftwrap{position:relative;margin:8px 0 10px}
+.ftbar{position:relative;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
 .ftbar i{position:absolute;top:0;bottom:0;opacity:.85}
-.ftbar .nowm{position:absolute;top:-2px;bottom:-2px;width:3px;margin-left:-1px;background:var(--ink);border-radius:2px;opacity:1}
+.ftwrap .plane{position:absolute;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;color:var(--plane);filter:drop-shadow(0 0 1.5px var(--panel)) drop-shadow(0 0 1.5px var(--panel))}
 .ftl{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .ftl::-webkit-scrollbar{display:none}
 .ftl div{flex:1 0 auto;min-width:44px;border:1px solid var(--line);border-top:4px solid var(--pc,var(--line));border-radius:6px;padding:4px 3px;text-align:center;font-size:10px;line-height:1.25}
@@ -384,11 +381,6 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   <div class="view" data-view="now" hidden>
       <section id="nowSec">
         <h2>Solat <span class="sub" id="nowClock"></span></h2>
-        <div class="r3">
-          <div><label for="nowAlt" class="altlbl">Altitude <span class="unit" role="group" aria-label="Altitude unit"><button type="button" data-u="m" aria-pressed="true">m</button><button type="button" data-u="ft" aria-pressed="false">ft</button></span></label><input id="nowAlt" class="mono" inputmode="numeric" placeholder="planned" maxlength="6"><div class="s mono" id="nowAltFt"></div></div>
-          <div><label for="nowHdg">Heading °M</label><input id="nowHdg" class="mono" inputmode="numeric" placeholder="track" maxlength="3"></div>
-          <div><label for="nowTime">Time UTC</label><input id="nowTime" class="mono" inputmode="numeric" placeholder="device" maxlength="5"><div class="s" id="nowTimeSrc"></div><button type="button" class="link" id="nowReset" hidden>Use device time</button></div>
-        </div>
         <div class="gcnote" hidden role="note"></div>
         <div id="nowRes" class="nowres"><span class="s">Import an OFP or press Calculate first.</span></div>
       </section>
@@ -1109,7 +1101,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     }
     $("evTbl").hidden = false;
     setupGlobe();
-    nowCache = null; nowCalc();
+    nowCalc();
   }
 
   // ---------- qibla dial ----------
@@ -1219,54 +1211,29 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   }
 
   // ---------- Now ----------
-  let nowCache = null, altUnit = store.get("solat.altUnit") === "ft" ? "ft" : "m";
-  const ft = (m) => m * 3.28084;
   const durNow = (ms) => ms < MIN ? "under 1 min" : fmtDur(ms);
   let nowMapped = false;    // device clock placed on the loaded flight's day
   function nowTime(){
-    let v = toMin($("nowTime").value); nowMapped = false;
-    if (!result) return Date.now();
-    if (v === null) {
-      const real = Date.now();
-      // on or around the flight: the real time; on another day: the same clock time on the flight's day
-      if (real >= result.route.start - 12 * HOUR && real <= result.route.end + 12 * HOUR) return real;
-      nowMapped = true; v = Math.floor((real % DAY) / MIN);
-    }
+    nowMapped = false;
+    const real = Date.now();
+    if (!result) return real;
+    // on or around the flight: the real time; on another day: the same clock time on the flight's day
+    if (real >= result.route.start - 12 * HOUR && real <= result.route.end + 12 * HOUR) return real;
+    nowMapped = true; const v = Math.floor((real % DAY) / MIN);
     // the day that puts this HHMM closest to the flight
     const { start, end } = result.route, mid = (start + end) / 2, d0 = Math.floor(start / DAY) * DAY;
     return [d0 - DAY, d0, d0 + DAY, d0 + 2 * DAY].map((d) => d + v * MIN).sort((a, b) => Math.abs(a - mid) - Math.abs(b - mid))[0];
   }
   function nowCalc(){
-    const manual = toMin($("nowTime").value) !== null;
-    $("nowTimeSrc").textContent = manual ? "set by you" : "device clock";
-    $("nowReset").hidden = !manual;
-    const altIn = parseFloat($("nowAlt").value);
-    const altFt = isFinite(altIn) && altIn >= 0 ? (altUnit === "m" ? ft(altIn) : altIn) : null;
-    $("nowAltFt").textContent = altFt === null ? "" : altUnit === "m"
-      ? `= ${Math.round(altFt).toLocaleString("en")} ft` : `= ${Math.round(altFt / 3.28084).toLocaleString("en")} m`;
-    const t = Math.floor(nowTime() / MIN) * MIN, d = new Date(manual ? t : Date.now());
+    const t = Math.floor(nowTime() / MIN) * MIN, d = new Date();
     $("nowClock").textContent = `${pad(d.getUTCDate())}/${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}Z · ${pad(d.getHours())}:${pad(d.getMinutes())} device`;
     jamakCalc(t);
     if (!result) return;
     const { route, conv } = result;
-    // Windows from now on, with the aircraft held at the altitude you entered.
-    const key = `${t}|${altFt}`;
-    if (!nowCache || nowCache.key !== key) {
-      let r2 = route, wins = result.windows;
-      if (altFt !== null) {
-        const base = route.profile;
-        const prof = Object.assign({}, base, { altitude: (x) => (x >= t ? altFt : base.altitude(x)) });
-        r2 = S.makeRoute(route.wps.map((w) => ({ name: w.name, lat: w.lat, lon: w.lon, eto: w.eto })), prof);
-        wins = S.prayerWindows(r2, conv).windows;
-      }
-      nowCache = { key, r2, wins };
-    }
-    const { r2, wins } = nowCache;
-    const s = S.situationAt(r2, wins, t);
+    const s = S.situationAt(route, result.windows, t);
     const altNow = s.alt;
     const v = window.SolatWMM.declination(s.lat, s.lon, altNow * 0.0003048, window.SolatWMM.yearOf(t));
-    const hIn = $("nowHdg").value.trim(), hM = hIn === "" ? null : ((+hIn % 360) + 360) % 360;
-    const refT = hM !== null && isFinite(hM) ? hM + v : s.track, refName = hM !== null && isFinite(hM) ? "heading" : "planned track";
+    const refT = s.track;
     const qrel = S.relBearing(S.qiblaBearing(s), refT);
     const sun = sunRel(t, s, refT);
     const phase = t < route.start ? `Before take-off (at ${esc(route.wps[0].name)})` : t > route.end ? `After landing (at ${esc(route.wps[route.wps.length - 1].name)})` : "Airborne";
@@ -1276,7 +1243,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     const tagP = (n) => `<span class="pname" style="--pc:${(window.SolatGlobe.LINES.find((L) => L.name === n) || {}).color || ""}">${n}</span>`;
     const devT = (x) => { const e = new Date(x); return `${pad(e.getHours())}:${pad(e.getMinutes())}`; };
     const dayTxt = (x) => new Date(x).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
-    let pray = `<div class="lbl">Current prayer · ${manual ? "at the time you set" : nowMapped ? `${fmtZ(t, floorMin).slice(3)} on the flight's day` : "now"}</div>`;
+    let pray = `<div class="lbl">Current prayer · ${nowMapped ? `${fmtZ(t, floorMin).slice(3)} on the flight's day` : "now"}</div>`;
     if (nowMapped) pray += `<div class="s">Today is ${dayTxt(Date.now())} but the loaded flight is on ${dayTxt(route.start)}, so your clock time is shown on the flight's day.</div>`;
     if (cur) {
       pray += `<div class="cur">${tagP(cur.name)}<span class="ptb">${fmtZ(cur.start, ceilMin).slice(3)}</span>` +
@@ -1298,8 +1265,8 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
           <dt>Qibla</dt><dd><b>${S.clockCode(qrel)} o'clock</b> <span class="s">${sideTxt(qrel)}</span></dd>
           <dt>Sun</dt><dd>☀ ${sunTxt(sun)}</dd>${rs}
           <dt>Position</dt><dd class="mono">${S.fmtPos(s.lat, s.lon)} <span class="s">${esc(S.fixRef(s))}</span></dd>
-          <dt>Altitude</dt><dd class="mono">${altFt !== null ? `${Math.round(altFt).toLocaleString("en")} ft` : `${fmtFL(altNow)} <span class="s">(planned)</span>`}</dd>
-          <dt>Reference</dt><dd class="mono">${refName === "heading" ? `HDG ${fmtDeg(hM)}M` : `TRK ${fmtDeg(s.track - v)}M <span class="s">(planned)</span>`}</dd>
+          <dt>Altitude</dt><dd class="mono">${fmtFL(altNow)} <span class="s">(planned)</span></dd>
+          <dt>Reference</dt><dd class="mono">TRK ${fmtDeg(s.track - v)}M <span class="s">(planned)</span></dd>
         </dl></div>${flightLine(t)}`;
     const fl = $("nowFtl"), on = fl && (fl.querySelector(".on") || [...fl.children].find((c) => !c.classList.contains("past")));
     if (on) fl.scrollLeft = Math.max(0, on.offsetLeft - fl.offsetLeft - 8);
@@ -1370,7 +1337,8 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     const pct = (x) => Math.max(0, Math.min(100, (x - route.start) / span * 100));
     const hm = (x, r) => { const d = new Date(r(x)); return pad(d.getUTCHours()) + pad(d.getUTCMinutes()); };
     const segs = windows.map((w) => `<i style="left:${pct(w.start)}%;width:${pct(w.end) - pct(w.start)}%;background:${col(w.name)}"></i>`).join("");
-    const nowm = t >= route.start && t <= route.end ? `<i class="nowm" style="left:${pct(t)}%"></i>` : "";
+    // thin aircraft, nose to the right (direction of time)
+    const nowm = t >= route.start && t <= route.end ? `<svg class="plane" style="left:${pct(t)}%" viewBox="0 0 24 24" aria-label="Aircraft now"><path fill="currentColor" d="M22 12c0-.6-.5-1-1.1-1H15L10.2 3.5H8.6L11 11H5.6L4 8.8H2.6l1 3.2-1 3.2H4l1.6-2.2H11l-2.4 7.5h1.6L15 13h5.9c.6 0 1.1-.4 1.1-1z"/></svg>` : "";
     const cur = S.situationAt(route, windows, t).current;
     const open0 = windows.filter((w) => w.openAtDeparture).map((w) => w.name).join(", ");
     const cells = [`<div class="end${t > route.start ? " past" : ""}"><span>DEP${open0 ? ` · ${open0}` : ""}</span><b>${hm(route.start, floorMin)}</b></div>`];
@@ -1379,25 +1347,11 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
       cells.push(`<div style="--pc:${col(e.name)}" class="${isCur ? "on" : e.raw <= t ? "past" : ""}"><span>${e.name === "Sunrise" ? "Syuruk" : e.name}</span><b>${hm(e.t, e.name === "Sunrise" ? floorMin : ceilMin)}</b></div>`);
     }
     cells.push(`<div class="end${t > route.end ? " past" : ""}"><span>${estimated ? "ETA" : "ARR"}</span><b>${hm(route.end, floorMin)}</b></div>`);
-    return `<div class="ground"><h4>Flight timeline · UTC</h4><div class="ftbar">${segs}${nowm}</div><div class="ftl" id="nowFtl">${cells.join("")}</div></div>`;
+    return `<div class="ground"><h4>Flight timeline · UTC</h4><div class="ftwrap"><div class="ftbar">${segs}</div>${nowm}</div><div class="ftl" id="nowFtl">${cells.join("")}</div></div>`;
   }
-  ["nowAlt", "nowHdg", "nowTime"].forEach((k) => $(k).addEventListener("input", () => nowCalc()));
-  $("nowReset").addEventListener("click", () => { $("nowTime").value = ""; nowCalc(); });
-  // Altitude unit: metres (cabin screens) or feet (cockpit). Switching converts a value already entered.
-  function setAltUnit(u, convert){
-    if (convert && u !== altUnit) {
-      const v = parseFloat($("nowAlt").value);
-      if (isFinite(v)) $("nowAlt").value = Math.round(u === "ft" ? ft(v) : v / 3.28084);
-    }
-    altUnit = u; store.set("solat.altUnit", u);
-    document.querySelectorAll(".unit button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.u === u)));
-    $("nowAlt").placeholder = "planned";
-    nowCalc();
-  }
-  document.querySelectorAll(".unit button").forEach((b) => b.addEventListener("click", (e) => { e.preventDefault(); setAltUnit(b.dataset.u, true); }));
-  setInterval(() => { if (toMin($("nowTime").value) === null) nowCalc(); }, 20000);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden && toMin($("nowTime").value) === null) nowCalc(); });
-  setAltUnit(altUnit, false);
+  setInterval(nowCalc, 20000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) nowCalc(); });
+  nowCalc();
 
   // ---------- globe ----------
   const globe = window.SolatGlobe.create($("globe"), {

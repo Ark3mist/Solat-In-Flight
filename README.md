@@ -29,7 +29,7 @@ What it does:
    - Magnetic variation comes from the World Magnetic Model 2025 (NOAA/BGS, public domain, bundled as `wmm.js`, valid to 2030). It is computed at the aircraft's position and level, and matches the reference implementation to 0.01°.
    - The clock position uses the planned track as the nose direction. Drift is not included, so with a crosswind the true answer can be a few degrees off.
 
-6. **Solat box:** altitude in metres or feet (tap **m / ft**; the other unit is shown underneath), heading °M and the time (device clock, or HHMM you type).
+6. **Solat box:** follows the device clock (on another day, the same clock time on the flight's day). Altitude and heading are the planned ones.
    - It shows at once which prayer is open, the time left, the next prayer, the qibla and the sun as clock positions from the nose, and when and where the next sunrise or sunset happens.
    - The aircraft is assumed to hold the altitude you entered from now on; the position comes from the planned route.
    - **On the ground below:** that day's six times (UTC) for someone on the ground directly under the aircraft, with the one in force highlighted, so you can compare them with the in-flight times.
