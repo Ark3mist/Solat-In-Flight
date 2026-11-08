@@ -532,7 +532,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
 
   // ---------- form state ----------
   const DEFAULT = {
-    date: new Date().toISOString().slice(0,10), offb: "", taxi: "20", dep: "1530", arr: "", gs: "430", conv: "jakim",
+    date: new Date().toISOString().slice(0,10), offb: "", taxi: "20", dep: "1530", arr: "", gs: "450", conv: "jakim",
     wps: [ { id:"KUL", lat:"N0244.6", lon:"E10141.9", eto:"" },
            { id:"LHR", lat:"N5128.7", lon:"W00027.7", eto:"" } ],
     fl: "350", elevO: "70", elevD: "83", climb: "1500", stepRate: "1000", descent: "1500",
@@ -540,7 +540,9 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   };
   let state = Object.assign({}, DEFAULT, store.get("solat.v2") || {});
   if (!S.CONVENTIONS[state.conv]) state.conv = "jakim";
-  if (!(+state.gs >= 100 && +state.gs <= 1200)) state.gs = "430";      // used only to estimate landing when it is blank        // methods no longer offered
+  // Average GS, used only to estimate landing when it is blank: the OFP's average if imported, otherwise 450 kt.
+  // (The GS box is gone, so an old saved value such as the former 430 default is replaced.)
+  if (!(state.ofpGs && +state.ofpGs.gs >= 100 && +state.ofpGs.gs <= 1200)) state.gs = "450";
 
   for (const [k,c] of Object.entries(S.CONVENTIONS)) {
     const o = document.createElement("option"); o.value = k; o.textContent = c.name; $("conv").appendChild(o);
@@ -772,7 +774,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     if (!(await ask(`<b>Clear the route?</b>\n\nThis removes ${n > 0 ? `all ${n} waypoint${n === 1 ? "" : "s"} with their FLs and ETAs` : "the waypoints"}, and keeps only DEP (${esc(W[0].id || "—")}) and ARR (${esc(W[W.length - 1].id || "—")}).\nSaved routes are not affected.`, "Clear", true))) return;
     const keep = (w) => ({ id: w.id, lat: w.lat, lon: w.lon, eto: "", fl: "" });
     state.wps = [keep(W[0]), keep(W[W.length - 1])];
-    state.steps = []; state.ofpGs = null; showGsInfo(); $("routeName").value = "";
+    state.steps = []; state.ofpGs = null; state.gs = "450"; showGsInfo(); $("routeName").value = "";
     renderWps(); save(); flash("routeMsg", "Route cleared: only DEP and ARR are left.");
     autoRun();
   });
@@ -791,7 +793,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   $("routeLoad").addEventListener("click", () => {
     const r = routes[$("routeSel").value]; if (!r) return;
     state.wps = r.wps.map((w) => ({ id: w.id, lat: w.lat, lon: w.lon, eto: "" }));
-    state.ofpGs = null; showGsInfo();
+    state.ofpGs = null; state.gs = "450"; showGsInfo();
     renderWps(); save(); flash("routeMsg", `Loaded "${$("routeSel").value}". Waypoint ETAs cleared; times come from airborne/landing.`);
   });
   $("routeDel").addEventListener("click", async () => {
