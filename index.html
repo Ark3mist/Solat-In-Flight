@@ -1258,12 +1258,8 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     const qrel = S.relBearing(S.qiblaBearing(s), refT);
     const sun = sunRel(t, s, refT);
     const phase = t < route.start ? `Before take-off (at ${esc(route.wps[0].name)})` : t > route.end ? `After landing (at ${esc(route.wps[route.wps.length - 1].name)})` : "Airborne";
-    // Current prayer at the time shown: in the air from the flight's windows, on the ground
-    // (before take-off or after landing) from the airport's own day.
-    const onGround = t < route.start || t > route.end;
-    let cur = s.current ? { name: s.current.name, start: s.current.start, end: s.current.end, problem: s.current.problem } : null;
-    let nxt = s.next ? { name: s.next.name, start: s.next.start } : null;
-    if (onGround) { const g = groundPrayer(s.lat, s.lon, t); cur = g.cur; nxt = g.next; }
+    // Current prayer at the time shown, always from the flight's calculated windows (same as the Timeline)
+    const cur = s.current, nxt = s.next;
     const NEXT_EV = { Fajr: "sunrise", Zuhr: "Asr", Asr: "Maghrib", Maghrib: "Isha", Isha: "Fajr" };
     const tagP = (n) => `<span class="pname" style="--pc:${(window.SolatGlobe.LINES.find((L) => L.name === n) || {}).color || ""}">${n}</span>`;
     const devT = (x) => { const e = new Date(x); return `${pad(e.getHours())}:${pad(e.getMinutes())}`; };
@@ -1272,7 +1268,8 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
       pray += `<div class="cur">${tagP(cur.name)}<span class="ptb">${fmtZ(cur.start, ceilMin).slice(3)}</span>` +
         `<span>to <b class="mono">${fmtZ(cur.end, floorMin).slice(3)}</b> <span class="s">(${cur.problem ? "next event" : NEXT_EV[cur.name]})</span></span></div>` +
         `<div><b>${durNow(cur.end - t)}</b> left${cur.problem ? ` <span class="pill warn">check</span>` : ""} <span class="s">· began ${devT(cur.start)}, ends ${devT(cur.end)} device time</span></div>`;
-    } else pray += `<div class="big" style="color:var(--muted)">No prayer now</div><div class="s">${onGround ? "after sunrise, before Zuhr" : "no prayer window open at this point of the flight"}</div>`;
+    } else pray += `<div class="big" style="color:var(--muted)">No prayer now</div><div class="s">${t < route.start ? `The flight's prayer times start at take-off, ${fmtZ(route.start, floorMin).slice(3)}, in ${durNow(route.start - t)}.`
+      : t > route.end ? `The flight landed at ${fmtZ(route.end, floorMin).slice(3)}; its prayer times have ended.` : "No prayer window open at this point of the flight."}</div>`;
     if (nxt) pray += `<div style="margin-top:4px">Next <b>${nxt.name}</b> at <b class="mono">${fmtZ(nxt.start, ceilMin).slice(3)}</b>, in ${durNow(nxt.start - t)}</div>`;
     // next sunrise / sunset on the route, and where it happens relative to the nose
     const ev = result.events.filter((e) => (e.name === "Sunrise" || e.name === "Maghrib") && e.raw > t).sort((a, b) => a.raw - b.raw)[0];
@@ -1350,18 +1347,6 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   $("jkMode").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { jkMode = b.dataset.m; nowCalc(); } });
   $("jkOut").addEventListener("click", (e) => { const b = e.target.closest("[data-jk]"); if (b) showWindowIdx(+b.dataset.jk); });
 
-  // Current and next prayer for someone on the ground at lat/lon at time t
-  function groundPrayer(lat, lon, t){
-    const evs = [];
-    for (const k of [-1, 0, 1]) { const { ev } = groundDay(lat, lon, t + k * DAY); for (const n in ev) evs.push({ name: n, t: ev[n] }); }
-    evs.sort((a, b) => a.t - b.t);
-    const u = evs.filter((e, i) => !i || e.name !== evs[i - 1].name || e.t - evs[i - 1].t > HOUR);
-    let i = -1; u.forEach((e, k) => { if (e.t <= t) i = k; });
-    const c = i >= 0 ? u[i] : null, after = i >= 0 ? u[i + 1] : null;
-    const cur = c && c.name !== "Sunrise" && after ? { name: c.name, start: c.t, end: after.t } : null;
-    const n = u.slice(i + 1).find((e) => e.name !== "Sunrise");
-    return { cur, next: n ? { name: n.name, start: n.t } : null };
-  }
   // Prayer times for someone on the ground directly below, for the local solar day around t.
   const groundCache = {};
   function groundDay(lat, lon, t){
