@@ -254,6 +254,8 @@ td.availcell:hover,td.availcell:focus-visible{outline:2px solid var(--pteal);out
 .seg button+button{border-left:1px solid var(--line)}
 .seg button span{display:block;font-size:11px;font-weight:500}
 .seg button[aria-pressed=true]{background:var(--pteal);color:#fff}
+.seg button:disabled{cursor:not-allowed;opacity:.45}
+.jkgone{margin-top:8px;padding:7px 10px;border-radius:8px;border:1px solid var(--warn);color:var(--warn);font-size:13px;font-weight:600}
 .jk{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--pteal-soft);border-left:5px solid var(--pteal)}
 .jk .jkt{font-size:18px;font-weight:800}
 .jk .jkw{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:6px 0}
@@ -1284,12 +1286,19 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
         : windows.some((w) => w.name === "Zuhr" || w.name === "Asr") ? "zuhr" : "maghrib";
     }
     $("jkPair").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.p === jkPair)));
-    $("jkMode").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.m === jkMode)));
     const [A, B] = jkPair === "zuhr" ? ["Zuhr", "Asr"] : ["Maghrib", "Isha"];
-    $("jkMode").querySelector("[data-m=taqdim] span").textContent = `early: both in ${A} time`;
-    $("jkMode").querySelector("[data-m=takhir] span").textContent = `late: both in ${B} time`;
     const wa = windows.find((w) => w.name === A);
     const wb = wa ? windows.find((w) => w.name === B && w.start >= wa.start) : windows.find((w) => w.name === B);
+    // Taqdim needs the first prayer's time: once it has ended, it can no longer be chosen
+    const taqdimGone = !!wa && t >= wa.end;
+    const bT = $("jkMode").querySelector("[data-m=taqdim]");
+    bT.disabled = taqdimGone;
+    let gone = "";
+    if (taqdimGone && jkMode === "taqdim") { jkMode = "takhir"; }
+    if (taqdimGone) gone = `<div class="jkgone">Jamak Taqdim is no longer possible: ${A} time ended at <b class="mono">${fmtZ(wa.end, floorMin).slice(3)}</b>.</div>`;
+    $("jkMode").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.m === jkMode)));
+    bT.querySelector("span").textContent = taqdimGone ? `${A} time has passed` : `early: both in ${A} time`;
+    $("jkMode").querySelector("[data-m=takhir] span").textContent = `late: both in ${B} time`;
     const km = route.distNm * 1.852;
     const dist = km >= 81 ? `<div class="s">Journey ${Math.round(km).toLocaleString("en")} km, over 2 marhalah (about 81 km).</div>`
       : `<div class="s no">Journey ${Math.round(km)} km is under 2 marhalah (about 81 km): jamak is not allowed for this trip.</div>`;
@@ -1317,6 +1326,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
       if (!wb) h += `<p class="no">${B} time does not start during this flight, so Jamak Ta'khir can only be done after landing at ${name1}, while you are still a traveller.</p>`;
       else {
         const niat = !wa ? `<li><b>${A} time ended before take-off</b> (at ${name0}): the niat to delay must have been made then, or ${A} is now qada.</li>`
+          : t >= wa.end ? `<li><b>${A} time has ended</b> (${fmtZ(wa.end, floorMin).slice(3)}). Jamak Ta'khir is valid only if you made the niat before then; otherwise ${A} is now qada.</li>`
           : `<li>Make the niat for <b>Jamak Ta'khir</b> during ${A} time: ${wa.openAtDeparture ? "before take-off or" : `after <b class="mono">${fmtZ(wa.start, ceilMin).slice(3)}</b> and`} before <b class="mono">${fmtZ(wa.end, floorMin).slice(3)}</b>, while there is still time to pray ${A}.</li>`;
         h += win(wb) + `<ol>${niat}<li>Pray both in ${B} time. Praying ${A} first is recommended, not required.</li>` +
           `<li>You must still be travelling until both are done.${wb.openAtArrival ? " If you finish after landing, do it before you reach home." : ""}</li></ol>` +
@@ -1324,10 +1334,10 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
       }
     }
     const hanafi = result.conv.asr === 2 ? `<div class="s no">You chose Hanafi Asr. The Hanafi school does not allow jamak for travel (only at Arafah and Muzdalifah during Hajj); this planner follows the Shafi'i ruling.</div>` : "";
-    out.innerHTML = `<div class="jk">${h}${dist}${hanafi}</div>`;
+    out.innerHTML = `${gone}<div class="jk">${h}${dist}${hanafi}</div>`;
   }
   $("jkPair").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { jkPair = b.dataset.p; nowCalc(); } });
-  $("jkMode").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { jkMode = b.dataset.m; nowCalc(); } });
+  $("jkMode").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b && !b.disabled) { jkMode = b.dataset.m; nowCalc(); } });
   $("jkOut").addEventListener("click", (e) => { const b = e.target.closest("[data-jk]"); if (b) showWindowIdx(+b.dataset.jk); });
 
   // One line: take-off, each prayer time on the flight, landing; with a bar showing where t is
