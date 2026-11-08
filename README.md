@@ -53,6 +53,8 @@ What it does:
    - The file is read **on the device**. Nothing is uploaded, and it works offline.
    - PDF reading uses [pdf.js](https://github.com/mozilla/pdf.js) 3.11.174 (Apache-2.0, bundled in `vendor/pdfjs`), loaded only when you choose a PDF.
    - The parser has been tested against one Lido-style OFP layout. Other layouts may need parser changes.
+   - **ATC route string:** paste just the route (e.g. `WMKK MITOS1B MITOS M630 JUNHA … RIVET DCT YSSY`). DEP and ARR come from the built-in airport list; waypoints come from this device's waypoint memory, or from lat/long groups such as `4000N05500E`. Airways, SID/STAR, DCT and speed/level groups are skipped. Unknown waypoints are listed and left out (the route goes direct past them); a remembered name far off the route (same name elsewhere) is also left out. Times come from the Flight box and are spread by distance.
+   - **Waypoint memory:** every fix with coordinates from an imported OFP, a saved route, or Lat/Long typed on a waypoint is remembered on the device only (*My waypoints*, included in Export backup). No navigation database is shipped: worldwide fix data is licensed.
 
 Every box has a **−** button to minimise it (remembered per device).
 
