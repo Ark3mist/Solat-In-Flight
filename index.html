@@ -1616,8 +1616,8 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   }
   let checking = false;
   async function checkUpdate(manual){
-    if (!navigator.onLine) { if (manual) $("updMsg").textContent = "Offline: connect to check."; return; }
-    if (checking) return; checking = true;
+    if (!navigator.onLine) { if (manual) $("updMsg").textContent = "Offline: connect to check."; return false; }
+    if (checking) return false; checking = true;
     if (manual) $("updMsg").textContent = "Checking…";
     try {
       const j = await (await fetch("version.json?t=" + Date.now(), { cache: "no-store" })).json();
@@ -1626,19 +1626,25 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
         announce(j);
         navigator.serviceWorker && navigator.serviceWorker.getRegistration().then((r) => r && r.update()).catch(() => {});   // start fetching it now
       } else if (manual) $("updMsg").textContent = "You have the latest version.";
+      checking = false; return true;
     } catch (e) { if (manual) $("updMsg").textContent = "Could not check (" + e.message + ")."; }
-    checking = false;
+    checking = false; return false;
   }
   $("updCur").textContent = APP_VERSION;
   $("updBtn").addEventListener("click", () => checkUpdate(true));
   $("updBarGo").addEventListener("click", doUpdate);
   $("updBarX").addEventListener("click", () => { store.set("solat.updSnooze", { v: $("updBar").dataset.v, t: Date.now() }); $("updBar").hidden = true; });
-  // Check automatically: on opening, when the app comes back to the screen or back online, and every 30 min while open.
-  const autoCheck = () => { const last = store.get("solat.lastUpdateCheck") || 0; if (Date.now() - last > 10 * MIN) checkUpdate(false); };
-  showVersion(); setTimeout(() => checkUpdate(false), 1500);
-  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") autoCheck(); });
-  addEventListener("online", () => setTimeout(() => checkUpdate(false), 2000));
-  setInterval(() => { if (document.visibilityState === "visible") checkUpdate(false); }, 30 * MIN);
+  // Check automatically once each time the app is opened: straight away if online, otherwise as soon as
+  // the device connects. No repeated checks in the background (battery).
+  showVersion();
+  let autoChecked = false;
+  const checkOnce = () => {
+    if (autoChecked || !navigator.onLine) return;
+    autoChecked = true;
+    checkUpdate(false).then((ok) => { if (!ok) autoChecked = false; });   // weak signal: try again on the next connection
+  };
+  setTimeout(checkOnce, 1500);
+  addEventListener("online", () => setTimeout(checkOnce, 2000));
 
   // Chrome/Android: offer a real install (opens full screen, no address bar) instead of a bookmark shortcut.
   // ---------- install: Android/desktop Chrome can install directly; iPhone/iPad need Safari's Share menu ----------
