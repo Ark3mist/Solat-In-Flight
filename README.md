@@ -80,7 +80,7 @@ For a review of the original Excel workbook (v3.7) and the reasons for this desi
 
 **App layout:** a bottom bar with five tabs, on every screen size:
 - **Flight:** flight times, Route (OFP import, FLs, ETAs, Clear, saved routes) and Calculate.
-- **Solat:** the Solat box (current prayer, qibla and sun from the nose, ground times below), the Jamak planner (Taqdim / Ta'khir) and the City-Pair.
+- **Solat:** the Solat box (current prayer, qibla and sun from the nose, a one-line flight timeline: DEP, prayer times, ARR/ETA), the Jamak planner (Taqdim / Ta'khir) and the City-Pair.
 - **Globe:** the globe, slider and prayer-line chips.
 - **Timeline:** prayer windows and the timeline.
 - **Settings:** version, magnetic-data expiry, update check and install; appearance (Device / Light / Dark) and the default taxi-out time used for OFP imports; **Advanced settings** (convention, Fajr/Isha angles, Asr, ihtiyat per prayer, local offset, dip on twilight), which recalculate at once; notes on the calculation.
