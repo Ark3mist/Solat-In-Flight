@@ -158,14 +158,15 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .qcell{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;min-width:120px}
 .qcell svg{width:120px;height:auto;display:block}
 .nowres{margin-top:10px}
-.altlbl{display:flex;align-items:center;justify-content:space-between;gap:4px}
-.unit{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
-.unit button{border:0;border-radius:0;padding:1px 7px;font-size:11px;background:var(--field);color:var(--muted)}
-.unit button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);font-weight:700}
 .nowgrid{display:grid;grid-template-columns:132px minmax(0,1fr);gap:12px;align-items:center}
 .nowgrid svg{width:132px;height:auto;display:block}
+@media (max-width:380px){.nowgrid{grid-template-columns:1fr;justify-items:center}.nowgrid .nowkv{width:100%}}
 .nowpray{padding:10px;border-radius:8px;background:var(--soft);margin-bottom:10px;font-size:15px}
 .nowpray .big{font-size:22px;font-weight:700;color:var(--accent)}
+.nowpray .cur{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:4px 0 6px}
+.nowpray .cur .pname{font-size:24px}
+.ptb{font-family:ui-monospace,Menlo,monospace;font-size:20px;font-weight:800;background:var(--pteal);color:#fff;padding:1px 8px;border-radius:7px}
+.nowpray .lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .nowkv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;font-size:13px;margin:0}
 .nowkv dt{color:var(--muted)} .nowkv dd{margin:0}
 .cmpin{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) minmax(0,1.2fr);gap:8px;align-items:end}
@@ -182,12 +183,18 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 @media (max-width:560px){.cmpin{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)} .cmpin>div:last-child{grid-column:1/-1}}
 .ground{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
 .ground h4{margin:0 0 6px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-.gtimes{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
-.gtimes div{border:1px solid var(--line);border-radius:6px;padding:5px 4px;text-align:center;font-size:12px}
-.gtimes b{display:block;font-family:ui-monospace,Menlo,monospace;font-size:14px}
-.gtimes .on{border-color:var(--accent);background:var(--soft)}
-.gtimes .on span{color:var(--accent);font-weight:700}
-@media (max-width:420px){.gtimes{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.ftwrap{position:relative;margin:8px 0 10px}
+.ftbar{position:relative;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.ftbar i{position:absolute;top:0;bottom:0;opacity:.85}
+.ftwrap .plane{position:absolute;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;color:var(--plane);filter:drop-shadow(0 0 1.5px var(--panel)) drop-shadow(0 0 1.5px var(--panel))}
+.ftl{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.ftl::-webkit-scrollbar{display:none}
+.ftl div{flex:1 0 auto;min-width:44px;border:1px solid var(--line);border-top:4px solid var(--pc,var(--line));border-radius:6px;padding:4px 3px;text-align:center;font-size:10px;line-height:1.25}
+.ftl b{display:block;font-family:ui-monospace,Menlo,monospace;font-size:13px}
+.ftl .past{opacity:.5}
+.ftl .on{background:var(--pteal-soft);border-color:var(--pteal);border-top-color:var(--pc,var(--pteal))}
+.ftl .on span{font-weight:800}
+.ftl .end{border-top-color:var(--ink)}
 .s{font-size:12px;color:var(--muted)}
 .installbtn{font-weight:600;border:1px solid var(--accent);color:var(--accent);background:var(--panel);padding:6px 12px;border-radius:999px}
 .installbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:10px 12px;margin-bottom:12px;border:1px solid var(--accent);border-radius:10px;background:var(--soft);font-size:14px}
@@ -233,6 +240,29 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
 #globeSec details{margin-top:6px}
 #globeSec summary{font-size:12px;color:var(--muted);cursor:pointer}
 .gtime b{color:var(--accent)}
+.gprayer{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin:2px 0 6px;padding:8px 11px;border-radius:10px;background:var(--pteal-soft);border-left:5px solid var(--pc,var(--pteal));font-family:system-ui,-apple-system,sans-serif}
+.gprayer .pn{font-size:24px;font-weight:800;color:var(--ink);line-height:1.1}
+.gprayer .pt{font-family:ui-monospace,Menlo,monospace;font-size:22px;font-weight:800;background:var(--pteal);color:#fff;padding:1px 8px;border-radius:7px}
+.gprayer .pd{flex-basis:100%;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted)}
+.gprayer .pd b{color:var(--ink)}
+.evchips button.on{border-color:var(--pteal);background:var(--pteal-soft);font-weight:700}
+td.availcell{cursor:pointer;-webkit-tap-highlight-color:transparent}
+td.availcell:hover,td.availcell:focus-visible{outline:2px solid var(--pteal);outline-offset:-2px}
+.pname{display:inline-block;font-size:20px;font-weight:800;line-height:1.2;color:var(--ink);padding:3px 12px 3px 9px;border-radius:8px;border-left:5px solid var(--pc,var(--pteal));background:var(--pteal-soft);background:color-mix(in srgb,var(--pc,var(--pteal)) 18%,transparent)}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:8px}
+.seg button{border:0;border-radius:0;padding:8px 6px;font-weight:700;background:var(--field);color:var(--muted);line-height:1.2}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button span{display:block;font-size:11px;font-weight:500}
+.seg button[aria-pressed=true]{background:var(--pteal);color:#fff}
+.seg button:disabled{cursor:not-allowed;opacity:.45}
+.jkgone{margin-top:8px;padding:7px 10px;border-radius:8px;border:1px solid var(--warn);color:var(--warn);font-size:13px;font-weight:600}
+.jk{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--pteal-soft);border-left:5px solid var(--pteal)}
+.jk .jkt{font-size:18px;font-weight:800}
+.jk .jkw{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:6px 0}
+.jk .jkw .pt{font-family:ui-monospace,Menlo,monospace;font-size:19px;font-weight:800;background:var(--pteal);color:#fff;padding:1px 8px;border-radius:7px}
+.jk ol{margin:8px 0 4px;padding-left:20px;font-size:14px;line-height:1.45}
+.jk .no{color:var(--warn);font-weight:600}
+td.availcell .go{margin-top:4px;font-size:12px;font-weight:700;color:var(--pteal)}
 .legend{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .legend button{display:inline-flex;gap:5px;align-items:center;font-size:11px;padding:2px 7px}
 .legend button[aria-pressed=false]{opacity:.4}
@@ -352,14 +382,22 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
 
   <div class="view" data-view="now" hidden>
       <section id="nowSec">
-        <h2>Now <span class="sub" id="nowClock"></span></h2>
-        <div class="r3">
-          <div><label for="nowAlt" class="altlbl">Altitude <span class="unit" role="group" aria-label="Altitude unit"><button type="button" data-u="m" aria-pressed="true">m</button><button type="button" data-u="ft" aria-pressed="false">ft</button></span></label><input id="nowAlt" class="mono" inputmode="numeric" placeholder="planned" maxlength="6"><div class="s mono" id="nowAltFt"></div></div>
-          <div><label for="nowHdg">Heading °M</label><input id="nowHdg" class="mono" inputmode="numeric" placeholder="track" maxlength="3"></div>
-          <div><label for="nowTime">Time UTC</label><input id="nowTime" class="mono" inputmode="numeric" placeholder="device" maxlength="5"><div class="s" id="nowTimeSrc"></div></div>
-        </div>
+        <h2>Solat <span class="sub" id="nowClock"></span></h2>
         <div class="gcnote" hidden role="note"></div>
         <div id="nowRes" class="nowres"><span class="s">Import an OFP or press Calculate first.</span></div>
+      </section>
+
+      <section id="jamakSec">
+        <h2>Jamak <span class="sub">combine two prayers</span></h2>
+        <div class="seg" id="jkPair" role="group" aria-label="Prayers to combine"><button type="button" data-p="zuhr">Zuhr + Asr</button><button type="button" data-p="maghrib">Maghrib + Isha</button></div>
+        <div class="seg" id="jkMode" role="group" aria-label="Type of jamak"><button type="button" data-m="taqdim">Jamak Taqdim<span>early: both in the first prayer's time</span></button><button type="button" data-m="takhir">Jamak Ta'khir<span>late: both in the second prayer's time</span></button></div>
+        <div id="jkOut"></div>
+        <details><summary>What is Jamak?</summary><div class="hint">
+          <p><b>Jamak</b> is combining two prayers in the time of one, allowed for a traveller (musafir) on a journey of at least 2 marhalah (about 81 km) that is not for a sinful purpose. Only <b>Zuhr with Asr</b> and <b>Maghrib with Isha</b> can be combined. Fajr is never combined, and Asr cannot be combined with Maghrib.</p>
+          <p><b>Jamak Taqdim</b> (early): both prayers in the time of the first (Zuhr or Maghrib). Pray in order, first prayer then the second; make the niat to combine during the first prayer, before its salam; pray the second straight after with no long break; and still be travelling when you begin the second.</p>
+          <p><b>Jamak Ta'khir</b> (late): both prayers in the time of the second (Asr or Isha). Make the niat to delay while the first prayer's time is still running, with enough of it left to pray it; otherwise the first prayer becomes qada. Praying the first prayer first is recommended, not required. You must still be travelling until both are done.</p>
+          <p>Jamak is often paired with <b>Qasar</b> (shortening a 4-rakaat prayer to 2); this planner covers only the timing. Rulings follow the Shafi'i school as practised in Malaysia; check with your own religious authority.</p>
+        </div></details>
       </section>
 
       <section id="cmpSec">
@@ -506,7 +544,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
 
 <nav class="tabbar" id="tabbar" aria-label="Sections">
   <button type="button" data-tab="flight"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="currentColor"/></svg><span>Flight</span></button>
-  <button type="button" data-tab="now"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Now</span></button>
+  <button type="button" data-tab="now"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 5.5l2.6 6.5-2.6 6.5-2.6-6.5z" fill="currentColor" fill-opacity=".25"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg><span>Solat</span></button>
   <button type="button" data-tab="globe" class="star"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg><span>Globe</span></button>
   <button type="button" data-tab="timeline"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.5" fill="currentColor"/><circle cx="4.5" cy="12" r="1.5" fill="currentColor"/><circle cx="4.5" cy="18" r="1.5" fill="currentColor"/></svg><span>Timeline</span></button>
   <button type="button" data-tab="settings"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span></button>
@@ -1006,7 +1044,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
 
     // windows
     const wb = $("winTbl").querySelector("tbody"); wb.innerHTML = "";
-    for (const w of pw.windows) {
+    pw.windows.forEach((w, wi) => {
       const se = w.startEvent;
       const openTxt = w.openAtDeparture
         ? `<span class="pill">open at take-off</span><div class="s">since ${fmtZ(w.start, ceilMin)} at ${esc(first.name)}</div>`
@@ -1037,11 +1075,11 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
       }
       const lt = state.tz ? `<div class="s">${fmtLocal(w.openAtDeparture ? route.start : w.start, ceilMin)}</div>` : "";
       wb.insertAdjacentHTML("beforeend",
-        `<tr><td><b>${w.name}</b></td><td data-l="Opens">${openTxt}${lt}</td><td data-l="Closes">${closeTxt}</td>` +
-        `<td class="availcell" data-l="Prayer time available">${availTxt}</td>` +
+        `<tr><td><span class="pname" style="--pc:${(window.SolatGlobe.LINES.find((L) => L.name === w.name) || {}).color || ""}">${w.name}</span></td><td data-l="Opens">${openTxt}${lt}</td><td data-l="Closes">${closeTxt}</td>` +
+        `<td class="availcell" data-l="Prayer time available" data-w="${wi}" role="button" tabindex="0" aria-label="Show ${w.name} on the globe">${availTxt}<div class="go">Show on globe ›</div></td>` +
         `<td data-l="Qibla from the nose"><div class="qcell">${dialSvg(rel, sunO)}` +
         `<div><b>${S.clockCode(rel)} o'clock</b></div><div class="s">${sideTxt(rel)}</div><div class="s">☀ ${sunTxt(sunO)}</div><div class="s mono">QDM ${fmtDeg(qm.q)}M · TRK ${fmtDeg(qm.trk)}M</div></div></td></tr>`);
-    }
+    });
     if (!pw.windows.length) wb.innerHTML = `<tr><td colspan="5" class="s">No prayer window overlaps this flight.</td></tr>`;
     $("winTbl").hidden = false;
 
@@ -1065,7 +1103,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     }
     $("evTbl").hidden = false;
     setupGlobe();
-    nowCache = null; nowCalc();
+    nowCalc();
   }
 
   // ---------- qibla dial ----------
@@ -1175,53 +1213,47 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   }
 
   // ---------- Now ----------
-  let nowCache = null, altUnit = store.get("solat.altUnit") === "ft" ? "ft" : "m";
-  const ft = (m) => m * 3.28084;
   const durNow = (ms) => ms < MIN ? "under 1 min" : fmtDur(ms);
+  let nowMapped = false;    // device clock placed on the loaded flight's day
   function nowTime(){
-    const v = toMin($("nowTime").value);
-    if (v === null || !result) return Date.now();
+    nowMapped = false;
+    const real = Date.now();
+    if (!result) return real;
+    // on or around the flight: the real time; on another day: the same clock time on the flight's day
+    if (real >= result.route.start - 12 * HOUR && real <= result.route.end + 12 * HOUR) return real;
+    nowMapped = true; const v = Math.floor((real % DAY) / MIN);
     // the day that puts this HHMM closest to the flight
     const { start, end } = result.route, mid = (start + end) / 2, d0 = Math.floor(start / DAY) * DAY;
     return [d0 - DAY, d0, d0 + DAY, d0 + 2 * DAY].map((d) => d + v * MIN).sort((a, b) => Math.abs(a - mid) - Math.abs(b - mid))[0];
   }
   function nowCalc(){
-    const manual = toMin($("nowTime").value) !== null;
-    $("nowTimeSrc").textContent = manual ? "set by you" : "device clock";
-    const altIn = parseFloat($("nowAlt").value);
-    const altFt = isFinite(altIn) && altIn >= 0 ? (altUnit === "m" ? ft(altIn) : altIn) : null;
-    $("nowAltFt").textContent = altFt === null ? "" : altUnit === "m"
-      ? `= ${Math.round(altFt).toLocaleString("en")} ft` : `= ${Math.round(altFt / 3.28084).toLocaleString("en")} m`;
-    const t = Math.floor(nowTime() / MIN) * MIN, d = new Date(t);
-    $("nowClock").textContent = `${pad(d.getUTCDate())}/${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}Z`;
+    const t = Math.floor(nowTime() / MIN) * MIN, d = new Date();
+    $("nowClock").textContent = `${pad(d.getUTCDate())}/${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}Z · ${pad(d.getHours())}:${pad(d.getMinutes())} device`;
+    jamakCalc(t);
     if (!result) return;
     const { route, conv } = result;
-    // Windows from now on, with the aircraft held at the altitude you entered.
-    const key = `${t}|${altFt}`;
-    if (!nowCache || nowCache.key !== key) {
-      let r2 = route, wins = result.windows;
-      if (altFt !== null) {
-        const base = route.profile;
-        const prof = Object.assign({}, base, { altitude: (x) => (x >= t ? altFt : base.altitude(x)) });
-        r2 = S.makeRoute(route.wps.map((w) => ({ name: w.name, lat: w.lat, lon: w.lon, eto: w.eto })), prof);
-        wins = S.prayerWindows(r2, conv).windows;
-      }
-      nowCache = { key, r2, wins };
-    }
-    const { r2, wins } = nowCache;
-    const s = S.situationAt(r2, wins, t);
+    const s = S.situationAt(route, result.windows, t);
     const altNow = s.alt;
     const v = window.SolatWMM.declination(s.lat, s.lon, altNow * 0.0003048, window.SolatWMM.yearOf(t));
-    const hIn = $("nowHdg").value.trim(), hM = hIn === "" ? null : ((+hIn % 360) + 360) % 360;
-    const refT = hM !== null && isFinite(hM) ? hM + v : s.track, refName = hM !== null && isFinite(hM) ? "heading" : "planned track";
+    const refT = s.track;
     const qrel = S.relBearing(S.qiblaBearing(s), refT);
     const sun = sunRel(t, s, refT);
     const phase = t < route.start ? `Before take-off (at ${esc(route.wps[0].name)})` : t > route.end ? `After landing (at ${esc(route.wps[route.wps.length - 1].name)})` : "Airborne";
-    let pray;
-    if (s.current) {
-      pray = `<div class="big">${s.current.name}</div><div><b>${durNow(s.current.end - t)}</b> left · closes ${fmtZ(s.current.end, floorMin)}${s.current.problem ? ` <span class="pill warn">check</span>` : ""}</div>`;
-    } else pray = `<div class="big" style="color:var(--muted)">No prayer now</div>`;
-    if (s.next) pray += `<div>Next <b>${s.next.name}</b> at ${fmtZ(s.next.start, ceilMin)}, in ${durNow(s.next.start - t)}</div>`;
+    // Current prayer at the time shown, always from the flight's calculated windows (same as the Timeline)
+    const cur = s.current, nxt = s.next;
+    const NEXT_EV = { Fajr: "sunrise", Zuhr: "Asr", Asr: "Maghrib", Maghrib: "Isha", Isha: "Fajr" };
+    const tagP = (n) => `<span class="pname" style="--pc:${(window.SolatGlobe.LINES.find((L) => L.name === n) || {}).color || ""}">${n}</span>`;
+    const devT = (x) => { const e = new Date(x); return `${pad(e.getHours())}:${pad(e.getMinutes())}`; };
+    const dayTxt = (x) => new Date(x).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+    let pray = `<div class="lbl">Current prayer · ${nowMapped ? `${fmtZ(t, floorMin).slice(3)} on the flight's day` : "now"}</div>`;
+    if (nowMapped) pray += `<div class="s">Today is ${dayTxt(Date.now())} but the loaded flight is on ${dayTxt(route.start)}, so your clock time is shown on the flight's day.</div>`;
+    if (cur) {
+      pray += `<div class="cur">${tagP(cur.name)}<span class="ptb">${fmtZ(cur.start, ceilMin).slice(3)}</span>` +
+        `<span>to <b class="mono">${fmtZ(cur.end, floorMin).slice(3)}</b> <span class="s">(${cur.problem ? "next event" : NEXT_EV[cur.name]})</span></span></div>` +
+        `<div><b>${durNow(cur.end - t)}</b> left${cur.problem ? ` <span class="pill warn">check</span>` : ""} <span class="s">· began ${devT(cur.start)}, ends ${devT(cur.end)} device time</span></div>`;
+    } else pray += `<div class="big" style="color:var(--muted)">No prayer now</div><div class="s">${t < route.start ? `The flight's prayer times start at take-off, ${fmtZ(route.start, floorMin).slice(3)}, in ${durNow(route.start - t)}.`
+      : t > route.end ? `The flight landed at ${fmtZ(route.end, floorMin).slice(3)}; its prayer times have ended.` : "No prayer window open at this point of the flight."}</div>`;
+    if (nxt) pray += `<div style="margin-top:4px">Next <b>${nxt.name}</b> at <b class="mono">${fmtZ(nxt.start, ceilMin).slice(3)}</b>, in ${durNow(nxt.start - t)}</div>`;
     // next sunrise / sunset on the route, and where it happens relative to the nose
     const ev = result.events.filter((e) => (e.name === "Sunrise" || e.name === "Maghrib") && e.raw > t).sort((a, b) => a.raw - b.raw)[0];
     let rs = "";
@@ -1235,54 +1267,101 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
           <dt>Qibla</dt><dd><b>${S.clockCode(qrel)} o'clock</b> <span class="s">${sideTxt(qrel)}</span></dd>
           <dt>Sun</dt><dd>☀ ${sunTxt(sun)}</dd>${rs}
           <dt>Position</dt><dd class="mono">${S.fmtPos(s.lat, s.lon)} <span class="s">${esc(S.fixRef(s))}</span></dd>
-          <dt>Altitude</dt><dd class="mono">${altFt !== null ? `${Math.round(altFt).toLocaleString("en")} ft` : `${fmtFL(altNow)} <span class="s">(planned)</span>`}</dd>
-          <dt>Reference</dt><dd class="mono">${refName === "heading" ? `HDG ${fmtDeg(hM)}M` : `TRK ${fmtDeg(s.track - v)}M <span class="s">(planned)</span>`}</dd>
-        </dl></div>${groundHtml(s, t, altFt !== null ? altFt : altNow, s.current)}`;
+          <dt>Altitude</dt><dd class="mono">${fmtFL(altNow)} <span class="s">(planned)</span></dd>
+          <dt>Reference</dt><dd class="mono">TRK ${fmtDeg(s.track - v)}M <span class="s">(planned)</span></dd>
+        </dl></div>${flightLine(t)}`;
+    const fl = $("nowFtl"), on = fl && (fl.querySelector(".on") || [...fl.children].find((c) => !c.classList.contains("past")));
+    if (on) fl.scrollLeft = Math.max(0, on.offsetLeft - fl.offsetLeft - 8);
   }
-  // Prayer times for someone on the ground directly below, for the local solar day around t.
-  const groundCache = {};
-  function groundDay(lat, lon, t){
-    const off = lon / 15 * HOUR, d0 = Math.floor((t + off) / DAY) * DAY - off;      // local mean-solar midnight
-    const key = `${lat.toFixed(2)},${lon.toFixed(2)},${d0}`;
-    if (groundCache[key]) return groundCache[key];
-    const r = S.makeRoute([{ name: "G", lat, lon, eto: d0 }, { name: "G", lat, lon, eto: d0 + DAY }],
-      S.makeProfile({ start: d0, end: d0 + DAY, initialFt: 0 }));
-    const ev = {}; for (const e of S.findEvents(r, result.conv)) if (!(e.name in ev)) ev[e.name] = e.t;
-    return (groundCache[key] = { d0, ev });
-  }
-  function groundHtml(s, t, altFt, airCurrent){
-    const { ev } = groundDay(s.lat, s.lon, t);
-    const order = ["Fajr", "Sunrise", "Zuhr", "Asr", "Maghrib", "Isha"];
-    // the period in force on the ground at t: the last event passed (Sunrise ends Fajr; nothing until Zuhr)
-    let cur = null; for (const n of order) if (ev[n] != null && ev[n] <= t) cur = n;
-    if (cur === null) cur = "Isha";                  // before today's Fajr: still last night's Isha
-    const label = { Sunrise: "Syuruk" };
-    const cells = order.map((n) => {
-      const v = ev[n];
-      const txt = v == null ? "—" : (() => { const d = new Date(n === "Sunrise" ? floorMin(v) : ceilMin(v)); return pad(d.getUTCHours()) + pad(d.getUTCMinutes()); })();
-      return `<div class="${n === cur && n !== "Sunrise" ? "on" : ""}"><span>${label[n] || n}</span><b>${txt}</b></div>`;
-    }).join("");
-    const groundNow = cur === "Sunrise" ? "no prayer (after sunrise)" : cur;
-    const air = airCurrent ? airCurrent.name : "no prayer";
-    const lt = " · UTC";
-    const note = altFt > 1000 ? `<div class="s" style="margin-top:6px">On the ground now: <b>${groundNow}</b> · in the aircraft: <b>${air}</b>${groundNow !== air && !(cur === "Sunrise" && !airCurrent) ? " (altitude and movement shift the times)" : ""}.</div>` : "";
-    return `<div class="ground"><h4>On the ground below · ${S.fmtPos(s.lat, s.lon)}${lt}</h4><div class="gtimes">${cells}</div>${note}</div>`;
-  }
-  ["nowAlt", "nowHdg", "nowTime"].forEach((k) => $(k).addEventListener("input", () => nowCalc()));
-  // Altitude unit: metres (cabin screens) or feet (cockpit). Switching converts a value already entered.
-  function setAltUnit(u, convert){
-    if (convert && u !== altUnit) {
-      const v = parseFloat($("nowAlt").value);
-      if (isFinite(v)) $("nowAlt").value = Math.round(u === "ft" ? ft(v) : v / 3.28084);
+  // ---------- Jamak planner ----------
+  let jkPair = null, jkMode = "taqdim";
+  const NEXT_OF = { Zuhr: "Asr", Asr: "Maghrib", Maghrib: "Isha", Isha: "Fajr" };
+  function jamakCalc(t){
+    const out = $("jkOut");
+    if (!result) { out.innerHTML = `<div class="s" style="margin-top:8px">Import an OFP or press Calculate first.</div>`; return; }
+    const { route, windows } = result;
+    if (!jkPair) {                       // start on the pair that is open now or next
+      const st = S.situationAt(route, windows, t), n = (st.current || st.next || {}).name;
+      jkPair = n === "Maghrib" || n === "Isha" ? "maghrib" : n === "Zuhr" || n === "Asr" ? "zuhr"
+        : windows.some((w) => w.name === "Zuhr" || w.name === "Asr") ? "zuhr" : "maghrib";
     }
-    altUnit = u; store.set("solat.altUnit", u);
-    document.querySelectorAll(".unit button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.u === u)));
-    $("nowAlt").placeholder = "planned";
-    nowCalc();
+    $("jkPair").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.p === jkPair)));
+    const [A, B] = jkPair === "zuhr" ? ["Zuhr", "Asr"] : ["Maghrib", "Isha"];
+    const wa = windows.find((w) => w.name === A);
+    const wb = wa ? windows.find((w) => w.name === B && w.start >= wa.start) : windows.find((w) => w.name === B);
+    // Taqdim needs the first prayer's time: once it has ended, it can no longer be chosen
+    const taqdimGone = !!wa && t >= wa.end;
+    const bT = $("jkMode").querySelector("[data-m=taqdim]");
+    bT.disabled = taqdimGone;
+    let gone = "";
+    if (taqdimGone && jkMode === "taqdim") { jkMode = "takhir"; }
+    if (taqdimGone) gone = `<div class="jkgone">Jamak Taqdim is no longer possible: ${A} time ended at <b class="mono">${fmtZ(wa.end, floorMin).slice(3)}</b>.</div>`;
+    $("jkMode").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.m === jkMode)));
+    bT.querySelector("span").textContent = taqdimGone ? `${A} time has passed` : `early: both in ${A} time`;
+    $("jkMode").querySelector("[data-m=takhir] span").textContent = `late: both in ${B} time`;
+    const km = route.distNm * 1.852;
+    const dist = km >= 81 ? `<div class="s">Journey ${Math.round(km).toLocaleString("en")} km, over 2 marhalah (about 81 km).</div>`
+      : `<div class="s no">Journey ${Math.round(km)} km is under 2 marhalah (about 81 km): jamak is not allowed for this trip.</div>`;
+    const tag = (n) => `<span class="pname" style="--pc:${(window.SolatGlobe.LINES.find((L) => L.name === n) || {}).color || ""};font-size:16px">${n}</span>`;
+    const name0 = esc(route.wps[0].name), name1 = esc(route.wps[route.wps.length - 1].name);
+    const win = (w) => {              // the part of a window inside the flight
+      const from = Math.max(w.start, route.start), st = w.openAtDeparture ? S.situationAt(route, windows, from) : w.startEvent;
+      const q = S.relBearing(S.qiblaBearing(st), st.track);
+      return `<div class="jkw">${w.openAtDeparture ? `<span class="pill">open at take-off</span>` : `<span class="pt">${fmtZ(from, ceilMin).slice(3)}</span>`}` +
+        `<span>to <b class="mono">${fmtZ(w.end, floorMin).slice(3)}</b> <span class="s">(${w.problem ? "next event" : NEXT_OF[w.name] + " begins"})</span></span>` +
+        `<span>· <b>${fmtDur(floorMin(w.end) - ceilMin(from))}</b> available</span></div>` +
+        `<div class="s">${w.openAtDeparture ? `Open since ${fmtZ(w.start, ceilMin).slice(3)} at ${name0}` : `Opens at ${esc(S.fixRef(st))}, ${fmtFL(st.alt)}`} · Qibla <b>${S.clockCode(q)} o'clock</b> from the nose</div>` +
+        (w.openAtArrival ? `<div class="s">Still open at landing; ${fmtDur(floorMin(route.end) - ceilMin(from))} of it airborne.</div>` : "");
+    };
+    let h;
+    if (jkMode === "taqdim") {
+      h = `<div class="jkt">Pray ${tag(A)} then ${tag(B)} in ${A} time</div>`;
+      if (!wa) h += `<p class="no">${A} time does not fall during this flight, so Jamak Taqdim with ${A} is not possible in the air. ${wb && wb.openAtDeparture ? `${A} ended before take-off from ${name0}.` : `${A} starts after landing at ${name1}.`}</p>`;
+      else h += win(wa) + `<ol><li>Make the niat for <b>Jamak Taqdim</b> in ${A}, before its salam.</li>` +
+        `<li>Pray ${A} first, then ${B} straight after, with no long break.</li>` +
+        `<li>You must still be travelling when you begin ${B}.</li></ol>` +
+        `<button type="button" class="link" data-jk="${windows.indexOf(wa)}">Show on globe ›</button>`;
+    } else {
+      h = `<div class="jkt">Pray ${tag(A)} and ${tag(B)} in ${B} time</div>`;
+      if (!wb) h += `<p class="no">${B} time does not start during this flight, so Jamak Ta'khir can only be done after landing at ${name1}, while you are still a traveller.</p>`;
+      else {
+        const niat = !wa ? `<li><b>${A} time ended before take-off</b> (at ${name0}): the niat to delay must have been made then, or ${A} is now qada.</li>`
+          : t >= wa.end ? `<li><b>${A} time has ended</b> (${fmtZ(wa.end, floorMin).slice(3)}). Jamak Ta'khir is valid only if you made the niat before then; otherwise ${A} is now qada.</li>`
+          : `<li>Make the niat for <b>Jamak Ta'khir</b> during ${A} time: ${wa.openAtDeparture ? "before take-off or" : `after <b class="mono">${fmtZ(wa.start, ceilMin).slice(3)}</b> and`} before <b class="mono">${fmtZ(wa.end, floorMin).slice(3)}</b>, while there is still time to pray ${A}.</li>`;
+        h += win(wb) + `<ol>${niat}<li>Pray both in ${B} time. Praying ${A} first is recommended, not required.</li>` +
+          `<li>You must still be travelling until both are done.${wb.openAtArrival ? " If you finish after landing, do it before you reach home." : ""}</li></ol>` +
+          `<button type="button" class="link" data-jk="${windows.indexOf(wb)}">Show on globe ›</button>`;
+      }
+    }
+    const hanafi = result.conv.asr === 2 ? `<div class="s no">You chose Hanafi Asr. The Hanafi school does not allow jamak for travel (only at Arafah and Muzdalifah during Hajj); this planner follows the Shafi'i ruling.</div>` : "";
+    out.innerHTML = `${gone}<div class="jk">${h}${dist}${hanafi}</div>`;
   }
-  document.querySelectorAll(".unit button").forEach((b) => b.addEventListener("click", (e) => { e.preventDefault(); setAltUnit(b.dataset.u, true); }));
-  setInterval(() => { if (toMin($("nowTime").value) === null) nowCalc(); }, 20000);
-  setAltUnit(altUnit, false);
+  $("jkPair").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { jkPair = b.dataset.p; nowCalc(); } });
+  $("jkMode").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b && !b.disabled) { jkMode = b.dataset.m; nowCalc(); } });
+  $("jkOut").addEventListener("click", (e) => { const b = e.target.closest("[data-jk]"); if (b) showWindowIdx(+b.dataset.jk); });
+
+  // One line: take-off, each prayer time on the flight, landing; with a bar showing where t is
+  function flightLine(t){
+    const { route, events, windows, estimated } = result, span = route.end - route.start;
+    const col = (n) => (window.SolatGlobe.LINES.find((L) => L.name === n) || {}).color || "";
+    const pct = (x) => Math.max(0, Math.min(100, (x - route.start) / span * 100));
+    const hm = (x, r) => { const d = new Date(r(x)); return pad(d.getUTCHours()) + pad(d.getUTCMinutes()); };
+    const segs = windows.map((w) => `<i style="left:${pct(w.start)}%;width:${pct(w.end) - pct(w.start)}%;background:${col(w.name)}"></i>`).join("");
+    // thin aircraft, nose to the right (direction of time)
+    const nowm = t >= route.start && t <= route.end ? `<svg class="plane" style="left:${pct(t)}%" viewBox="0 0 24 24" aria-label="Aircraft now"><path fill="currentColor" d="M22 12c0-.6-.5-1-1.1-1H15L10.2 3.5H8.6L11 11H5.6L4 8.8H2.6l1 3.2-1 3.2H4l1.6-2.2H11l-2.4 7.5h1.6L15 13h5.9c.6 0 1.1-.4 1.1-1z"/></svg>` : "";
+    const cur = S.situationAt(route, windows, t).current;
+    const open0 = windows.filter((w) => w.openAtDeparture).map((w) => w.name).join(", ");
+    const cells = [`<div class="end${t > route.start ? " past" : ""}"><span>DEP${open0 ? ` · ${open0}` : ""}</span><b>${hm(route.start, floorMin)}</b></div>`];
+    for (const e of events) {
+      const isCur = cur && cur.startEvent === e;
+      cells.push(`<div style="--pc:${col(e.name)}" class="${isCur ? "on" : e.raw <= t ? "past" : ""}"><span>${e.name === "Sunrise" ? "Syuruk" : e.name}</span><b>${hm(e.t, e.name === "Sunrise" ? floorMin : ceilMin)}</b></div>`);
+    }
+    cells.push(`<div class="end${t > route.end ? " past" : ""}"><span>${estimated ? "ETA" : "ARR"}</span><b>${hm(route.end, floorMin)}</b></div>`);
+    return `<div class="ground"><h4>Flight timeline · UTC</h4><div class="ftwrap"><div class="ftbar">${segs}</div>${nowm}</div><div class="ftl" id="nowFtl">${cells.join("")}</div></div>`;
+  }
+  setInterval(nowCalc, 20000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) nowCalc(); });
+  nowCalc();
 
   // ---------- globe ----------
   const globe = window.SolatGlobe.create($("globe"), {
@@ -1292,7 +1371,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   $("gZin").addEventListener("click", () => globe.zoomBy(2));
   $("gZout").addEventListener("click", () => globe.zoomBy(0.5));
   $("gZreset").addEventListener("click", () => globe.reset());
-  let exactT = null, exactEv = null;   // set when jumping to an event, cleared when the slider moves
+  let exactT = null, exactEv = null, focusWin = null;   // set when jumping to an event, cleared when the slider moves
   const hiddenLines = store.get("solat.hiddenLines") || {};
   const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
   window.SolatGlobe.LINES.forEach((L) => {
@@ -1336,13 +1415,39 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
       const sky = `Sun ${sunAlt.toFixed(1)}° (${vis(sunAlt, 0.833)}) · Moon ${moonAlt.toFixed(1)}° (${vis(moonAlt, 0.833)}), ${mp.phase.toLowerCase()} ${Math.round(mp.illum * 100)}% lit, ${age.toFixed(1)} d after new moon`;
       const ev = exactEv && exactT === exactEv.raw ? exactEv : null;
       const hms = (x) => { const d = new Date(Math.round(x / 1000) * 1000); return `${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}Z`; };
-      const evLine = ev ? `<b>${ev.name}</b> line crossed ${hms(ev.raw)} at ${esc(S.fixRef(ev))} · prayer time <b>${fmtZ(ev.t, ev.name === "Sunrise" ? floorMin : ceilMin).slice(3)}</b>${ev.t > ev.raw ? ` (incl. +${Math.round((ev.t - ev.raw) / MIN)} min ihtiyat)` : ""}<br>` : "";
+      const lineCol = (n) => (window.SolatGlobe.LINES.find((L) => L.name === n) || {}).color || "";
+      const fw = focusWin && exactT === route.start ? focusWin : null;
+      const evLine = ev
+        ? `<div class="gprayer" style="--pc:${lineCol(ev.name)}"><span class="pn">${ev.name}</span><span class="pt">${fmtZ(ev.t, ev.name === "Sunrise" ? floorMin : ceilMin).slice(3)}</span>` +
+          `<span class="pd">line crossed ${hms(ev.raw)} at <b>${esc(S.fixRef(ev))}</b>${ev.t > ev.raw ? ` · incl. +${Math.round((ev.t - ev.raw) / MIN)} min ihtiyat` : ""}</span></div>`
+        : fw ? `<div class="gprayer" style="--pc:${lineCol(fw.name)}"><span class="pn">${fw.name}</span><span class="pt">${fmtZ(fw.start, ceilMin).slice(3)}</span>` +
+          `<span class="pd">already open at take-off · <b>${fmtDur(floorMin(fw.end) - ceilMin(route.start))}</b> available</span></div>` : "";
+      $("gEvents").querySelectorAll("button").forEach((b, i) => b.classList.toggle("on", !!ev && events[i] === ev));
       const gm = magAt(s, t), grel = S.relBearing(gm.q, gm.trk);
       const qib = `Qibla <b>${S.clockCode(grel)} o'clock</b> from the nose (${sideTxt(grel)}) · TRK ${fmtDeg(gm.trk)}M`;
       $("gTime").innerHTML = evLine + `${fmtZ(t, floorMin)} · ${fmtT(t - route.start)} · ${fmtFL(s.alt)} · ${S.fmtPos(s.lat, s.lon)} · ${esc(S.fixRef(s))}<br>${qib}<br>${pr}${nx}<br><span class="sub">${sky}</span>`;
     });
   }
-  $("gSlider").addEventListener("input", () => { exactT = null; drawGlobe(); });
+  $("gSlider").addEventListener("input", () => { exactT = null; focusWin = null; drawGlobe(); });
+  // jump to a moment and zoom onto the aircraft
+  function jumpTo(t, ev, win){
+    stop(); exactT = t; exactEv = ev || null; focusWin = win || null;
+    $("gSlider").value = Math.round((t - result.route.start) / MIN);
+    globe.setFollow(true); $("gFollow").checked = true; globe.setZoom(14);
+    drawGlobe();
+  }
+  // Timeline: tap "Prayer time available" to see where that prayer opens
+  function showWindow(cell){ showWindowIdx(+cell.dataset.w); }
+  function showWindowIdx(i){
+    const w = result && result.windows[i]; if (!w) return;
+    showTab("globe");
+    if (w.openAtDeparture) return jumpTo(result.route.start, null, w);
+    const e = result.events.find((x) => x === w.startEvent) || result.events.find((x) => x.name === w.name && Math.abs(x.t - w.start) < MIN);
+    if (e) jumpTo(e.raw, e); else jumpTo(Math.max(result.route.start, Math.min(result.route.end, w.start)), null, null);
+  }
+  $("winTbl").addEventListener("click", (ev) => { const c = ev.target.closest("td.availcell"); if (c) showWindow(c); });
+  $("winTbl").addEventListener("keydown", (ev) => { const c = ev.target.closest("td.availcell");
+    if (c && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); showWindow(c); } });
   $("gFollow").addEventListener("change", () => globe.setFollow($("gFollow").checked));
   let playing = null;
   function stop(){ if (playing) { clearInterval(playing); playing = null; $("gPlay").textContent = "▶"; $("gPlay").setAttribute("aria-label", "Play"); } }
@@ -1370,12 +1475,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
       const L = window.SolatGlobe.LINES.find((x) => x.name === e.name);
       const b = document.createElement("button"); b.type = "button";
       b.innerHTML = `<i style="background:${L ? L.color : "var(--ink)"}"></i><b>${e.name}</b> ${fmtZ(e.t, e.name === "Sunrise" ? floorMin : ceilMin)} · ${esc(S.fixRef(e))}`;
-      b.addEventListener("click", () => {
-        stop(); exactT = e.raw; exactEv = e;
-        $("gSlider").value = Math.round((e.raw - result.route.start) / MIN);
-        globe.setFollow(true); $("gFollow").checked = true; globe.setZoom(14);
-        drawGlobe();
-      });
+      b.addEventListener("click", () => jumpTo(e.raw, e));
       box.appendChild(b);
     }
     $("globeSec").hidden = false; $("globeEmpty").hidden = true;
@@ -1582,7 +1682,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   });
 
   // ---------- tabs (bottom bar) ----------
-  const TABS = { flight: "Flight", now: "Now", globe: "Globe", timeline: "Timeline", settings: "Settings" };
+  const TABS = { flight: "Flight", now: "Solat", globe: "Globe", timeline: "Timeline", settings: "Settings" };
   const tabScroll = {};
   let curTab = null;
   function showTab(name, keepScroll){
@@ -1615,7 +1715,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     $("hereOk").innerHTML = ok ? '<span style="color:var(--accent)">✓ official</span>' : '<span style="color:var(--err)">⚠ not the official address</span>';
   })();
   // Version MAJOR-HOTFIX-YY: MAJOR = major change, HOTFIX = 01, 02, 03… (back to 01 after a major change), YY = year of the update.
-  const APP_VERSION = "1-07-26", APP_DATE = Date.UTC(2026, 10, 8);
+  const APP_VERSION = "1-08-26", APP_DATE = Date.UTC(2026, 10, 8);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){
