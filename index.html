@@ -1326,7 +1326,8 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
           `<button type="button" class="link" data-jk="${windows.indexOf(wb)}">Show on globe ›</button>`;
       }
     }
-    out.innerHTML = `<div class="jk">${h}${dist}</div>`;
+    const hanafi = result.conv.asr === 2 ? `<div class="s no">You chose Hanafi Asr. The Hanafi school does not allow jamak for travel (only at Arafah and Muzdalifah during Hajj); this planner follows the Shafi'i ruling.</div>` : "";
+    out.innerHTML = `<div class="jk">${h}${dist}${hanafi}</div>`;
   }
   $("jkPair").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { jkPair = b.dataset.p; nowCalc(); } });
   $("jkMode").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { jkMode = b.dataset.m; nowCalc(); } });
