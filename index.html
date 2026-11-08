@@ -260,12 +260,6 @@ td.availcell:hover,td.availcell:focus-visible{outline:2px solid var(--pteal);out
 .seg button span{display:block;font-size:11px;font-weight:500}
 .seg button[aria-pressed=true]{background:var(--pteal);color:#fff}
 .seg button:disabled{cursor:not-allowed;opacity:.45}
-.changes h4{display:flex;gap:8px;align-items:baseline;margin:12px 0 4px;font-size:14px}
-.changes h4:first-child{margin-top:0}
-.changes h4 .mono{font-size:15px;color:var(--pteal)}
-.changes h4 .s{font-weight:400}
-.changes ul{margin:0;padding-left:20px;font-size:13px;line-height:1.45}
-.changes .cur{font-size:11px;font-weight:700;color:#fff;background:var(--pteal);padding:1px 6px;border-radius:999px}
 .jkgone{margin-top:8px;padding:7px 10px;border-radius:8px;border:1px solid var(--warn);color:var(--warn);font-size:13px;font-weight:600}
 .jk{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--pteal-soft);border-left:5px solid var(--pteal)}
 .jk .jkt{font-size:18px;font-weight:800}
@@ -481,11 +475,6 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
       <ul id="appCheckList" class="mono" style="font-size:12px;padding-left:18px;margin:6px 0"></ul>
       <button type="button" id="appCheckRun">Run again</button>
     </details>
-      </section>
-
-      <section id="changeSec">
-        <h2>What's new</h2>
-        <div id="changeList" class="changes"></div>
       </section>
 
       <section id="prefSec">
@@ -907,7 +896,6 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   const minState = store.get("solat.min") || {};
   // On a phone these always open minimised (tap + to open).
   const PHONE = matchMedia("(max-width: 860px)").matches, PHONE_MIN = ["routeSec", "winSec", "tlSec"];
-  const DEFAULT_MIN = ["changeSec"];          // start minimised until the user opens them
   document.querySelectorAll("main section").forEach((sec) => {
     const h = sec.querySelector(":scope > h2"); if (!h) return;
     const key = sec.id || h.firstChild.textContent.trim();
@@ -920,7 +908,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
       b.setAttribute("aria-label", (m ? "Restore " : "Minimise ") + h.firstChild.textContent.trim());
       b.title = m ? "Restore" : "Minimise";
     };
-    set(key in minState ? !!minState[key] : DEFAULT_MIN.includes(key));
+    set(!!minState[key]);
     b.addEventListener("click", () => {
       const m = !sec.classList.contains("min"); set(m);
       minState[key] = m; store.set("solat.min", minState);
@@ -1831,41 +1819,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     $("hereOk").innerHTML = ok ? '<span style="color:var(--accent)">✓ official</span>' : '<span style="color:var(--err)">⚠ not the official address</span>';
   })();
   // Version MAJOR-HOTFIX-YY: MAJOR = major change, HOTFIX = 01, 02, 03… (back to 01 after a major change), YY = year of the update.
-  const APP_VERSION = "1-10-26", APP_DATE = Date.UTC(2026, 10, 8);
-  // Changelog, newest first. Add the entry with the change; the version is bumped at release.
-  const CHANGELOG = [
-    ["1-10-26", "8 Nov 2026", [
-      "Route: paste just the ATC route (e.g. WMKK MITOS1B MITOS M630 … YSSY) and the app builds the route.",
-      "Waypoints are remembered on your device from imported OFPs, saved routes and Lat/Long you type, so a route string places them next time.",
-      "Settings: this What's new list."]],
-    ["1-09-26", "8 Nov 2026", [
-      "Solat: tap the flight timeline to open the globe at the current time; tap a prayer, DEP or ARR to jump there."]],
-    ["1-08-26", "8 Nov 2026", [
-      "Globe: land and sea no longer swap colours while rotating.",
-      "Timeline: tap Prayer time available to see that prayer on the globe; prayer names highlighted.",
-      "Now tab renamed Solat: follows your clock, shows the current prayer from the flight's times and a one-line flight timeline with the aircraft.",
-      "Jamak planner (Taqdim / Ta'khir) for Zuhr + Asr and Maghrib + Isha; Taqdim locks once its time has passed."]],
-    ["1-07-26", "8 Nov 2026", [
-      "Flight time (airborne to landing) replaces Avg GS; the average ground speed is shown as a note.",
-      "Estimated landing uses 450 kt.",
-      "The app checks for an update once each time it opens online, and shows a banner."]],
-    ["1-06-26", "7 Nov 2026", [
-      "Calculate opens the globe.",
-      "Date field fixed on iPhone and Android."]],
-    ["1-05-26", "7 Nov 2026", [
-      "Anonymous visit counts (Cloudflare Web Analytics) on the official address only."]],
-    ["1-03-26", "7 Nov 2026", [
-      "OFP import shows the average ground speed and a reminder to update ETAs and FLs in flight."]],
-    ["1-02-26", "7 Nov 2026", [
-      "New name: SolAir, Solat in the air."]],
-    ["1-01-26", "7 Nov 2026", [
-      "First numbered release: worldwide airport search by city, name or code; great-circle warning; globe, timeline and five calculation methods."]],
-  ];
-  const verKey = (v) => String(v).split("-").map(Number);       // MAJOR-HOTFIX-YY
-  const newer = (a, b) => { const x = verKey(a), y = verKey(b); return x[0] !== y[0] ? x[0] > y[0] : x[1] > y[1]; };
-  $("changeList").innerHTML = CHANGELOG.map(([v, d, items]) =>
-    `<h4><span class="mono">${v}</span><span class="s">${d}</span>${v === APP_VERSION ? `<span class="cur">this version</span>` : newer(v, APP_VERSION) ? `<span class="pill warn">preview</span>` : ""}</h4>` +
-    `<ul>${items.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>`).join("");
+  const APP_VERSION = "1-11-26", APP_DATE = Date.UTC(2026, 10, 8);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){

@@ -72,8 +72,6 @@ For a review of the original Excel workbook (v3.7) and the reasons for this desi
 
 **City-Pair:** the Route's DEP and ARR airports (always taken from the Route) and a date, which follows the flight date unless you change it. Shows each prayer in local time (with daylight saving) and UTC, the real-time gap between them, which prayer is in force now at each, daylight length and qibla. Works for any airport in the database below, with its own time zone.
 
-**What's new:** Settings has a changelog box, minimised by default (tap + to open; the choice is remembered). Entries live in `CHANGELOG` in index.html, newest first; add one with each change. An entry newer than the running version is tagged *preview*, the running one *this version*.
-
 **Flight time and average ground speed:** the Flight box has *Flight time* (airborne to landing, H:MM); typing it sets Landing, and changing Landing updates it. Below the boxes a teal note shows the average ground speed: from an imported OFP (ground distance ÷ planned flight time, with the average wind), otherwise route distance ÷ flight time. With Landing blank, landing is estimated at 450 kt (or the OFP's average) and shown greyed in Landing and Flight time. The note also reminds the user to update ETAs to actual times (ATO) and FLs in flight. In the Timeline, *Prayer time available* is highlighted in teal (#00A19C).
 
 **Great-circle warning:** when the Route has only DEP and ARR (typical for a passenger without the OFP), the Globe, Solat and Timeline tabs show a warning that the path is a great circle, not the airline's flight plan, and that prayer times may differ by 10–20 min or more. It disappears once an OFP is imported or waypoints are added.
