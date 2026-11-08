@@ -260,6 +260,12 @@ td.availcell:hover,td.availcell:focus-visible{outline:2px solid var(--pteal);out
 .seg button span{display:block;font-size:11px;font-weight:500}
 .seg button[aria-pressed=true]{background:var(--pteal);color:#fff}
 .seg button:disabled{cursor:not-allowed;opacity:.45}
+.changes h4{display:flex;gap:8px;align-items:baseline;margin:12px 0 4px;font-size:14px}
+.changes h4:first-child{margin-top:0}
+.changes h4 .mono{font-size:15px;color:var(--pteal)}
+.changes h4 .s{font-weight:400}
+.changes ul{margin:0;padding-left:20px;font-size:13px;line-height:1.45}
+.changes .cur{font-size:11px;font-weight:700;color:#fff;background:var(--pteal);padding:1px 6px;border-radius:999px}
 .jkgone{margin-top:8px;padding:7px 10px;border-radius:8px;border:1px solid var(--warn);color:var(--warn);font-size:13px;font-weight:600}
 .jk{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--pteal-soft);border-left:5px solid var(--pteal)}
 .jk .jkt{font-size:18px;font-weight:800}
@@ -342,7 +348,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
       <section id="routeSec">
         <h2>Route <span><button class="ofpbtn" id="ofpOpen" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3"/></svg>Import OFP</button> <button class="link" id="llToggle" type="button" aria-pressed="false">Lat/Long</button> <button class="link" id="addWp" type="button">+ Add</button> <button class="link danger" id="clearRoute" type="button">Clear</button></span></h2>
         <div id="ofpBox" class="ofp" hidden>
-          <div class="hint" style="margin-top:0">Load the briefing package (PDF) or paste its text. It is read <b>on this device only</b>: nothing is uploaded, and it works offline. The app reads the coordinates list, the nav log (ELTM and FL) and the header times.</div>
+          <div class="hint" style="margin-top:0">Load the briefing package (PDF) or paste its text. It is read <b>on this device only</b>: nothing is uploaded, and it works offline. The app reads the coordinates list, the nav log (ELTM and FL) and the header times. You can also paste just the <b>ATC route</b> (e.g. <span class="mono">WMKK MITOS1B MITOS M630 JUNHA … YSSY</span>): waypoints you have imported before are placed automatically.</div>
           <div class="btnrow">
             <button type="button" id="ofpPick">Choose PDF…</button>
             <input type="file" id="ofpFile" accept="application/pdf,.pdf,text/plain,.txt" hidden>
@@ -475,6 +481,11 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
       <ul id="appCheckList" class="mono" style="font-size:12px;padding-left:18px;margin:6px 0"></ul>
       <button type="button" id="appCheckRun">Run again</button>
     </details>
+      </section>
+
+      <section id="changeSec">
+        <h2>What's new</h2>
+        <div id="changeList" class="changes"></div>
       </section>
 
       <section id="prefSec">
@@ -617,6 +628,24 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     fixes[id] = { lat: S.fmtLat(lat), lon: S.fmtLon(lon) };
     return null;
   }
+  // Waypoint memory: every fix with coordinates the app sees (imported OFPs, saved routes, Lat/Long
+  // typed on a waypoint) is remembered on this device, so a route string can place it next time.
+  const PSEUDO_FIX = /^(SETP\d*|ETP\d*|EEP\d*|EXP\d*|ENTRY|EXIT|T-O-C|T-O-D|TOC|TOD|CP\d*)$/;
+  function learnFixes(list){
+    let n = 0;
+    for (const p of list) {
+      const id = String(p.name || p.id || "").trim().toUpperCase();
+      // 4-letter airports come from the built-in list; 2–3 letter navaids are kept even when an airport
+      // shares the code (DET is a VOR near London and Detroit City airport)
+      if (!/^[A-Z][A-Z0-9]{1,5}$/.test(id) || PSEUDO_FIX.test(id) || (/^[A-Z]{4}$/.test(id) && S.station(id))) continue;
+      const lat = typeof p.lat === "number" ? p.lat : S.parseLat(p.lat), lon = typeof p.lon === "number" ? p.lon : S.parseLon(p.lon);
+      if (lat === null || lon === null || !isFinite(lat) || !isFinite(lon)) continue;
+      const v = { lat: S.fmtLat(lat), lon: S.fmtLon(lon) };
+      if (!fixes[id] || fixes[id].lat !== v.lat || fixes[id].lon !== v.lon) { fixes[id] = v; n++; }
+    }
+    if (n) { store.set("solat.fixes", fixes); refreshDatalist(); }
+    return n;
+  }
   function renderRoutes(sel){
     const box = $("routeSel"); box.innerHTML = "";
     const keys = Object.keys(routes).sort();
@@ -726,6 +755,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
           save(); return;
         }
         w[k] = v;
+        if ((k === "lat" || k === "lon") && !first && !last) learnFixes([w]);
         save();
       }));
       const idIn = row.querySelector("[data-k=id]");
@@ -871,11 +901,13 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     $("libImport").value = "";
   });
   refreshDatalist(); renderRoutes();
+  learnFixes([...Object.values(routes).flatMap((r) => r.wps || []), ...(state.wps || [])]);
 
   // ---------- minimise / restore any box (remembered per device) ----------
   const minState = store.get("solat.min") || {};
   // On a phone these always open minimised (tap + to open).
   const PHONE = matchMedia("(max-width: 860px)").matches, PHONE_MIN = ["routeSec", "winSec", "tlSec"];
+  const DEFAULT_MIN = ["changeSec"];          // start minimised until the user opens them
   document.querySelectorAll("main section").forEach((sec) => {
     const h = sec.querySelector(":scope > h2"); if (!h) return;
     const key = sec.id || h.firstChild.textContent.trim();
@@ -888,7 +920,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
       b.setAttribute("aria-label", (m ? "Restore " : "Minimise ") + h.firstChild.textContent.trim());
       b.title = m ? "Restore" : "Minimise";
     };
-    set(!!minState[key]);
+    set(key in minState ? !!minState[key] : DEFAULT_MIN.includes(key));
     b.addEventListener("click", () => {
       const m = !sec.classList.contains("min"); set(m);
       minState[key] = m; store.set("solat.min", minState);
@@ -1596,6 +1628,65 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     $("ofpPreview").innerHTML = h;
     if (ok) $("ofpApply").addEventListener("click", applyOfp);
   }
+  // ATC route string: "WMKK MITOS1B MITOS M630 JUNHA ... RIVET DCT YSSY". Airports from the built-in
+  // list, waypoints from this device's memory (or lat/long groups such as 0230N10130E); airways, SID/STAR,
+  // DCT and speed/level groups are skipped. Unknown waypoints are left out: the route goes direct.
+  const nmBetween = (a, b) => {
+    const r = Math.PI / 180, x = Math.sin((b.lat - a.lat) * r / 2), y = Math.sin((b.lon - a.lon) * r / 2);
+    return 2 * 3440.065 * Math.asin(Math.min(1, Math.sqrt(x * x + Math.cos(a.lat * r) * Math.cos(b.lat * r) * y * y)));
+  };
+  function routeString(text){
+    const toks = String(text || "").toUpperCase().split(/\s+/).map((t) => t.split("/")[0]).filter(Boolean);
+    if (toks.length < 2 || toks.length > 400) return null;
+    const isApt = (t) => /^[A-Z]{4}$/.test(t) && S.station(t);
+    const iD = toks.findIndex(isApt), iA = toks.length - 1 - [...toks].reverse().findIndex(isApt);
+    if (iD < 0 || iA <= iD) return null;
+    const D = S.station(toks[iD]), A = S.station(toks[iA]);
+    const dep = { id: toks[iD], lat: D.lat, lon: D.lon }, arr = { id: toks[iA], lat: A.lat, lon: A.lon };
+    const direct = nmBetween(dep, arr), pts = [dep], unknown = [], off = [];
+    let skipped = 0;
+    for (const t of toks.slice(iD + 1, iA)) {
+      let m;
+      if (t === "DCT" || /^[A-Z]{1,2}\d{1,4}[A-Z]?$/.test(t) || /^[A-Z]{2,5}\d[A-Z]?$/.test(t) || /^[NMK]\d{3,4}([FASM]\d{3,4}|VFR)$/.test(t)) { skipped++; continue; }
+      let p = null;
+      if ((m = /^(\d{2})(\d{2})?([NS])(\d{3})(\d{2})?([EW])$/.exec(t))) {
+        const lat = (+m[1] + (+m[2] || 0) / 60) * (m[3] === "S" ? -1 : 1), lon = (+m[4] + (+m[5] || 0) / 60) * (m[6] === "W" ? -1 : 1);
+        p = { id: t, lat, lon };
+      } else if (/^[A-Z]{2,5}$/.test(t)) {
+        const c = lookup(t);
+        if (!c) { unknown.push(t); continue; }
+        p = { id: t, lat: c.lat, lon: c.lon };
+      } else { skipped++; continue; }
+      // a remembered name from another part of the world: leave it out
+      if (nmBetween(dep, p) + nmBetween(p, arr) > direct * 1.3 + 300) { off.push(t); continue; }
+      pts.push(p);
+    }
+    pts.push(arr);
+    return { pts, unknown, off, direct };
+  }
+  let routeData = null;
+  function showRouteString(r){
+    routeData = r;
+    const known = r.pts.length - 2, total = known + r.unknown.length + r.off.length;
+    let h = `<dl><dt>Route</dt><dd>${esc(r.pts[0].id)} → ${esc(r.pts[r.pts.length - 1].id)} <span class="s">(ATC route string, ${Math.round(r.direct)} nm direct)</span></dd>` +
+      `<dt>Waypoints</dt><dd><b>${known} of ${total}</b> placed${known ? `: <span class="mono">${r.pts.slice(1, -1).map((p) => esc(p.id)).join(" ")}</span>` : ""}</dd></dl>`;
+    if (r.unknown.length) h += `<div class="warn">⚠ Not known on this device yet: <span class="mono">${r.unknown.map(esc).join(" ")}</span>. Import an OFP with these waypoints once (or type their Lat/Long) and they are remembered. Until then the route goes direct past them.</div>`;
+    if (r.off.length) h += `<div class="warn">⚠ Left out, too far from this route (same name elsewhere): <span class="mono">${r.off.map(esc).join(" ")}</span>.</div>`;
+    h += `<div class="s" style="margin:6px 0">Times come from the Flight box (Off-block, Landing or Flight time); a route string has no nav-log times, so times along the route are spread by distance.</div>`;
+    h += `<div class="btnrow"><button type="button" class="primary" id="rsApply" style="width:auto">Use this route</button></div>`;
+    $("ofpPreview").innerHTML = h;
+    $("rsApply").addEventListener("click", () => {
+      const r2 = routeData; if (!r2) return;
+      state.wps = r2.pts.map((p) => ({ id: p.id, lat: S.fmtLat(p.lat), lon: S.fmtLon(p.lon), fl: "", eto: "" }));
+      state.ofpGs = null; state.gs = "450";
+      renderWps(); save(); showGsInfo();
+      $("routeName").value = `${r2.pts[0].id}-${r2.pts[r2.pts.length - 1].id}`;
+      $("ofpBox").hidden = true;
+      flash("routeMsg", `Route string: ${r2.pts.length} points. Press "Save route" to keep it.`);
+      run();
+      if (result && !$("errors").textContent.trim()) showTab("globe");
+    });
+  }
   function applyOfp(){
     const o = ofpData; if (!o) return;
     const withPseudo = $("ofpPseudo") && $("ofpPseudo").checked;
@@ -1632,7 +1723,13 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     if (result) showTab("globe");
   }
   async function handleText(text){
-    try { showOfp(window.SolatOFP.parse(text)); $("ofpMsg").textContent = ""; }
+    try {
+      const o = window.SolatOFP.parse(text);
+      learnFixes(o.points);
+      const r = !o.points.length ? routeString(text) : null;
+      if (r) showRouteString(r); else showOfp(o);
+      $("ofpMsg").textContent = "";
+    }
     catch (e) { $("ofpMsg").textContent = "Could not read it: " + e.message; }
   }
   $("ofpOpen").addEventListener("click", () => {
@@ -1734,7 +1831,41 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     $("hereOk").innerHTML = ok ? '<span style="color:var(--accent)">✓ official</span>' : '<span style="color:var(--err)">⚠ not the official address</span>';
   })();
   // Version MAJOR-HOTFIX-YY: MAJOR = major change, HOTFIX = 01, 02, 03… (back to 01 after a major change), YY = year of the update.
-  const APP_VERSION = "1-09-26", APP_DATE = Date.UTC(2026, 10, 8);
+  const APP_VERSION = "1-10-26", APP_DATE = Date.UTC(2026, 10, 8);
+  // Changelog, newest first. Add the entry with the change; the version is bumped at release.
+  const CHANGELOG = [
+    ["1-10-26", "8 Nov 2026", [
+      "Route: paste just the ATC route (e.g. WMKK MITOS1B MITOS M630 … YSSY) and the app builds the route.",
+      "Waypoints are remembered on your device from imported OFPs, saved routes and Lat/Long you type, so a route string places them next time.",
+      "Settings: this What's new list."]],
+    ["1-09-26", "8 Nov 2026", [
+      "Solat: tap the flight timeline to open the globe at the current time; tap a prayer, DEP or ARR to jump there."]],
+    ["1-08-26", "8 Nov 2026", [
+      "Globe: land and sea no longer swap colours while rotating.",
+      "Timeline: tap Prayer time available to see that prayer on the globe; prayer names highlighted.",
+      "Now tab renamed Solat: follows your clock, shows the current prayer from the flight's times and a one-line flight timeline with the aircraft.",
+      "Jamak planner (Taqdim / Ta'khir) for Zuhr + Asr and Maghrib + Isha; Taqdim locks once its time has passed."]],
+    ["1-07-26", "8 Nov 2026", [
+      "Flight time (airborne to landing) replaces Avg GS; the average ground speed is shown as a note.",
+      "Estimated landing uses 450 kt.",
+      "The app checks for an update once each time it opens online, and shows a banner."]],
+    ["1-06-26", "7 Nov 2026", [
+      "Calculate opens the globe.",
+      "Date field fixed on iPhone and Android."]],
+    ["1-05-26", "7 Nov 2026", [
+      "Anonymous visit counts (Cloudflare Web Analytics) on the official address only."]],
+    ["1-03-26", "7 Nov 2026", [
+      "OFP import shows the average ground speed and a reminder to update ETAs and FLs in flight."]],
+    ["1-02-26", "7 Nov 2026", [
+      "New name: SolAir, Solat in the air."]],
+    ["1-01-26", "7 Nov 2026", [
+      "First numbered release: worldwide airport search by city, name or code; great-circle warning; globe, timeline and five calculation methods."]],
+  ];
+  const verKey = (v) => String(v).split("-").map(Number);       // MAJOR-HOTFIX-YY
+  const newer = (a, b) => { const x = verKey(a), y = verKey(b); return x[0] !== y[0] ? x[0] > y[0] : x[1] > y[1]; };
+  $("changeList").innerHTML = CHANGELOG.map(([v, d, items]) =>
+    `<h4><span class="mono">${v}</span><span class="s">${d}</span>${v === APP_VERSION ? `<span class="cur">this version</span>` : newer(v, APP_VERSION) ? `<span class="pill warn">preview</span>` : ""}</h4>` +
+    `<ul>${items.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>`).join("");
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){
