@@ -233,6 +233,15 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
 #globeSec details{margin-top:6px}
 #globeSec summary{font-size:12px;color:var(--muted);cursor:pointer}
 .gtime b{color:var(--accent)}
+.gprayer{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin:2px 0 6px;padding:8px 11px;border-radius:10px;background:var(--pteal-soft);border-left:5px solid var(--pc,var(--pteal));font-family:system-ui,-apple-system,sans-serif}
+.gprayer .pn{font-size:24px;font-weight:800;color:var(--pc,var(--pteal));line-height:1.1}
+.gprayer .pt{font-family:ui-monospace,Menlo,monospace;font-size:22px;font-weight:800;background:var(--pteal);color:#fff;padding:1px 8px;border-radius:7px}
+.gprayer .pd{flex-basis:100%;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted)}
+.gprayer .pd b{color:var(--ink)}
+.evchips button.on{border-color:var(--pteal);background:var(--pteal-soft);font-weight:700}
+td.availcell{cursor:pointer;-webkit-tap-highlight-color:transparent}
+td.availcell:hover,td.availcell:focus-visible{outline:2px solid var(--pteal);outline-offset:-2px}
+td.availcell .go{margin-top:4px;font-size:12px;font-weight:700;color:var(--pteal)}
 .legend{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .legend button{display:inline-flex;gap:5px;align-items:center;font-size:11px;padding:2px 7px}
 .legend button[aria-pressed=false]{opacity:.4}
@@ -1006,7 +1015,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
 
     // windows
     const wb = $("winTbl").querySelector("tbody"); wb.innerHTML = "";
-    for (const w of pw.windows) {
+    pw.windows.forEach((w, wi) => {
       const se = w.startEvent;
       const openTxt = w.openAtDeparture
         ? `<span class="pill">open at take-off</span><div class="s">since ${fmtZ(w.start, ceilMin)} at ${esc(first.name)}</div>`
@@ -1038,10 +1047,10 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
       const lt = state.tz ? `<div class="s">${fmtLocal(w.openAtDeparture ? route.start : w.start, ceilMin)}</div>` : "";
       wb.insertAdjacentHTML("beforeend",
         `<tr><td><b>${w.name}</b></td><td data-l="Opens">${openTxt}${lt}</td><td data-l="Closes">${closeTxt}</td>` +
-        `<td class="availcell" data-l="Prayer time available">${availTxt}</td>` +
+        `<td class="availcell" data-l="Prayer time available" data-w="${wi}" role="button" tabindex="0" aria-label="Show ${w.name} on the globe">${availTxt}<div class="go">Show on globe ›</div></td>` +
         `<td data-l="Qibla from the nose"><div class="qcell">${dialSvg(rel, sunO)}` +
         `<div><b>${S.clockCode(rel)} o'clock</b></div><div class="s">${sideTxt(rel)}</div><div class="s">☀ ${sunTxt(sunO)}</div><div class="s mono">QDM ${fmtDeg(qm.q)}M · TRK ${fmtDeg(qm.trk)}M</div></div></td></tr>`);
-    }
+    });
     if (!pw.windows.length) wb.innerHTML = `<tr><td colspan="5" class="s">No prayer window overlaps this flight.</td></tr>`;
     $("winTbl").hidden = false;
 
@@ -1292,7 +1301,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   $("gZin").addEventListener("click", () => globe.zoomBy(2));
   $("gZout").addEventListener("click", () => globe.zoomBy(0.5));
   $("gZreset").addEventListener("click", () => globe.reset());
-  let exactT = null, exactEv = null;   // set when jumping to an event, cleared when the slider moves
+  let exactT = null, exactEv = null, focusWin = null;   // set when jumping to an event, cleared when the slider moves
   const hiddenLines = store.get("solat.hiddenLines") || {};
   const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
   window.SolatGlobe.LINES.forEach((L) => {
@@ -1336,13 +1345,38 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
       const sky = `Sun ${sunAlt.toFixed(1)}° (${vis(sunAlt, 0.833)}) · Moon ${moonAlt.toFixed(1)}° (${vis(moonAlt, 0.833)}), ${mp.phase.toLowerCase()} ${Math.round(mp.illum * 100)}% lit, ${age.toFixed(1)} d after new moon`;
       const ev = exactEv && exactT === exactEv.raw ? exactEv : null;
       const hms = (x) => { const d = new Date(Math.round(x / 1000) * 1000); return `${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}Z`; };
-      const evLine = ev ? `<b>${ev.name}</b> line crossed ${hms(ev.raw)} at ${esc(S.fixRef(ev))} · prayer time <b>${fmtZ(ev.t, ev.name === "Sunrise" ? floorMin : ceilMin).slice(3)}</b>${ev.t > ev.raw ? ` (incl. +${Math.round((ev.t - ev.raw) / MIN)} min ihtiyat)` : ""}<br>` : "";
+      const lineCol = (n) => (window.SolatGlobe.LINES.find((L) => L.name === n) || {}).color || "";
+      const fw = focusWin && exactT === route.start ? focusWin : null;
+      const evLine = ev
+        ? `<div class="gprayer" style="--pc:${lineCol(ev.name)}"><span class="pn">${ev.name}</span><span class="pt">${fmtZ(ev.t, ev.name === "Sunrise" ? floorMin : ceilMin).slice(3)}</span>` +
+          `<span class="pd">line crossed ${hms(ev.raw)} at <b>${esc(S.fixRef(ev))}</b>${ev.t > ev.raw ? ` · incl. +${Math.round((ev.t - ev.raw) / MIN)} min ihtiyat` : ""}</span></div>`
+        : fw ? `<div class="gprayer" style="--pc:${lineCol(fw.name)}"><span class="pn">${fw.name}</span><span class="pt">${fmtZ(fw.start, ceilMin).slice(3)}</span>` +
+          `<span class="pd">already open at take-off · <b>${fmtDur(floorMin(fw.end) - ceilMin(route.start))}</b> available</span></div>` : "";
+      $("gEvents").querySelectorAll("button").forEach((b, i) => b.classList.toggle("on", !!ev && events[i] === ev));
       const gm = magAt(s, t), grel = S.relBearing(gm.q, gm.trk);
       const qib = `Qibla <b>${S.clockCode(grel)} o'clock</b> from the nose (${sideTxt(grel)}) · TRK ${fmtDeg(gm.trk)}M`;
       $("gTime").innerHTML = evLine + `${fmtZ(t, floorMin)} · ${fmtT(t - route.start)} · ${fmtFL(s.alt)} · ${S.fmtPos(s.lat, s.lon)} · ${esc(S.fixRef(s))}<br>${qib}<br>${pr}${nx}<br><span class="sub">${sky}</span>`;
     });
   }
-  $("gSlider").addEventListener("input", () => { exactT = null; drawGlobe(); });
+  $("gSlider").addEventListener("input", () => { exactT = null; focusWin = null; drawGlobe(); });
+  // jump to a moment and zoom onto the aircraft
+  function jumpTo(t, ev, win){
+    stop(); exactT = t; exactEv = ev || null; focusWin = win || null;
+    $("gSlider").value = Math.round((t - result.route.start) / MIN);
+    globe.setFollow(true); $("gFollow").checked = true; globe.setZoom(14);
+    drawGlobe();
+  }
+  // Timeline: tap "Prayer time available" to see where that prayer opens
+  function showWindow(cell){
+    const w = result && result.windows[+cell.dataset.w]; if (!w) return;
+    showTab("globe");
+    if (w.openAtDeparture) return jumpTo(result.route.start, null, w);
+    const e = result.events.find((x) => x === w.startEvent) || result.events.find((x) => x.name === w.name && Math.abs(x.t - w.start) < MIN);
+    if (e) jumpTo(e.raw, e); else jumpTo(Math.max(result.route.start, Math.min(result.route.end, w.start)), null, null);
+  }
+  $("winTbl").addEventListener("click", (ev) => { const c = ev.target.closest("td.availcell"); if (c) showWindow(c); });
+  $("winTbl").addEventListener("keydown", (ev) => { const c = ev.target.closest("td.availcell");
+    if (c && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); showWindow(c); } });
   $("gFollow").addEventListener("change", () => globe.setFollow($("gFollow").checked));
   let playing = null;
   function stop(){ if (playing) { clearInterval(playing); playing = null; $("gPlay").textContent = "▶"; $("gPlay").setAttribute("aria-label", "Play"); } }
@@ -1370,12 +1404,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
       const L = window.SolatGlobe.LINES.find((x) => x.name === e.name);
       const b = document.createElement("button"); b.type = "button";
       b.innerHTML = `<i style="background:${L ? L.color : "var(--ink)"}"></i><b>${e.name}</b> ${fmtZ(e.t, e.name === "Sunrise" ? floorMin : ceilMin)} · ${esc(S.fixRef(e))}`;
-      b.addEventListener("click", () => {
-        stop(); exactT = e.raw; exactEv = e;
-        $("gSlider").value = Math.round((e.raw - result.route.start) / MIN);
-        globe.setFollow(true); $("gFollow").checked = true; globe.setZoom(14);
-        drawGlobe();
-      });
+      b.addEventListener("click", () => jumpTo(e.raw, e));
       box.appendChild(b);
     }
     $("globeSec").hidden = false; $("globeEmpty").hidden = true;
