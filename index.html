@@ -234,13 +234,25 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
 #globeSec summary{font-size:12px;color:var(--muted);cursor:pointer}
 .gtime b{color:var(--accent)}
 .gprayer{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin:2px 0 6px;padding:8px 11px;border-radius:10px;background:var(--pteal-soft);border-left:5px solid var(--pc,var(--pteal));font-family:system-ui,-apple-system,sans-serif}
-.gprayer .pn{font-size:24px;font-weight:800;color:var(--pc,var(--pteal));line-height:1.1}
+.gprayer .pn{font-size:24px;font-weight:800;color:var(--ink);line-height:1.1}
 .gprayer .pt{font-family:ui-monospace,Menlo,monospace;font-size:22px;font-weight:800;background:var(--pteal);color:#fff;padding:1px 8px;border-radius:7px}
 .gprayer .pd{flex-basis:100%;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted)}
 .gprayer .pd b{color:var(--ink)}
 .evchips button.on{border-color:var(--pteal);background:var(--pteal-soft);font-weight:700}
 td.availcell{cursor:pointer;-webkit-tap-highlight-color:transparent}
 td.availcell:hover,td.availcell:focus-visible{outline:2px solid var(--pteal);outline-offset:-2px}
+.pname{display:inline-block;font-size:20px;font-weight:800;line-height:1.2;color:var(--ink);padding:3px 12px 3px 9px;border-radius:8px;border-left:5px solid var(--pc,var(--pteal));background:var(--pteal-soft);background:color-mix(in srgb,var(--pc,var(--pteal)) 18%,transparent)}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:8px}
+.seg button{border:0;border-radius:0;padding:8px 6px;font-weight:700;background:var(--field);color:var(--muted);line-height:1.2}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button span{display:block;font-size:11px;font-weight:500}
+.seg button[aria-pressed=true]{background:var(--pteal);color:#fff}
+.jk{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--pteal-soft);border-left:5px solid var(--pteal)}
+.jk .jkt{font-size:18px;font-weight:800}
+.jk .jkw{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:6px 0}
+.jk .jkw .pt{font-family:ui-monospace,Menlo,monospace;font-size:19px;font-weight:800;background:var(--pteal);color:#fff;padding:1px 8px;border-radius:7px}
+.jk ol{margin:8px 0 4px;padding-left:20px;font-size:14px;line-height:1.45}
+.jk .no{color:var(--warn);font-weight:600}
 td.availcell .go{margin-top:4px;font-size:12px;font-weight:700;color:var(--pteal)}
 .legend{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .legend button{display:inline-flex;gap:5px;align-items:center;font-size:11px;padding:2px 7px}
@@ -369,6 +381,19 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
         </div>
         <div class="gcnote" hidden role="note"></div>
         <div id="nowRes" class="nowres"><span class="s">Import an OFP or press Calculate first.</span></div>
+      </section>
+
+      <section id="jamakSec">
+        <h2>Jamak <span class="sub">combine two prayers</span></h2>
+        <div class="seg" id="jkPair" role="group" aria-label="Prayers to combine"><button type="button" data-p="zuhr">Zuhr + Asr</button><button type="button" data-p="maghrib">Maghrib + Isha</button></div>
+        <div class="seg" id="jkMode" role="group" aria-label="Type of jamak"><button type="button" data-m="taqdim">Jamak Taqdim<span>early: both in the first prayer's time</span></button><button type="button" data-m="takhir">Jamak Ta'khir<span>late: both in the second prayer's time</span></button></div>
+        <div id="jkOut"></div>
+        <details><summary>What is Jamak?</summary><div class="hint">
+          <p><b>Jamak</b> is combining two prayers in the time of one, allowed for a traveller (musafir) on a journey of at least 2 marhalah (about 81 km) that is not for a sinful purpose. Only <b>Zuhr with Asr</b> and <b>Maghrib with Isha</b> can be combined. Fajr is never combined, and Asr cannot be combined with Maghrib.</p>
+          <p><b>Jamak Taqdim</b> (early): both prayers in the time of the first (Zuhr or Maghrib). Pray in order, first prayer then the second; make the niat to combine during the first prayer, before its salam; pray the second straight after with no long break; and still be travelling when you begin the second.</p>
+          <p><b>Jamak Ta'khir</b> (late): both prayers in the time of the second (Asr or Isha). Make the niat to delay while the first prayer's time is still running, with enough of it left to pray it; otherwise the first prayer becomes qada. Praying the first prayer first is recommended, not required. You must still be travelling until both are done.</p>
+          <p>Jamak is often paired with <b>Qasar</b> (shortening a 4-rakaat prayer to 2); this planner covers only the timing. Rulings follow the Shafi'i school as practised in Malaysia; check with your own religious authority.</p>
+        </div></details>
       </section>
 
       <section id="cmpSec">
@@ -1046,7 +1071,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
       }
       const lt = state.tz ? `<div class="s">${fmtLocal(w.openAtDeparture ? route.start : w.start, ceilMin)}</div>` : "";
       wb.insertAdjacentHTML("beforeend",
-        `<tr><td><b>${w.name}</b></td><td data-l="Opens">${openTxt}${lt}</td><td data-l="Closes">${closeTxt}</td>` +
+        `<tr><td><span class="pname" style="--pc:${(window.SolatGlobe.LINES.find((L) => L.name === w.name) || {}).color || ""}">${w.name}</span></td><td data-l="Opens">${openTxt}${lt}</td><td data-l="Closes">${closeTxt}</td>` +
         `<td class="availcell" data-l="Prayer time available" data-w="${wi}" role="button" tabindex="0" aria-label="Show ${w.name} on the globe">${availTxt}<div class="go">Show on globe ›</div></td>` +
         `<td data-l="Qibla from the nose"><div class="qcell">${dialSvg(rel, sunO)}` +
         `<div><b>${S.clockCode(rel)} o'clock</b></div><div class="s">${sideTxt(rel)}</div><div class="s">☀ ${sunTxt(sunO)}</div><div class="s mono">QDM ${fmtDeg(qm.q)}M · TRK ${fmtDeg(qm.trk)}M</div></div></td></tr>`);
@@ -1203,6 +1228,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
       ? `= ${Math.round(altFt).toLocaleString("en")} ft` : `= ${Math.round(altFt / 3.28084).toLocaleString("en")} m`;
     const t = Math.floor(nowTime() / MIN) * MIN, d = new Date(t);
     $("nowClock").textContent = `${pad(d.getUTCDate())}/${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}Z`;
+    jamakCalc(t);
     if (!result) return;
     const { route, conv } = result;
     // Windows from now on, with the aircraft held at the altitude you entered.
@@ -1248,6 +1274,64 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
           <dt>Reference</dt><dd class="mono">${refName === "heading" ? `HDG ${fmtDeg(hM)}M` : `TRK ${fmtDeg(s.track - v)}M <span class="s">(planned)</span>`}</dd>
         </dl></div>${groundHtml(s, t, altFt !== null ? altFt : altNow, s.current)}`;
   }
+  // ---------- Jamak planner ----------
+  let jkPair = null, jkMode = "taqdim";
+  const NEXT_OF = { Zuhr: "Asr", Asr: "Maghrib", Maghrib: "Isha", Isha: "Fajr" };
+  function jamakCalc(t){
+    const out = $("jkOut");
+    if (!result) { out.innerHTML = `<div class="s" style="margin-top:8px">Import an OFP or press Calculate first.</div>`; return; }
+    const { route, windows } = result;
+    if (!jkPair) {                       // start on the pair that is open now or next
+      const st = S.situationAt(route, windows, t), n = (st.current || st.next || {}).name;
+      jkPair = n === "Maghrib" || n === "Isha" ? "maghrib" : n === "Zuhr" || n === "Asr" ? "zuhr"
+        : windows.some((w) => w.name === "Zuhr" || w.name === "Asr") ? "zuhr" : "maghrib";
+    }
+    $("jkPair").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.p === jkPair)));
+    $("jkMode").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.m === jkMode)));
+    const [A, B] = jkPair === "zuhr" ? ["Zuhr", "Asr"] : ["Maghrib", "Isha"];
+    $("jkMode").querySelector("[data-m=taqdim] span").textContent = `early: both in ${A} time`;
+    $("jkMode").querySelector("[data-m=takhir] span").textContent = `late: both in ${B} time`;
+    const wa = windows.find((w) => w.name === A);
+    const wb = wa ? windows.find((w) => w.name === B && w.start >= wa.start) : windows.find((w) => w.name === B);
+    const km = route.distNm * 1.852;
+    const dist = km >= 81 ? `<div class="s">Journey ${Math.round(km).toLocaleString("en")} km, over 2 marhalah (about 81 km).</div>`
+      : `<div class="s no">Journey ${Math.round(km)} km is under 2 marhalah (about 81 km): jamak is not allowed for this trip.</div>`;
+    const tag = (n) => `<span class="pname" style="--pc:${(window.SolatGlobe.LINES.find((L) => L.name === n) || {}).color || ""};font-size:16px">${n}</span>`;
+    const name0 = esc(route.wps[0].name), name1 = esc(route.wps[route.wps.length - 1].name);
+    const win = (w) => {              // the part of a window inside the flight
+      const from = Math.max(w.start, route.start), st = w.openAtDeparture ? S.situationAt(route, windows, from) : w.startEvent;
+      const q = S.relBearing(S.qiblaBearing(st), st.track);
+      return `<div class="jkw">${w.openAtDeparture ? `<span class="pill">open at take-off</span>` : `<span class="pt">${fmtZ(from, ceilMin).slice(3)}</span>`}` +
+        `<span>to <b class="mono">${fmtZ(w.end, floorMin).slice(3)}</b> <span class="s">(${w.problem ? "next event" : NEXT_OF[w.name] + " begins"})</span></span>` +
+        `<span>· <b>${fmtDur(floorMin(w.end) - ceilMin(from))}</b> available</span></div>` +
+        `<div class="s">${w.openAtDeparture ? `Open since ${fmtZ(w.start, ceilMin).slice(3)} at ${name0}` : `Opens at ${esc(S.fixRef(st))}, ${fmtFL(st.alt)}`} · Qibla <b>${S.clockCode(q)} o'clock</b> from the nose</div>` +
+        (w.openAtArrival ? `<div class="s">Still open at landing; ${fmtDur(floorMin(route.end) - ceilMin(from))} of it airborne.</div>` : "");
+    };
+    let h;
+    if (jkMode === "taqdim") {
+      h = `<div class="jkt">Pray ${tag(A)} then ${tag(B)} in ${A} time</div>`;
+      if (!wa) h += `<p class="no">${A} time does not fall during this flight, so Jamak Taqdim with ${A} is not possible in the air. ${wb && wb.openAtDeparture ? `${A} ended before take-off from ${name0}.` : `${A} starts after landing at ${name1}.`}</p>`;
+      else h += win(wa) + `<ol><li>Make the niat for <b>Jamak Taqdim</b> in ${A}, before its salam.</li>` +
+        `<li>Pray ${A} first, then ${B} straight after, with no long break.</li>` +
+        `<li>You must still be travelling when you begin ${B}.</li></ol>` +
+        `<button type="button" class="link" data-jk="${windows.indexOf(wa)}">Show on globe ›</button>`;
+    } else {
+      h = `<div class="jkt">Pray ${tag(A)} and ${tag(B)} in ${B} time</div>`;
+      if (!wb) h += `<p class="no">${B} time does not start during this flight, so Jamak Ta'khir can only be done after landing at ${name1}, while you are still a traveller.</p>`;
+      else {
+        const niat = !wa ? `<li><b>${A} time ended before take-off</b> (at ${name0}): the niat to delay must have been made then, or ${A} is now qada.</li>`
+          : `<li>Make the niat for <b>Jamak Ta'khir</b> during ${A} time: ${wa.openAtDeparture ? "before take-off or" : `after <b class="mono">${fmtZ(wa.start, ceilMin).slice(3)}</b> and`} before <b class="mono">${fmtZ(wa.end, floorMin).slice(3)}</b>, while there is still time to pray ${A}.</li>`;
+        h += win(wb) + `<ol>${niat}<li>Pray both in ${B} time. Praying ${A} first is recommended, not required.</li>` +
+          `<li>You must still be travelling until both are done.${wb.openAtArrival ? " If you finish after landing, do it before you reach home." : ""}</li></ol>` +
+          `<button type="button" class="link" data-jk="${windows.indexOf(wb)}">Show on globe ›</button>`;
+      }
+    }
+    out.innerHTML = `<div class="jk">${h}${dist}</div>`;
+  }
+  $("jkPair").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { jkPair = b.dataset.p; nowCalc(); } });
+  $("jkMode").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { jkMode = b.dataset.m; nowCalc(); } });
+  $("jkOut").addEventListener("click", (e) => { const b = e.target.closest("[data-jk]"); if (b) showWindowIdx(+b.dataset.jk); });
+
   // Prayer times for someone on the ground directly below, for the local solar day around t.
   const groundCache = {};
   function groundDay(lat, lon, t){
@@ -1367,8 +1451,9 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     drawGlobe();
   }
   // Timeline: tap "Prayer time available" to see where that prayer opens
-  function showWindow(cell){
-    const w = result && result.windows[+cell.dataset.w]; if (!w) return;
+  function showWindow(cell){ showWindowIdx(+cell.dataset.w); }
+  function showWindowIdx(i){
+    const w = result && result.windows[i]; if (!w) return;
     showTab("globe");
     if (w.openAtDeparture) return jumpTo(result.route.start, null, w);
     const e = result.events.find((x) => x === w.startEvent) || result.events.find((x) => x.name === w.name && Math.abs(x.t - w.start) < MIN);
