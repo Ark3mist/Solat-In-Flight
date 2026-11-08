@@ -42,6 +42,10 @@ main{max-width:880px;margin:0 auto;padding:12px 16px calc(84px + env(safe-area-i
 .tabtitle:before{content:"· "}
 .updbadge{font-size:12px;font-weight:600;color:var(--accent-ink);background:var(--accent);border-radius:999px;padding:2px 9px;cursor:pointer}
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(5,1fr);background:var(--panel);border-top:1px solid var(--line);padding:4px max(6px,env(safe-area-inset-left)) calc(4px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-right));box-shadow:0 -2px 10px rgba(0,0,0,.08)}
+.updbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(68px + env(safe-area-inset-bottom));z-index:21;width:min(848px,calc(100% - 24px));display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:10px 12px;border:1px solid var(--accent);border-radius:12px;background:var(--panel);box-shadow:0 6px 24px rgba(0,0,0,.22);font-size:14px}
+.updbar[hidden]{display:none}
+.updbar .primary{width:auto;padding:8px 14px}
+.updbar .x{padding:6px 9px}
 .tabbar button{border:0;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 4px;font-size:11px;font-weight:600;border-radius:10px}
 .tabbar svg{width:24px;height:24px}
 .tabbar button[aria-current=page]{color:var(--accent)}
@@ -490,6 +494,12 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
       <div class="brand">SolAir<br><span style="font-size:12px;letter-spacing:.04em">Solat in the air</span><br><span>by <b>LipasTerbang</b>™</span><br><span style="font-size:11px">© 2026 LipasTerbang</span></div>
   </div>
 </main>
+
+<div class="updbar" id="updBar" role="status" aria-live="polite" hidden>
+  <span id="updBarTxt"></span>
+  <button type="button" id="updBarGo" class="primary">Update</button>
+  <button type="button" id="updBarX" class="x" aria-label="Later">✕</button>
+</div>
 
 <nav class="tabbar" id="tabbar" aria-label="Sections">
   <button type="button" data-tab="flight"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="currentColor"/></svg><span>Flight</span></button>
@@ -1578,34 +1588,57 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
       : `Valid to ${dFmt(MAG_EXPIRES)} <span class="s">(WMM2025)</span>`;
     if (left < 180 * DAY) $("updBadge").hidden = false;
   }
+  // Install the new version: let the new offline worker take over (it re-checks every file), then reload.
+  async function doUpdate(){
+    $("updMsg").textContent = "Updating…"; $("updBarTxt").textContent = "Updating…"; $("updBarGo").disabled = true;
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) {
+        const took = new Promise((ok) => { navigator.serviceWorker.addEventListener("controllerchange", ok, { once: true }); setTimeout(ok, 6000); });
+        await reg.update();
+        if (reg.installing || reg.waiting) await took;
+      }
+    } catch (e) {}
+    location.reload();
+  }
+  // Show "update available" everywhere: header badge, Settings, and a banner above the tab bar.
+  function announce(j){
+    $("updMsg").innerHTML = `<b>New version <span class="mono">${esc(j.version)}</span></b>${j.date ? ` <span class="s">(${esc(j.date)})</span>` : ""} <button class="link" type="button" id="updNow">Update now</button>`;
+    $("updNow").addEventListener("click", doUpdate);
+    $("updBadge").hidden = false;
+    // "Later" hides the banner for this version for 6 hours; the header badge stays
+    const snooze = store.get("solat.updSnooze") || {};
+    if (snooze.v === j.version && Date.now() - snooze.t < 6 * HOUR) return;
+    $("updBarTxt").innerHTML = `<b>SolAir ${esc(j.version)}</b> is available.<span class="s"> Takes a few seconds; your flights and settings are kept.</span>`;
+    $("updBarGo").disabled = false;
+    $("updBar").hidden = false;
+    $("updBar").dataset.v = j.version;
+  }
+  let checking = false;
   async function checkUpdate(manual){
     if (!navigator.onLine) { if (manual) $("updMsg").textContent = "Offline: connect to check."; return; }
+    if (checking) return; checking = true;
     if (manual) $("updMsg").textContent = "Checking…";
     try {
       const j = await (await fetch("version.json?t=" + Date.now(), { cache: "no-store" })).json();
       store.set("solat.lastUpdateCheck", Date.now()); showVersion();
       if (j.version && j.version !== APP_VERSION) {
-        $("updMsg").innerHTML = `<b>New version <span class="mono">${esc(j.version)}</span></b>${j.date ? ` <span class="s">(${esc(j.date)})</span>` : ""} <button class="link" type="button" id="updNow">Update now</button>`;
-        $("updBadge").hidden = false;
-        $("updNow").addEventListener("click", async () => {
-          $("updMsg").textContent = "Updating…";
-          // let the new offline worker take over (it re-checks every file with the server), then reload
-          try {
-            const reg = await navigator.serviceWorker.getRegistration();
-            if (reg) {
-              const took = new Promise((ok) => { navigator.serviceWorker.addEventListener("controllerchange", ok, { once: true }); setTimeout(ok, 6000); });
-              await reg.update();
-              if (reg.installing || reg.waiting) await took;
-            }
-          } catch (e) {}
-          location.reload();
-        });
+        announce(j);
+        navigator.serviceWorker && navigator.serviceWorker.getRegistration().then((r) => r && r.update()).catch(() => {});   // start fetching it now
       } else if (manual) $("updMsg").textContent = "You have the latest version.";
     } catch (e) { if (manual) $("updMsg").textContent = "Could not check (" + e.message + ")."; }
+    checking = false;
   }
   $("updCur").textContent = APP_VERSION;
   $("updBtn").addEventListener("click", () => checkUpdate(true));
+  $("updBarGo").addEventListener("click", doUpdate);
+  $("updBarX").addEventListener("click", () => { store.set("solat.updSnooze", { v: $("updBar").dataset.v, t: Date.now() }); $("updBar").hidden = true; });
+  // Check automatically: on opening, when the app comes back to the screen or back online, and every 30 min while open.
+  const autoCheck = () => { const last = store.get("solat.lastUpdateCheck") || 0; if (Date.now() - last > 10 * MIN) checkUpdate(false); };
   showVersion(); setTimeout(() => checkUpdate(false), 1500);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") autoCheck(); });
+  addEventListener("online", () => setTimeout(() => checkUpdate(false), 2000));
+  setInterval(() => { if (document.visibilityState === "visible") checkUpdate(false); }, 30 * MIN);
 
   // Chrome/Android: offer a real install (opens full screen, no address bar) instead of a bookmark shortcut.
   // ---------- install: Android/desktop Chrome can install directly; iPhone/iPad need Safari's Share menu ----------
