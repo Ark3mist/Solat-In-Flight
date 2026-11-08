@@ -17,6 +17,7 @@
 <style>
 :root{
   --bg:#f5f6f8; --panel:#fff; --ink:#111827; --muted:#5b6472; --line:#dde1e6; --field:#f8f9fb;
+  --pteal:#00A19C; --pteal-soft:rgba(0,161,156,.11);
   --accent:#0f766e; --accent-ink:#fff; --soft:#e7f3f1; --warn:#b45309; --err:#b91c1c; --qibla:#0f766e; --plane:#111827;
   --ocean:#cfe2ee; --land:#ece6d3; --night-ocean:#1d2c45; --night-land:#323a49; --grid:rgba(17,24,39,.14); --halo:#ffffff; --route:#334155; --coast:#a39a80; --night:#0d1830;
 }
@@ -42,6 +43,10 @@ main{max-width:880px;margin:0 auto;padding:12px 16px calc(84px + env(safe-area-i
 .tabtitle:before{content:"· "}
 .updbadge{font-size:12px;font-weight:600;color:var(--accent-ink);background:var(--accent);border-radius:999px;padding:2px 9px;cursor:pointer}
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(5,1fr);background:var(--panel);border-top:1px solid var(--line);padding:4px max(6px,env(safe-area-inset-left)) calc(4px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-right));box-shadow:0 -2px 10px rgba(0,0,0,.08)}
+.updbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(68px + env(safe-area-inset-bottom));z-index:21;width:min(848px,calc(100% - 24px));display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:10px 12px;border:1px solid var(--accent);border-radius:12px;background:var(--panel);box-shadow:0 6px 24px rgba(0,0,0,.22);font-size:14px}
+.updbar[hidden]{display:none}
+.updbar .primary{width:auto;padding:8px 14px}
+.updbar .x{padding:6px 9px}
 .tabbar button{border:0;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 4px;font-size:11px;font-weight:600;border-radius:10px}
 .tabbar svg{width:24px;height:24px}
 .tabbar button[aria-current=page]{color:var(--accent)}
@@ -135,7 +140,8 @@ tr.mark td{color:var(--muted);font-size:13px}
 .gcnote{border:1px solid var(--warn);border-left-width:4px;border-radius:8px;padding:8px 10px;margin:0 0 10px;font-size:13px;line-height:1.4}
 .gcnote b{color:var(--warn)} .gcnote summary{cursor:pointer}
 .gcnote[hidden]{display:none}
-.gsinfo{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--soft);font-size:13px;line-height:1.45}
+.gsinfo{margin-top:10px;padding:9px 11px;border-radius:10px;background:var(--pteal-soft);border-left:4px solid var(--pteal);font-size:13px;line-height:1.45}
+.gsinfo .big b{color:var(--pteal)}
 .gsinfo[hidden]{display:none}
 .gsinfo .big{font-size:15px}
 .pill.warn{background:transparent;color:var(--warn);border:1px solid var(--warn)}
@@ -236,7 +242,8 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
 .ofp dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;font-size:13px;margin:8px 0}
 .ofp dt{color:var(--muted)} .ofp dd{margin:0;font-family:ui-monospace,Menlo,monospace}
 .ofp .warn{color:var(--warn);font-size:12px}
-.avail{font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:16px}
+.avail{font-family:ui-monospace,Menlo,monospace;font-weight:800;font-size:19px;color:var(--pteal)}
+td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);border-radius:8px;padding:8px 10px 8px 14px !important}
 @media (max-width:560px){
   .wp{grid-template-columns:18px minmax(0,1fr) 46px 50px 20px;gap:3px}
   section.showll .wp{grid-template-columns:16px minmax(40px,1fr) 62px 68px 42px 50px 18px;gap:3px}
@@ -290,9 +297,9 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
         <div class="r3">
           <div><label for="dep">Airborne UTC</label><input id="dep" class="mono" inputmode="numeric" placeholder="1530" maxlength="5"></div>
           <div><label for="arr">Landing UTC</label><input id="arr" class="mono" inputmode="numeric" placeholder="auto" maxlength="5"></div>
-          <div><label for="gs">Avg GS kt</label><input id="gs" class="mono" inputmode="numeric" value="430"></div>
+          <div><label for="flt">Flight time</label><input id="flt" class="mono" inputmode="numeric" placeholder="auto" maxlength="5" title="Airborne to landing, H:MM"></div>
         </div>
-        <div class="hint">Airborne = off-block + taxi. Changing off-block, taxi, airborne or any waypoint ETA moves every later ETA (and landing) by the same amount and recalculates. Leave Landing blank to estimate it from distance ÷ GS.</div>
+        <div class="hint">Airborne = off-block + taxi. Change any time and the later times follow. Leave Landing blank to estimate it.</div>
         <div class="gsinfo" id="gsInfo" hidden></div>
         <div class="s" id="convNote" style="margin-top:8px"></div>
       </section>
@@ -491,6 +498,12 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   </div>
 </main>
 
+<div class="updbar" id="updBar" role="status" aria-live="polite" hidden>
+  <span id="updBarTxt"></span>
+  <button type="button" id="updBarGo" class="primary">Update</button>
+  <button type="button" id="updBarX" class="x" aria-label="Later">✕</button>
+</div>
+
 <nav class="tabbar" id="tabbar" aria-label="Sections">
   <button type="button" data-tab="flight"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="currentColor"/></svg><span>Flight</span></button>
   <button type="button" data-tab="now"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Now</span></button>
@@ -519,19 +532,23 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
 
   // ---------- form state ----------
   const DEFAULT = {
-    date: new Date().toISOString().slice(0,10), offb: "", taxi: "20", dep: "1530", arr: "", gs: "430", conv: "jakim",
+    date: new Date().toISOString().slice(0,10), offb: "", taxi: "20", dep: "1530", arr: "", gs: "450", conv: "jakim",
     wps: [ { id:"KUL", lat:"N0244.6", lon:"E10141.9", eto:"" },
            { id:"LHR", lat:"N5128.7", lon:"W00027.7", eto:"" } ],
     fl: "350", elevO: "70", elevD: "83", climb: "1500", stepRate: "1000", descent: "1500",
     steps: [], tz: "", dipTw: true, ihF: "1", ihZ: "2", ihA: "1", ihM: "1", ihI: "1",
   };
   let state = Object.assign({}, DEFAULT, store.get("solat.v2") || {});
-  if (!S.CONVENTIONS[state.conv]) state.conv = "jakim";        // methods no longer offered
+  if (!S.CONVENTIONS[state.conv]) state.conv = "jakim";
+  // Average GS, used only to estimate landing when it is blank: the OFP's average if imported, otherwise 450 kt.
+  // (The GS box is gone, so an old saved value such as the former 430 default is replaced.)
+  if (!(state.ofpGs && +state.ofpGs.gs >= 100 && +state.ofpGs.gs <= 1200)) state.gs = "450";
 
   for (const [k,c] of Object.entries(S.CONVENTIONS)) {
     const o = document.createElement("option"); o.value = k; o.textContent = c.name; $("conv").appendChild(o);
   }
   // ---------- library: saved waypoints + routes (browser storage) ----------
+  let result = null;                              // last calculation
   let fixes = store.get("solat.fixes") || {};     // { NAME: {lat:"N..", lon:"E.."} }
   let routes = store.get("solat.routes") || {};   // { name: {wps:[{id,lat,lon}], saved:iso} }
   const dl = document.createElement("datalist"); dl.id = "stations";
@@ -678,15 +695,28 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
       box.appendChild(row);
     });
   }
-  const SIMPLE = ["date","offb","taxi","dep","arr","gs","conv","tz","ihF","ihZ","ihA","ihM","ihI"];   // levels and rates live in state (route FLs / OFP)
+  const SIMPLE = ["date","offb","taxi","dep","arr","conv","tz","ihF","ihZ","ihA","ihM","ihI"];   // levels and rates live in state (route FLs / OFP)
   function readSimple(){ SIMPLE.forEach((k) => state[k] = $(k).value.trim()); state.dipTw = $("dipTw").checked; }
   let cmpReady = false;
-  function save(){ readSimple(); store.set("solat.v2", state); if (cmpReady) cmpCalc(); }
+  function save(){ readSimple(); store.set("solat.v2", state); showFlt(); if (cmpReady) cmpCalc(); }
+  // Flight time = landing − airborne (H:MM). Typing one sets Landing.
+  function fmtHM(m){ return `${Math.floor(m / 60)}:${pad(m % 60)}`; }
+  function parseHM(v){
+    v = String(v || "").trim().replace(/h\s*/i, ":").replace(/m$/i, "");
+    let m = /^(\d{1,2}):(\d{2})$/.exec(v) || /^(\d{1,2})(\d{2})$/.exec(v);
+    if (m && +m[2] < 60) return +m[1] * 60 + +m[2];
+    return null;
+  }
+  function showFlt(){
+    const a = toMin(state.dep), b = toMin(state.arr);
+    $("flt").value = a !== null && b !== null ? fmtHM(((b - a) % 1440 + 1440) % 1440) : "";
+  }
 
   SIMPLE.forEach((k) => { if (state[k] != null) $(k).value = state[k]; });
   $("dipTw").checked = !!state.dipTw;
   applyConv();
   renderWps();
+  showFlt();
   showGsInfo();
   $("conv").addEventListener("change", () => { applyConv(); save(); });
   // Off-block + taxi -> airborne; a new airborne time moves all ETAs with it.
@@ -712,6 +742,13 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   }
   ["offb","taxi","dep"].forEach((k) => $(k).addEventListener("change", () => onTimes(k)));
   $("arr").addEventListener("change", () => { save(); renderWps(); autoRun(); });
+  $("flt").addEventListener("change", () => {
+    const v = $("flt").value.trim(), m = parseHM(v), a = toMin(state.dep);
+    if (!v) { $("arr").value = ""; }
+    else if (m !== null && m > 0 && a !== null) { $("arr").value = fromMin(a + m); }
+    else { showFlt(); flash("routeMsg", ""); return; }
+    save(); renderWps(); autoRun();
+  });
   SIMPLE.forEach((k) => $(k).addEventListener("change", save));
   const routeSec = $("wps").closest("section");
   function setLL(on){ state.showLL = !!on; routeSec.classList.toggle("showll", !!on); $("llToggle").setAttribute("aria-pressed", String(!!on)); }
@@ -737,7 +774,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     if (!(await ask(`<b>Clear the route?</b>\n\nThis removes ${n > 0 ? `all ${n} waypoint${n === 1 ? "" : "s"} with their FLs and ETAs` : "the waypoints"}, and keeps only DEP (${esc(W[0].id || "—")}) and ARR (${esc(W[W.length - 1].id || "—")}).\nSaved routes are not affected.`, "Clear", true))) return;
     const keep = (w) => ({ id: w.id, lat: w.lat, lon: w.lon, eto: "", fl: "" });
     state.wps = [keep(W[0]), keep(W[W.length - 1])];
-    state.steps = []; state.ofpGs = null; showGsInfo(); $("routeName").value = "";
+    state.steps = []; state.ofpGs = null; state.gs = "450"; showGsInfo(); $("routeName").value = "";
     renderWps(); save(); flash("routeMsg", "Route cleared: only DEP and ARR are left.");
     autoRun();
   });
@@ -756,7 +793,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   $("routeLoad").addEventListener("click", () => {
     const r = routes[$("routeSel").value]; if (!r) return;
     state.wps = r.wps.map((w) => ({ id: w.id, lat: w.lat, lon: w.lon, eto: "" }));
-    state.ofpGs = null; showGsInfo();
+    state.ofpGs = null; state.gs = "450"; showGsInfo();
     renderWps(); save(); flash("routeMsg", `Loaded "${$("routeSel").value}". Waypoint ETAs cleared; times come from airborne/landing.`);
   });
   $("routeDel").addEventListener("click", async () => {
@@ -845,7 +882,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     if (dep === null && offb === null) errs.push("Airborne time must be HHMM.");
     if (state.arr && arr === null) errs.push("Landing time must be HHMM (or blank to estimate).");
     const gs = +state.gs;
-    if (!state.arr && !(gs >= 100 && gs <= 1200)) errs.push("Average ground speed must be 100–1200 kt.");
+    if (!state.arr && !(gs >= 100 && gs <= 1200)) errs.push("Enter the landing time or the flight time.");
     const wps = [];
     let last = null;
     state.wps.forEach((w, i) => {
@@ -937,7 +974,6 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
   const LABEL = { Fajr:"Fajr", Sunrise:"Sunrise", Zuhr:"Zuhr", Asr:"Asr", Maghrib:"Maghrib", Isha:"Isha" };
 
   // ---------- render results ----------
-  let result = null;
   function run(){
     $("errors").textContent = "";
     let b;
@@ -945,7 +981,11 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     save();
     const { route, conv, estimated } = b;
     const pw = S.prayerWindows(route, conv);
-    result = { route, conv, ...pw };
+    result = { route, conv, estimated, ...pw };
+    // estimated landing: show it as a hint in the empty Landing and Flight time boxes
+    $("arr").placeholder = estimated ? hhmmOf(route.end) : "auto";
+    $("flt").placeholder = estimated ? fmtHM(Math.round((route.end - route.start) / MIN)) : "auto";
+    showGsInfo();
     const first = route.wps[0], last = route.wps[route.wps.length-1], prof = route.profile;
     const avgGs = route.distNm / ((route.end - route.start) / HOUR);
     // Only DEP and ARR (no OFP, no waypoints): the path is a great circle, not the airline's route
@@ -998,7 +1038,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
       const lt = state.tz ? `<div class="s">${fmtLocal(w.openAtDeparture ? route.start : w.start, ceilMin)}</div>` : "";
       wb.insertAdjacentHTML("beforeend",
         `<tr><td><b>${w.name}</b></td><td data-l="Opens">${openTxt}${lt}</td><td data-l="Closes">${closeTxt}</td>` +
-        `<td data-l="Prayer time available">${availTxt}</td>` +
+        `<td class="availcell" data-l="Prayer time available">${availTxt}</td>` +
         `<td data-l="Qibla from the nose"><div class="qcell">${dialSvg(rel, sunO)}` +
         `<div><b>${S.clockCode(rel)} o'clock</b></div><div class="s">${sideTxt(rel)}</div><div class="s">☀ ${sunTxt(sunO)}</div><div class="s mono">QDM ${fmtDeg(qm.q)}M · TRK ${fmtDeg(qm.trk)}M</div></div></td></tr>`);
     }
@@ -1390,17 +1430,26 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     }
     return pages.join("\n\n");
   }
-  const hhmmOf = (t) => { const d = new Date(t); return pad(d.getUTCHours()) + pad(d.getUTCMinutes()); };
+  function hhmmOf(t){ const d = new Date(t); return pad(d.getUTCHours()) + pad(d.getUTCMinutes()); }
   function elOf(min){ return `${Math.floor(min / 60)}:${pad(min % 60)}`; }
   // Planned average ground speed: OFP ground distance over the planned flight time.
   function ofpGs(o){ const t = o.eetMin || o.fltMin; return o.grdDist && t ? Math.round(o.grdDist / (t / 60)) : null; }
+  // Teal info under the Flight boxes: average ground speed and where it comes from.
   function showGsInfo(){
-    const g = state.ofpGs, el = $("gsInfo");
-    el.hidden = !g;
-    if (!g) return;
-    el.innerHTML = `<div class="big">OFP average ground speed <b class="mono">${g.gs} kt</b></div>` +
-      `<div class="s">${g.grd} nm ground distance${g.air ? ` (${g.air} nm air)` : ""} in ${elOf(g.min)} flight time${g.wc ? `, average wind ${esc(g.wc)}` : ""}.</div>` +
-      `<div style="margin-top:6px"><b>For the most accurate prayer times</b>, update the Route in flight: overwrite each waypoint's ETA with the actual time over (ATO) and change the FL when the level changes. Every later time moves with it and the prayers recalculate.</div>`;
+    const g = state.ofpGs, el = $("gsInfo"), r = result && result.route;
+    let head = "", sub = "";
+    if (g) {
+      head = `Avg ground speed <b class="mono">${g.gs} kt</b>`;
+      sub = `OFP: ${g.grd} nm in ${elOf(g.min)}${g.wc ? `, wind ${esc(g.wc)}` : ""}.`;
+    } else if (r) {
+      const gs = Math.round(r.distNm / ((r.end - r.start) / HOUR));
+      head = `Avg ground speed <b class="mono">${gs} kt</b>`;
+      sub = result.estimated ? `Landing estimated at ${state.gs} kt over ${Math.round(r.distNm)} nm.` : `${Math.round(r.distNm)} nm in ${fmtDur(r.end - r.start)}.`;
+    }
+    el.hidden = !head;
+    if (!head) return;
+    el.innerHTML = `<div class="big">${head}</div><div class="s">${sub}</div>` +
+      `<div style="margin-top:4px">For the best prayer times, update ETAs to actual times (ATO) and FLs in flight.</div>`;
   }
   function showOfp(o){
     ofpData = o;
@@ -1566,7 +1615,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
     $("hereOk").innerHTML = ok ? '<span style="color:var(--accent)">✓ official</span>' : '<span style="color:var(--err)">⚠ not the official address</span>';
   })();
   // Version MAJOR-HOTFIX-YY: MAJOR = major change, HOTFIX = 01, 02, 03… (back to 01 after a major change), YY = year of the update.
-  const APP_VERSION = "1-06-26", APP_DATE = Date.UTC(2026, 10, 8);
+  const APP_VERSION = "1-07-26", APP_DATE = Date.UTC(2026, 10, 8);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){
@@ -1578,34 +1627,63 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
       : `Valid to ${dFmt(MAG_EXPIRES)} <span class="s">(WMM2025)</span>`;
     if (left < 180 * DAY) $("updBadge").hidden = false;
   }
+  // Install the new version: let the new offline worker take over (it re-checks every file), then reload.
+  async function doUpdate(){
+    $("updMsg").textContent = "Updating…"; $("updBarTxt").textContent = "Updating…"; $("updBarGo").disabled = true;
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) {
+        const took = new Promise((ok) => { navigator.serviceWorker.addEventListener("controllerchange", ok, { once: true }); setTimeout(ok, 6000); });
+        await reg.update();
+        if (reg.installing || reg.waiting) await took;
+      }
+    } catch (e) {}
+    location.reload();
+  }
+  // Show "update available" everywhere: header badge, Settings, and a banner above the tab bar.
+  function announce(j){
+    $("updMsg").innerHTML = `<b>New version <span class="mono">${esc(j.version)}</span></b>${j.date ? ` <span class="s">(${esc(j.date)})</span>` : ""} <button class="link" type="button" id="updNow">Update now</button>`;
+    $("updNow").addEventListener("click", doUpdate);
+    $("updBadge").hidden = false;
+    // "Later" hides the banner for this version for 6 hours; the header badge stays
+    const snooze = store.get("solat.updSnooze") || {};
+    if (snooze.v === j.version && Date.now() - snooze.t < 6 * HOUR) return;
+    $("updBarTxt").innerHTML = `<b>SolAir ${esc(j.version)}</b> is available.<span class="s"> Takes a few seconds; your flights and settings are kept.</span>`;
+    $("updBarGo").disabled = false;
+    $("updBar").hidden = false;
+    $("updBar").dataset.v = j.version;
+  }
+  let checking = false;
   async function checkUpdate(manual){
-    if (!navigator.onLine) { if (manual) $("updMsg").textContent = "Offline: connect to check."; return; }
+    if (!navigator.onLine) { if (manual) $("updMsg").textContent = "Offline: connect to check."; return false; }
+    if (checking) return false; checking = true;
     if (manual) $("updMsg").textContent = "Checking…";
     try {
       const j = await (await fetch("version.json?t=" + Date.now(), { cache: "no-store" })).json();
       store.set("solat.lastUpdateCheck", Date.now()); showVersion();
       if (j.version && j.version !== APP_VERSION) {
-        $("updMsg").innerHTML = `<b>New version <span class="mono">${esc(j.version)}</span></b>${j.date ? ` <span class="s">(${esc(j.date)})</span>` : ""} <button class="link" type="button" id="updNow">Update now</button>`;
-        $("updBadge").hidden = false;
-        $("updNow").addEventListener("click", async () => {
-          $("updMsg").textContent = "Updating…";
-          // let the new offline worker take over (it re-checks every file with the server), then reload
-          try {
-            const reg = await navigator.serviceWorker.getRegistration();
-            if (reg) {
-              const took = new Promise((ok) => { navigator.serviceWorker.addEventListener("controllerchange", ok, { once: true }); setTimeout(ok, 6000); });
-              await reg.update();
-              if (reg.installing || reg.waiting) await took;
-            }
-          } catch (e) {}
-          location.reload();
-        });
+        announce(j);
+        navigator.serviceWorker && navigator.serviceWorker.getRegistration().then((r) => r && r.update()).catch(() => {});   // start fetching it now
       } else if (manual) $("updMsg").textContent = "You have the latest version.";
+      checking = false; return true;
     } catch (e) { if (manual) $("updMsg").textContent = "Could not check (" + e.message + ")."; }
+    checking = false; return false;
   }
   $("updCur").textContent = APP_VERSION;
   $("updBtn").addEventListener("click", () => checkUpdate(true));
-  showVersion(); setTimeout(() => checkUpdate(false), 1500);
+  $("updBarGo").addEventListener("click", doUpdate);
+  $("updBarX").addEventListener("click", () => { store.set("solat.updSnooze", { v: $("updBar").dataset.v, t: Date.now() }); $("updBar").hidden = true; });
+  // Check automatically once each time the app is opened: straight away if online, otherwise as soon as
+  // the device connects. No repeated checks in the background (battery).
+  showVersion();
+  let autoChecked = false;
+  const checkOnce = () => {
+    if (autoChecked || !navigator.onLine) return;
+    autoChecked = true;
+    checkUpdate(false).then((ok) => { if (!ok) autoChecked = false; });   // weak signal: try again on the next connection
+  };
+  setTimeout(checkOnce, 1500);
+  addEventListener("online", () => setTimeout(checkOnce, 2000));
 
   // Chrome/Android: offer a real install (opens full screen, no address bar) instead of a bookmark shortcut.
   // ---------- install: Android/desktop Chrome can install directly; iPhone/iPad need Safari's Share menu ----------
