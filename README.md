@@ -107,6 +107,19 @@ Asr is Shafi'i by default (Hanafi selectable). Umm al-Qura's Isha is counted 90 
 
 **Validation:** against the JAKIM e-Solat 2026 timetables (5 zones, 1,825 zone-days), the JAKIM preset (Fajr 18°, Isha 18°, ihtiyat Fajr +1, Zuhr +2, Asr +1, Maghrib +1, Isha +1) is within 1 min on 96–100% of days and never more than 2 min out. The qibla agrees with JAKIM to within 0.07°. See [`docs/jakim-validation.md`](docs/jakim-validation.md).
 
+## Releasing (preview first, then live)
+
+| Branch | What it is |
+|---|---|
+| `Main` | **Live app.** GitHub Pages publishes it at https://ark3mist.github.io/Solat-In-Flight/. Changes arrive only by merging a pull request. |
+| `claude/sweet-allen-q6tovx` | **Work in progress.** Every push is published by Cloudflare Pages as a preview at https://claude-sweet-allen-q6tovx.solatinflight.pages.dev/ (users never see it). |
+
+1. Make and push the change on the work branch; try it at the preview address, online and offline.
+2. When it is right, set the next version (`APP_VERSION` in `index.html` and `version.json`, `MAJOR-HOTFIX-YY`) and bump `CACHE` in `sw.js`.
+3. Open a pull request from the work branch into `Main` and merge it. The live app updates within about 2 minutes; users get it with *Check for update*.
+
+The preview and https://solatinflight.pages.dev/ are unofficial copies: analytics does not load there and Settings shows "not the official address".
+
 ## Privacy and analytics
 
 Flights, routes and OFPs stay on the device and are never uploaded. The official site counts visits with [Cloudflare Web Analytics](https://developers.cloudflare.com/web-analytics/) (no cookies, no personal data, nothing about the flight). The beacon loads only on `ark3mist.github.io`, only when online, and only once `CF_WEB_ANALYTICS_TOKEN` is set at the end of `index.html`.
