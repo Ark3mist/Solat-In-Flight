@@ -29,7 +29,7 @@ What it does:
    - Magnetic variation comes from the World Magnetic Model 2025 (NOAA/BGS, public domain, bundled as `wmm.js`, valid to 2030). It is computed at the aircraft's position and level, and matches the reference implementation to 0.01°.
    - The clock position uses the planned track as the nose direction. Drift is not included, so with a crosswind the true answer can be a few degrees off.
 
-6. **Now box:** altitude in metres or feet (tap **m / ft**; the other unit is shown underneath), heading °M and the time (device clock, or HHMM you type).
+6. **Solat box:** altitude in metres or feet (tap **m / ft**; the other unit is shown underneath), heading °M and the time (device clock, or HHMM you type).
    - It shows at once which prayer is open, the time left, the next prayer, the qibla and the sun as clock positions from the nose, and when and where the next sunrise or sunset happens.
    - The aircraft is assumed to hold the altitude you entered from now on; the position comes from the planned route.
    - **On the ground below:** that day's six times (UTC) for someone on the ground directly under the aircraft, with the one in force highlighted, so you can compare them with the in-flight times.
@@ -72,7 +72,7 @@ For a review of the original Excel workbook (v3.7) and the reasons for this desi
 
 **Flight time and average ground speed:** the Flight box has *Flight time* (airborne to landing, H:MM); typing it sets Landing, and changing Landing updates it. Below the boxes a teal note shows the average ground speed: from an imported OFP (ground distance ÷ planned flight time, with the average wind), otherwise route distance ÷ flight time. With Landing blank, landing is estimated at 450 kt (or the OFP's average) and shown greyed in Landing and Flight time. The note also reminds the user to update ETAs to actual times (ATO) and FLs in flight. In the Timeline, *Prayer time available* is highlighted in teal (#00A19C).
 
-**Great-circle warning:** when the Route has only DEP and ARR (typical for a passenger without the OFP), the Globe, Now and Timeline tabs show a warning that the path is a great circle, not the airline's flight plan, and that prayer times may differ by 10–20 min or more. It disappears once an OFP is imported or waypoints are added.
+**Great-circle warning:** when the Route has only DEP and ARR (typical for a passenger without the OFP), the Globe, Solat and Timeline tabs show a warning that the path is a great circle, not the airline's flight plan, and that prayer times may differ by 10–20 min or more. It disappears once an OFP is imported or waypoints are added.
 
 **Airports:** `airports.js` holds about 7,950 airports with IATA codes (every airline-served airport), offline, each with ICAO code, name, city, country, position and IANA time zone. In the Route, type a code (IATA or ICAO), a city, an airport name or a country into the Ident box and pick from the list; for DEP/ARR, typing a city and leaving the box takes the best match. Common alternative names work (Madinah, Makkah → Jeddah, Saigon, Bombay…). The 41 workbook airports keep the workbook coordinates. Source: the [airportsdata](https://github.com/mborsetti/airportsdata) package (MIT); regenerate with `tools/build_airports.py`.
 
@@ -80,7 +80,7 @@ For a review of the original Excel workbook (v3.7) and the reasons for this desi
 
 **App layout:** a bottom bar with five tabs, on every screen size:
 - **Flight:** flight times, Route (OFP import, FLs, ETAs, Clear, saved routes) and Calculate.
-- **Now:** the Now box (current prayer, qibla and sun from the nose, ground times below) and the City-Pair.
+- **Solat:** the Solat box (current prayer, qibla and sun from the nose, ground times below), the Jamak planner (Taqdim / Ta'khir) and the City-Pair.
 - **Globe:** the globe, slider and prayer-line chips.
 - **Timeline:** prayer windows and the timeline.
 - **Settings:** version, magnetic-data expiry, update check and install; appearance (Device / Light / Dark) and the default taxi-out time used for OFP imports; **Advanced settings** (convention, Fajr/Isha angles, Asr, ihtiyat per prayer, local offset, dip on twilight), which recalculate at once; notes on the calculation.
