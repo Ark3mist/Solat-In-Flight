@@ -5,13 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SolAir · Solat in the air</title>
 <meta name="description" content="Prayer times, prayer windows and qibla along a flight route, computed offline from the sun's position.">
-<meta name="theme-color" content="#0f1720">
+<meta name="theme-color" content="#0B132B">
 <script>try{var t=JSON.parse(localStorage.getItem("solat.theme"));if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="SolAir">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="favicon-48.png" type="image/png" sizes="48x48">
+<link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" href="favicon-32x32.png" type="image/png" sizes="32x32">
+<link rel="icon" href="favicon-16x16.png" type="image/png" sizes="16x16">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <style>
@@ -1753,7 +1755,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     store.set("solat.theme", t);
     document.querySelectorAll("#themeSeg button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.theme === t)));
     const dark = t === "dark" || (t === "device" && matchMedia("(prefers-color-scheme: dark)").matches);
-    document.querySelector('meta[name="theme-color"]').setAttribute("content", dark ? "#0f1720" : "#f5f6f8");
+    document.querySelector('meta[name="theme-color"]').setAttribute("content", dark ? "#0B132B" : "#f5f6f8");
     if (typeof drawGlobe === "function") drawGlobe();
     if (typeof nowCalc === "function") nowCalc();
   }
