@@ -817,6 +817,51 @@ textarea{font-size:1rem;padding:8px}
   }
   let autoT = 0;
   function autoRun(){ clearTimeout(autoT); autoT = setTimeout(() => { try { build(); } catch(e){ return; } run(); }, 150); }
+  // ---------- level change: re-time later fixes from the OFP's forecast winds ----------
+  // Each cruise fix may carry the OFP wind table [FL, dir, kt, °C, planned]. A leg flown at a
+  // new level gets a new ground speed from that level's wind and temperature (constant Mach,
+  // taken from the planned TAS); the difference in leg time moves every later ETA.
+  const A_KT = 38.967854;                                   // speed of sound, kt per sqrt(K)
+  function wxNear(j){                                       // wind table of fix j, or the nearest fix that has one
+    const W = state.wps;
+    for (let d = 0; d <= 3; d++) for (const k of [j - d, j + d]) if (W[k] && W[k].wx && W[k].wx.length) return W[k];
+    return null;
+  }
+  function wxAt(w, fl){                                     // wind (from, kt) and temp at FL, linear in u/v between levels
+    const L = w.wx.slice().sort((a, b) => a[0] - b[0]);
+    let lo = L[0], hi = L[L.length - 1];
+    for (let k = 0; k + 1 < L.length; k++) if (fl >= L[k][0] && fl <= L[k + 1][0]) { lo = L[k]; hi = L[k + 1]; break; }
+    if (fl <= L[0][0]) hi = lo; if (fl >= L[L.length - 1][0]) lo = hi;
+    const f = hi[0] === lo[0] ? 0 : (fl - lo[0]) / (hi[0] - lo[0]), r = Math.PI / 180;
+    const u = (1 - f) * lo[2] * Math.sin(lo[1] * r) + f * hi[2] * Math.sin(hi[1] * r);
+    const v = (1 - f) * lo[2] * Math.cos(lo[1] * r) + f * hi[2] * Math.cos(hi[1] * r);
+    return { dir: (Math.atan2(u, v) / r + 360) % 360, spd: Math.hypot(u, v), temp: (1 - f) * lo[3] + f * hi[3] };
+  }
+  function legMin(j, fl){                                   // minutes for leg j -> j+1 at FL, or null
+    const W = state.wps, a = W[j], b = W[j + 1], ref = wxNear(j) || wxNear(j + 1);
+    if (!a || !b || !ref || !/^\d{2,3}$/.test(fl)) return null;
+    const pa = { lat: S.parseLat(a.lat), lon: S.parseLon(a.lon) }, pb = { lat: S.parseLat(b.lat), lon: S.parseLon(b.lon) };
+    if ([pa.lat, pa.lon, pb.lat, pb.lon].some((x) => x === null)) return null;
+    const plan = ref.wx.find((x) => x[4]) || null, tas0 = ref.tas || (wxNear(j + 1) || {}).tas;
+    const mach = tas0 && plan ? tas0 / (A_KT * Math.sqrt(plan[3] + 273.15)) : 0.85;
+    const x = wxAt(ref, +fl), tas = mach * A_KT * Math.sqrt(x.temp + 273.15);
+    const trk = S.bearing(pa, pb) * Math.PI / 180, to = (x.dir + 180) * Math.PI / 180;
+    const along = x.spd * Math.cos(to - trk), cross = x.spd * Math.sin(to - trk);
+    const gs = Math.sqrt(Math.max(0, tas * tas - cross * cross)) + along;
+    return gs > 50 ? S.gcNm(pa, pb) / gs * 60 : null;
+  }
+  // levels before -> after (per leg): move each later ETA by the summed change in leg times
+  function windShift(before, after){
+    const W = state.wps, n = W.length; let cum = 0;     // each fix moves by the rounded running total
+    for (let j = 0; j + 1 < n; j++) {
+      if (before[j] !== after[j]) { const t0 = legMin(j, before[j]), t1 = legMin(j, after[j]); if (t0 != null && t1 != null) cum += t1 - t0; }
+      const d = Math.round(cum), k = j + 1;
+      if (!d) continue;
+      if (k < n - 1) { if (toMin(W[k].eto) !== null) W[k].eto = fromMin(toMin(W[k].eto) + d); }
+      else if (toMin(state.arr) !== null) { state.arr = fromMin(toMin(state.arr) + d); $("arr").value = state.arr; }
+    }
+    return Math.round(cum);
+  }
   // Cruise FL in force at fix i: its own, or the last one set before it.
   function effFL(i){ for (let j = i; j > 0; j--) if (state.wps[j].fl) return state.wps[j].fl; return ""; }
   // ---------- airport search under the Ident box ----------
@@ -868,12 +913,15 @@ textarea{font-size:1rem;padding:8px}
         if (k === "fl") {
           const nv = v.replace(/^FL/, ""), old = effFL(i);
           if (nv && !/^\d{2,3}$/.test(nv)) { inp.value = w.fl || ""; return; }
-          const run = [];
+          const run = [], before = state.wps.map((_, j) => effFL(j));
           if (nv && old) { for (let j = i; j < state.wps.length - 1 && effFL(j) === old; j++) run.push(j); }
           else run.push(i);
           run.forEach((j) => state.wps[j].fl = nv);
           if (!nv) state.wps[i].fl = "";
-          save(); renderWps(-1, 0, run.slice(1)); autoRun(); return;
+          const shift = windShift(before, state.wps.map((_, j) => effFL(j)));
+          save(); renderWps(shift ? i : -1, shift, run.slice(1)); autoRun();
+          if (shift) flash("routeMsg", `FL${nv || effFL(i)} winds: later ETAs ${shift > 0 ? "+" : "−"}${Math.abs(shift)} min (OFP forecast wind and temperature).`);
+          return;
         }
         if (k === "eto") {
           const d = deltaMin(w.eto, v); w.eto = v;
@@ -1893,7 +1941,7 @@ textarea{font-size:1rem;padding:8px}
         <dt>Levels</dt><dd>${o.initialFL ? "FL" + o.initialFL : "?"}${(o.steps || []).map((s) => ` → FL${s.fl} from ${esc(s.at)} (T+${elOf(s.eltm)})`).join("")}</dd>
         <dt>Climb / descent</dt><dd>${o.climbFpm || "?"} / ${o.descentFpm || "?"} fpm <span class="s">(from T-O-C / T-O-D)</span></dd>
       </dl>`;
-      h += `<label class="chk" style="margin-top:0"><input type="checkbox" id="ofpPseudo"> Also add SETP / ETP / T-O-C / T-O-D points to the route</label>`;
+      h += `<label class="chk" style="margin-top:0"><input type="checkbox" id="ofpPseudo" checked> Also add SETP / ETP / T-O-C / T-O-D points to the route</label>`;
     }
     if (o.warnings.length) h += o.warnings.map((w) => `<div class="warn">⚠ ${esc(w)}</div>`).join("");
     if (ok) h += `<div class="btnrow"><button type="button" class="primary" id="ofpApply" style="width:auto">Use this route</button></div>`;
@@ -1977,8 +2025,12 @@ textarea{font-size:1rem;padding:8px}
       const cruise = p.eltm != null && (o.tocEltm == null || p.eltm >= o.tocEltm) && (o.todEltm == null || p.eltm <= o.todEltm);
       const fl = i > 0 && i < pts.length - 1 && cruise && /^\d{2,3}$/.test(p.fl || "") && p.fl !== lastFl ? p.fl : "";
       if (fl) lastFl = fl;
-      return { id: p.name, lat: S.fmtLat(p.lat), lon: S.fmtLon(p.lon), fl,
+      const wp = { id: p.name, lat: S.fmtLat(p.lat), lon: S.fmtLon(p.lon), fl,
         eto: i > 0 && i < pts.length - 1 && p.eltm != null ? hhmmOf(air + p.eltm * MIN) : "" };
+      // forecast wind per level (OFP wind information) and planned TAS: used to re-time later fixes on a level change
+      if (p.wx && p.wx.length) wp.wx = p.wx.map((x) => [x.fl, x.dir, x.spd, x.temp, x.plan ? 1 : 0]);
+      if (p.tas) wp.tas = p.tas;
+      return wp;
     });
     const gs = ofpGs(o);
     state.ofpGs = gs ? { gs, grd: o.grdDist, air: o.airDist || null, min: o.eetMin || o.fltMin, wc: o.avgWc || null } : null;

@@ -51,6 +51,8 @@ What it does:
 
 9. **Import OFP:** load the briefing package as a PDF, or paste its text.
    - It reads the COORDINATES INFORMATION list, the nav log (ELTM and FL per fix) and the header (date, STD, taxi, flight time). The reclearance log is skipped.
+   - It also reads the WIND INFORMATION table (wind and temperature at each level per cruise fix) and the planned TAS. When you change an FL, each leg flown at the new level is re-timed from that level's wind and temperature at constant Mach, and every later ETA (and landing) moves by the difference. Checked against the OFP: the model gives the planned cruise time within about 1%. Routes without the table (typed, route string, older saves) keep the old behaviour.
+   - SETP / ETP / T-O-C / T-O-D points are added to the route by default (untick to leave them out).
    - From these it sets off-block (STD), airborne (off-block + the taxi setting, 20 min by default, not the OFP's planned taxi), landing (airborne + FLT time), every waypoint with its ETA, the initial FL and step climbs, and the climb and descent rates (from T-O-C and T-O-D).
    - The file is read **on the device**. Nothing is uploaded, and it works offline.
    - PDF reading uses [pdf.js](https://github.com/mozilla/pdf.js) 3.11.174 (Apache-2.0, bundled in `vendor/pdfjs`), loaded only when you choose a PDF.
