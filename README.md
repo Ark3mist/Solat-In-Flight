@@ -74,7 +74,7 @@ For a review of the original Excel workbook (v3.7) and the reasons for this desi
 
 **Flight time and average ground speed:** the Flight box has *Flight time* (airborne to landing, H:MM); typing it sets Landing, and changing Landing updates it. Below the boxes a teal note shows the average ground speed: from an imported OFP (ground distance ÷ planned flight time, with the average wind), otherwise route distance ÷ flight time. With Landing blank, landing is estimated at 450 kt (or the OFP's average) and shown greyed in Landing and Flight time. The note also reminds the user to update ETAs to actual times (ATO) and FLs in flight. In the Timeline, *Prayer time available* is highlighted in teal (#00A19C).
 
-**Great-circle warning:** when the Route has only DEP and ARR (typical for a passenger without the OFP), the Globe, Solat and Timeline tabs show a warning that the path is a great circle, not the airline's flight plan, and that prayer times may differ by 10–20 min or more. It disappears once an OFP is imported or waypoints are added.
+**Great-circle warning:** when the Route has only DEP and ARR (typical for a passenger without the OFP), the Globe and Solat tabs show a warning that the path is a great circle, not the airline's flight plan, and that prayer times may differ by 10–20 min or more. It disappears once an OFP is imported or waypoints are added.
 
 **Airports:** `airports.js` holds about 7,950 airports with IATA codes (every airline-served airport), offline, each with ICAO code, name, city, country, position and IANA time zone. In the Route, type a code (IATA or ICAO), a city, an airport name or a country into the Ident box and pick from the list; for DEP/ARR, typing a city and leaving the box takes the best match. Common alternative names work (Madinah, Makkah → Jeddah, Saigon, Bombay…). The 41 workbook airports keep the workbook coordinates. Source: the [airportsdata](https://github.com/mborsetti/airportsdata) package (MIT); regenerate with `tools/build_airports.py`.
 
@@ -82,9 +82,9 @@ For a review of the original Excel workbook (v3.7) and the reasons for this desi
 
 **App layout:** a bottom bar with five tabs, on every screen size:
 - **Flight:** flight times, Route (OFP import, FLs, ETAs, Clear, saved routes) and Calculate.
-- **Solat:** the Solat box (current prayer, qibla and sun from the nose, a one-line flight timeline: DEP, prayer times, ARR/ETA), the Jamak planner (Taqdim / Ta'khir) and the City-Pair.
+- **Solat:** the Solat box (current prayer, qibla and sun from the nose, a one-line flight timeline: DEP, prayer times, ARR/ETA), the Jamak planner (Taqdim / Ta'khir), then the prayer windows and the timeline tables.
 - **Globe:** the globe, slider and prayer-line chips.
-- **Timeline:** prayer windows and the timeline.
+- **City:** the City-Pair (DEP and ARR ground times) and *Any city*: search a city or airport (or type coordinates) and a date to see that place's prayer times, local and UTC, daylight and qibla. Uses the offline airport list.
 - **Settings:** version, magnetic-data expiry, update check and install; appearance (Device / Light / Dark) and the default taxi-out time used for OFP imports; **Advanced settings** (convention, Fajr/Isha angles, Asr, ihtiyat per prayer, local offset, dip on twilight), which recalculate at once; notes on the calculation.
 
 **Feedback** (Settings): type, message and, if you tick it, the current flight (route ends, times, convention, event times; no personal data). *Send by email* opens your mail app addressed to the LipasTerbang team; nothing is sent until you press send there.

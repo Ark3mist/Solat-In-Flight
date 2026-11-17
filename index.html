@@ -171,6 +171,11 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .nowpray .lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .nowkv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;font-size:13px;margin:0}
 .nowkv dt{color:var(--muted)} .nowkv dd{margin:0}
+.cityin{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(0,1fr);gap:8px;align-items:end}
+#citySug .sug{margin:4px 0 4px}
+#citySug .sug small{grid-column:2}
+.cityhd{margin:10px 0 0;font-size:13px;color:var(--muted)}
+.cityhd b{color:var(--fg)}
 .cmpin{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) minmax(0,1.2fr);gap:8px;align-items:end}
 .cmparrow{padding-bottom:8px;color:var(--muted);font-size:18px}
 .cmpin input[readonly]{background:var(--panel);font-weight:700}
@@ -407,16 +412,24 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
         </div></details>
       </section>
 
-      <section id="cmpSec">
-        <h2>City-Pair <span class="sub" id="cmpPair"></span></h2>
-        <div class="cmpin">
-          <div><label for="cmpA">DEP</label><input id="cmpA" class="mono" readonly tabindex="-1" title="From the Route"></div>
-          <span class="cmparrow">→</span>
-          <div><label for="cmpB">ARR</label><input id="cmpB" class="mono" readonly tabindex="-1" title="From the Route"></div>
-          <div><label for="cmpDate">Date</label><input id="cmpDate" type="date"></div>
-        </div>
-        <div id="cmpOut" class="cmpout"></div>
-        <div class="hint">Ground times at the departure and arrival airports of the Route, for that local date, same convention as above. The date follows the flight date unless you change it. Local time follows each airport's time zone, including daylight saving; an airport outside the built-in list shows UTC only.</div>
+
+      <section id="winSec">
+        <h2>Prayer windows</h2>
+        <div class="gcnote" hidden role="note"></div>
+        <div class="summary" id="summary">Enter the flight and press Calculate.</div>
+        <div class="errors" id="gsWarn" style="margin:0 0 8px"></div>
+        <div class="tablewrap"><table id="winTbl" class="cards" hidden>
+          <thead><tr><th>Prayer</th><th>Opens</th><th>Closes</th><th>Prayer time available</th><th>Qibla and sun from the nose</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </section>
+
+      <section id="tlSec">
+        <h2>Timeline</h2>
+        <div class="tablewrap"><table id="evTbl" class="cards" hidden>
+          <thead><tr><th>Event</th><th>UTC</th><th>Elapsed</th><th>Position</th><th>FL</th><th>TRK °M</th><th>Qibla</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
       </section>
   </div>
 
@@ -442,24 +455,28 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
       </section>
   </div>
 
-  <div class="view" data-view="timeline" hidden>
-      <section id="winSec">
-        <h2>Prayer windows</h2>
-        <div class="gcnote" hidden role="note"></div>
-        <div class="summary" id="summary">Enter the flight and press Calculate.</div>
-        <div class="errors" id="gsWarn" style="margin:0 0 8px"></div>
-        <div class="tablewrap"><table id="winTbl" class="cards" hidden>
-          <thead><tr><th>Prayer</th><th>Opens</th><th>Closes</th><th>Prayer time available</th><th>Qibla and sun from the nose</th></tr></thead>
-          <tbody></tbody>
-        </table></div>
+  <div class="view" data-view="city" hidden>
+      <section id="cmpSec">
+        <h2>City-Pair <span class="sub" id="cmpPair"></span></h2>
+        <div class="cmpin">
+          <div><label for="cmpA">DEP</label><input id="cmpA" class="mono" readonly tabindex="-1" title="From the Route"></div>
+          <span class="cmparrow">→</span>
+          <div><label for="cmpB">ARR</label><input id="cmpB" class="mono" readonly tabindex="-1" title="From the Route"></div>
+          <div><label for="cmpDate">Date</label><input id="cmpDate" type="date"></div>
+        </div>
+        <div id="cmpOut" class="cmpout"></div>
+        <div class="hint">Ground times at the departure and arrival airports of the Route, for that local date, same convention as above. The date follows the flight date unless you change it. Local time follows each airport's time zone, including daylight saving; an airport outside the built-in list shows UTC only.</div>
       </section>
 
-      <section id="tlSec">
-        <h2>Timeline</h2>
-        <div class="tablewrap"><table id="evTbl" class="cards" hidden>
-          <thead><tr><th>Event</th><th>UTC</th><th>Elapsed</th><th>Position</th><th>FL</th><th>TRK °M</th><th>Qibla</th></tr></thead>
-          <tbody></tbody>
-        </table></div>
+      <section id="citySec">
+        <h2>Any city <span class="sub" id="cityName"></span></h2>
+        <div class="cityin">
+          <div><label for="cityQ">City or airport</label><input id="cityQ" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Jeddah, Istanbul, KUL, or 3.14 N 101.69 E" role="combobox" aria-expanded="false" aria-controls="citySug"></div>
+          <div><label for="cityDate">Date</label><input id="cityDate" type="date"></div>
+        </div>
+        <div id="citySug" role="listbox"></div>
+        <div id="cityOut" class="cmpout"><p class="s">Type a city or airport and pick it from the list.</p></div>
+        <div class="hint">Prayer times on the ground for that local date, same convention and ihtiyat as the rest of the app. Cities come from the offline airport list (about 8,000 airports), so a place with no airport is not listed: type its coordinates instead, and its times show in UTC.</div>
       </section>
   </div>
 
@@ -553,7 +570,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   <button type="button" data-tab="flight"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="currentColor"/></svg><span>Flight</span></button>
   <button type="button" data-tab="now"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 5.5l2.6 6.5-2.6 6.5-2.6-6.5z" fill="currentColor" fill-opacity=".25"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg><span>Solat</span></button>
   <button type="button" data-tab="globe" class="star"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg><span>Globe</span></button>
-  <button type="button" data-tab="timeline"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.5" fill="currentColor"/><circle cx="4.5" cy="12" r="1.5" fill="currentColor"/><circle cx="4.5" cy="18" r="1.5" fill="currentColor"/></svg><span>Timeline</span></button>
+  <button type="button" data-tab="city"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10l5-3v14M10 21V4l9 5v12M13 12h3M13 16h3"/></svg><span>City</span></button>
   <button type="button" data-tab="settings"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span></button>
 </nav>
 
@@ -1239,6 +1256,75 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     cmpReady = true; cmpCalc();
   }
 
+  // ---------- Any city ----------
+  const cityLabel = (a) => `${a.city || a.name} (${a.iata})`;
+  function cityPlace(){
+    const v = $("cityQ").value.trim(); if (!v) return null;
+    const saved = store.get("solat.city") || {};
+    if (saved.code && saved.label === v) { const st = S.station(saved.code), a = S.airport(saved.code);
+      if (st) return { name: cityLabel(a || { iata: saved.code, city: saved.code }), lat: st.lat, lon: st.lon, tz: st.tz, apt: a }; }
+    const p = place(v);                                   // code, own waypoint or "lat lon"
+    if (p && !p.error) return Object.assign(p, { apt: S.airport(p.name.split(" ")[0]) });
+    const a = S.searchAirports(v, 1)[0];                  // typed a name and did not pick: best match
+    if (a) return { name: cityLabel(a), lat: a.lat, lon: a.lon, tz: a.tz, apt: a };
+    return { error: `"${v}" not found. Try the airport code or the coordinates.` };
+  }
+  function cityCalc(){
+    const P = cityPlace(), date = $("cityDate").value, out = $("cityOut");
+    $("cityName").textContent = P && !P.error ? P.name : "";
+    if (!P) { out.innerHTML = `<p class="s">Type a city or airport and pick it from the list.</p>`; return; }
+    if (P.error) { out.innerHTML = `<p class="errors">${esc(P.error)}</p>`; return; }
+    if (!date) { out.innerHTML = `<p class="s">Pick a date.</p>`; return; }
+    const conv = currentConv(), x = dayTimes(P, date, conv);
+    const order = [["Fajr", "Fajr"], ["Sunrise", "Syuruk"], ["Zuhr", "Zuhr"], ["Asr", "Asr"], ["Maghrib", "Maghrib"], ["Isha", "Isha"]];
+    const rnd = (n, t) => (n === "Sunrise" ? floorMin(t) : ceilMin(t));
+    const hm = (t) => { const d = new Date(t); return pad(d.getUTCHours()) + ":" + pad(d.getUTCMinutes()); };
+    const now = Date.now(), isToday = now >= x.d0 && now < x.d0 + DAY;
+    let cur = null; if (isToday) { cur = "Isha"; for (const [n] of order) if (x.ev[n] != null && x.ev[n] <= now) cur = n; }
+    const off = P.tz ? tzOffset(P.tz, x.d0 + DAY / 2) : null;
+    let missing = false;
+    const loc = off !== null;                             // coordinates have no time zone: UTC only
+    const rows = order.map(([n, lbl]) => {
+      const t = x.ev[n]; if (t == null) { missing = true; return `<tr><td>${lbl}</td>${loc ? "<td>—</td>" : ""}<td>—</td></tr>`; }
+      const tt = rnd(n, t), o = P.tz ? tzOffset(P.tz, tt) : null;
+      return `<tr class="${n === cur ? "cur" : ""}"><td>${lbl}${n === cur ? " <span class='pill'>now</span>" : ""}</td>${loc ? `<td><b>${hm(tt + (o || 0) * MIN)}</b></td>` : ""}<td><b>${hm(tt).replace(":", "")}Z</b></td></tr>`;
+    }).join("");
+    const dayLen = x.ev.Sunrise != null && x.ev.Maghrib != null ? fmtDur(x.ev.Maghrib - x.ev.Sunrise) : "—";
+    const zone = loc ? `local time, UTC${off >= 0 ? "+" : "−"}${Math.floor(Math.abs(off) / 60)}${Math.abs(off) % 60 ? ":" + pad(Math.abs(off) % 60) : ""}` : "";
+    const a = P.apt, where = a ? ` · ${esc(a.name)}, ${esc(a.country)}` : "";
+    const nowTxt = loc ? ` Now there: <b>${hm(now + off * MIN)}</b>.` : "";
+    out.innerHTML = `<p class="cityhd"><b>${esc(P.name)}</b>${where}.${nowTxt}${loc ? "" : " No time zone for coordinates: times are in UTC (Z)."}</p>
+      <table><thead><tr><th></th>${loc ? `<th>Local<span class="utc">${zone}</span></th>` : ""}<th>UTC</th></tr></thead><tbody>${rows}
+      <tr><td>Daylight</td><td colspan="${loc ? 2 : 1}">${dayLen}</td></tr>
+      <tr><td>Qibla</td><td class="mono" colspan="${loc ? 2 : 1}">${fmtDeg(S.qiblaBearing(P))}T</td></tr></tbody></table>
+      ${missing ? `<p class="s">— : the sun does not reach that angle on this date at this latitude.</p>` : ""}`;
+  }
+  {
+    const c = store.get("solat.city") || {}, q = $("cityQ"), box = $("citySug");
+    $("cityDate").value = new Date().toISOString().slice(0, 10);
+    if (c.label) q.value = c.label;
+    const hide = () => { box.innerHTML = ""; q.setAttribute("aria-expanded", "false"); };
+    const pick = (a) => { store.set("solat.city", { code: a.iata, label: cityLabel(a) }); q.value = cityLabel(a); hide(); cityCalc(); };
+    q.addEventListener("input", () => {
+      const v = q.value.trim(); hide(); store.set("solat.city", {});
+      if (v.length < 2) { cityCalc(); return; }
+      const apts = S.searchAirports(v, 6); if (!apts.length) { cityCalc(); return; }
+      const d = document.createElement("div"); d.className = "sug";
+      apts.forEach((a) => {
+        const b = document.createElement("button"); b.type = "button"; b.setAttribute("role", "option");
+        b.innerHTML = `<b>${esc(a.iata)}</b><span>${esc(a.city)}${a.city && a.country ? ", " : ""}${esc(a.country)}</span><small>${esc(a.name)}${a.icao ? " · " + esc(a.icao) : ""}</small>`;
+        b.addEventListener("pointerdown", (e) => e.preventDefault());
+        b.addEventListener("click", () => pick(a));
+        d.appendChild(b);
+      });
+      box.appendChild(d); q.setAttribute("aria-expanded", "true");
+    });
+    q.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); const f = box.querySelector("button"); if (f) f.click(); else { hide(); cityCalc(); } } if (e.key === "Escape") hide(); });
+    q.addEventListener("blur", () => setTimeout(hide, 150));
+    $("cityDate").addEventListener("change", cityCalc);
+    cityCalc();
+  }
+
   // ---------- Now ----------
   const durNow = (ms) => ms < MIN ? "under 1 min" : fmtDur(ms);
   let nowMapped = false;    // device clock placed on the loaded flight's day
@@ -1763,8 +1849,8 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   setTheme(store.get("solat.theme") || "device");
   // convention / angles / ihtiyat / dip: save and recalculate at once
   function convNote(){ const c = S.CONVENTIONS[$("conv").value]; $("convNote").innerHTML = `Convention: <b>${esc(c ? c.name : "custom")}</b> · change it in Settings`; }
-  ["fajr", "isha", "asr", "ihF", "ihZ", "ihA", "ihM", "ihI", "tz", "dipTw"].forEach((k) => $(k).addEventListener("change", () => { save(); autoRun(); cmpCalc(); }));
-  $("conv").addEventListener("change", () => { convNote(); autoRun(); cmpCalc(); });
+  ["fajr", "isha", "asr", "ihF", "ihZ", "ihA", "ihM", "ihI", "tz", "dipTw"].forEach((k) => $(k).addEventListener("change", () => { save(); autoRun(); cmpCalc(); cityCalc(); }));
+  $("conv").addEventListener("change", () => { convNote(); autoRun(); cmpCalc(); cityCalc(); });
   convNote();
 
   // ---------- feedback (by email) ----------
@@ -1788,10 +1874,12 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   });
 
   // ---------- tabs (bottom bar) ----------
-  const TABS = { flight: "Flight", now: "Solat", globe: "Globe", timeline: "Timeline", settings: "Settings" };
+  const TABS = { flight: "Flight", now: "Solat", globe: "Globe", city: "City", settings: "Settings" };
   const tabScroll = {};
   let curTab = null;
+  const TAB_ALIAS = { timeline: "now" };    // the old Timeline tab now lives under Solat
   function showTab(name, keepScroll){
+    name = TAB_ALIAS[name] || name;
     if (!TABS[name]) name = "flight";
     if (curTab) tabScroll[curTab] = window.scrollY;
     document.querySelectorAll(".view").forEach((v) => v.hidden = v.dataset.view !== name);
@@ -1808,7 +1896,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     if (b.dataset.tab === curTab) window.scrollTo({ top: 0, behavior: "smooth" }); else showTab(b.dataset.tab);
   }));
   document.querySelectorAll("[data-goto]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.goto)));
-  window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (TABS[h] && h !== curTab) showTab(h); });
+  window.addEventListener("hashchange", () => { const h = TAB_ALIAS[location.hash.slice(1)] || location.hash.slice(1); if (TABS[h] && h !== curTab) showTab(h); });
   showTab("globe", true);          // the app always opens on the globe
   $("updBadge").addEventListener("click", () => showTab("settings"));
 
