@@ -402,6 +402,15 @@ section#routeSec.showll .wp input[data-k=lat],section#routeSec.showll .wp input[
 #gNow[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .livetag{display:inline-block;margin-right:6px;padding:1px 6px;border-radius:4px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:11px;letter-spacing:.06em}
 .gtip{margin-top:6px}
+.citynote{margin:10px 0 0;padding:8px 10px;border:1px solid var(--e-card-line);border-left:3px solid var(--warn);border-radius:8px;font-size:13px;line-height:1.4;color:var(--e-adv);background:var(--e-auto-bg)}
+#routeSec .wp.passed{opacity:.42;margin-bottom:3px;transition:opacity .2s}
+#routeSec .wp.passed input{min-height:34px;font-size:.88rem}
+#routeSec .wp.passed button.x{min-height:34px}
+#routeSec .wp.passed .tag{padding:2px 5px;font-size:.68rem}
+#routeSec .wp.passed:focus-within,#routeSec .wp.passed:hover{opacity:.85}
+.dctform{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 10px;align-items:center;margin:10px 0 4px;white-space:normal}
+.dctform label{margin:0}
+.dctsum{grid-column:1/-1;font-size:13px;color:var(--e-adv);white-space:normal}
 .wpnow{position:relative;justify-self:center;min-height:0;padding:4px 6px;border:0;border-radius:4px;background:var(--accent);color:var(--accent-ink);font:700 10px/1 var(--e-mono);letter-spacing:.06em}
 .wpnow::before{content:"";position:absolute;inset:-10px -4px}
 .wp.wpflash{animation:wpflash 1.6s ease-out}
@@ -489,6 +498,7 @@ textarea{font-size:1rem;padding:8px}
         <div class="routebar">
           <button class="rbtn" id="llToggle" type="button" aria-pressed="false">Lat/Long</button>
           <button class="rbtn" id="addWp" type="button">+ Add</button>
+          <button class="rbtn" id="dctBtn" type="button" title="Direct to a later waypoint">DCT</button>
           <button class="rbtn danger" id="clearRoute" type="button">Clear</button>
         </div>
         <div class="wp wphead"><button type="button" id="wpNow" class="wpnow" title="Scroll to the waypoint at the time now" aria-label="Scroll to the waypoint at the time now">NOW</button><span>Ident</span><span class="ll">Lat</span><span class="ll">Long</span><span>FL</span><span>ETA</span><span></span></div>
@@ -606,6 +616,7 @@ textarea{font-size:1rem;padding:8px}
         </div>
         <div id="citySug" role="listbox"></div>
         <div id="cityOut" class="cmpout"><p class="s">Type a city or airport and pick it from the list.</p></div>
+        <div class="citynote" role="note"><b>Note:</b> these times are calculated by the app and may differ by a few minutes from the official timetable of the local religious authority. On the ground, follow the local authority's timetable.</div>
         <div class="hint">Prayer times on the ground for that local date, same convention and ihtiyat as the rest of the app. Cities come from the offline airport list (about 8,000 airports), so a place with no airport is not listed: type its coordinates instead, and its times show in UTC.</div>
       </section>
   </div>
@@ -964,6 +975,7 @@ textarea{font-size:1rem;padding:8px}
       if (rm) rm.addEventListener("click", () => { state.wps.splice(i, 1); renderWps(); save(); });
       box.appendChild(row);
     });
+    markPassed();
   }
   const SIMPLE = ["date","offb","taxi","dep","arr","conv","tz","ihF","ihZ","ihA","ihM","ihI"];   // levels and rates live in state (route FLs / OFP)
   function readSimple(){ SIMPLE.forEach((k) => state[k] = $(k).value.trim()); state.dipTw = $("dipTw").checked; }
@@ -1034,6 +1046,70 @@ textarea{font-size:1rem;padding:8px}
   function setLL(on){ state.showLL = !!on; routeSec.classList.toggle("showll", !!on); $("llToggle").setAttribute("aria-pressed", String(!!on)); }
   setLL(state.showLL);
   $("llToggle").addEventListener("click", () => { setLL(!state.showLL); save(); });
+  // Waypoints the aircraft has passed (by the Solat tab's clock): greyed and smaller, still editable
+  function markPassed(){
+    try {
+      if (!result) return;
+      const W = result.route.wps, t = nowTime(), rows = $("wps").children;
+      if (W.length !== rows.length) return;                  // list edited since the last calculation
+      for (let i = 0; i < rows.length; i++) rows[i].classList.toggle("passed", W[i].eto <= t && i < rows.length - 1 && t > result.route.start);
+    } catch (e) {}
+  }
+  setInterval(markPassed, 20000);
+
+  // DCT: from one waypoint direct to a later one. The fixes between are removed; the time
+  // between the two scales with distance (the average ground speed of the old path), so the
+  // target and every later ETA move by the time saved. The level in force at the target is kept.
+  let dctUndo = null;
+  function etaOf(i){ const W = state.wps; return i === 0 ? state.dep : i === W.length - 1 ? state.arr : W[i].eto; }
+  function posOf(w){ let lat = S.parseLat(w.lat), lon = S.parseLon(w.lon); if ((lat === null || lon === null) && lookup(w.id)) { const st = lookup(w.id); lat = st.lat; lon = st.lon; } return lat === null || lon === null ? null : { lat, lon }; }
+  function dctPlan(a, b){
+    const W = state.wps; let path = 0;
+    for (let j = a; j < b; j++) { const p = posOf(W[j]), q = posOf(W[j + 1]); if (!p || !q) return null; path += S.gcNm(p, q); }
+    const direct = S.gcNm(posOf(W[a]), posOf(W[b]));
+    const ta = toMin(etaOf(a)), tb = toMin(etaOf(b));
+    const span = ta !== null && tb !== null ? ((tb - ta) % 1440 + 1440) % 1440 : null;
+    const saveMin = span !== null && path > 0 ? Math.round(span - span * direct / path) : null;
+    return { path, direct, skip: b - a - 1, saveMin };
+  }
+  $("dctBtn").addEventListener("click", async () => {
+    const W = state.wps;
+    if (W.length < 3) { flash("routeMsg", "Add waypoints first."); return; }
+    // default From: the next fix at the time now
+    let from = 0;
+    try { if (result && result.route.wps.length === W.length) { const t = nowTime(), k = result.route.wps.findIndex((w) => w.eto > t); from = Math.max(0, Math.min(W.length - 3, k < 0 ? 0 : k)); } } catch (e) {}
+    const opt = (i) => `<option value="${i}">${esc(W[i].id || "WP" + i)}${etaOf(i) ? " · " + esc(etaOf(i)) : ""}</option>`;
+    const html = `<b>Direct to</b><div class="dctform"><label for="dctFrom">From</label><select id="dctFrom">${W.slice(0, -2).map((_, i) => opt(i)).join("")}</select>` +
+      `<label for="dctTo">DCT</label><select id="dctTo"></select><div class="dctsum" id="dctSum"></div></div>`;
+    const done = ask(html, "Apply DCT");
+    const f = $("dctFrom"), to = $("dctTo");
+    f.value = String(from);
+    const fillTo = () => { const a = +f.value; to.innerHTML = W.map((_, i) => i).filter((i) => i > a + 1 && !PSEUDO_FIX.test(W[i].id || "")).map(opt).join(""); sum(); };
+    const sum = () => {
+      const a = +f.value, b = +to.value, pl = dctPlan(a, b);
+      $("dctSum").innerHTML = !pl ? "A waypoint has no position." :
+        `Removes ${pl.skip} waypoint${pl.skip === 1 ? "" : "s"} · ${Math.round(pl.path)} → ${Math.round(pl.direct)} nm` +
+        (pl.saveMin !== null ? ` · ETAs from ${esc(W[b].id || "WP" + b)} ${pl.saveMin >= 0 ? "−" : "+"}${Math.abs(pl.saveMin)} min` : "");
+    };
+    f.addEventListener("change", fillTo); to.addEventListener("change", sum); fillTo();
+    if (!(await done)) return;
+    const a = +f.value, b = +to.value, pl = dctPlan(a, b); if (!pl || !(b > a + 1)) return;
+    dctUndo = { wps: JSON.parse(JSON.stringify(W)), arr: state.arr };
+    const flAtB = effFL(b), target = W[b];
+    W.splice(a + 1, b - a - 1);
+    if (!target.fl && flAtB && flAtB !== effFL(a) && a + 1 < W.length - 1) target.fl = flAtB;
+    if (pl.saveMin) shiftAfter(a, -pl.saveMin);
+    save(); renderWps(a, pl.saveMin ? -pl.saveMin : 0); autoRun();
+    const m = $("routeMsg"); clearTimeout(flash.routeMsg);
+    m.innerHTML = `${esc(W[a].id || "WP" + a)} DCT ${esc(target.id || "")}: ${pl.skip} removed${pl.saveMin ? `, ETAs −${pl.saveMin} min` : ""}. <button type="button" class="link" id="dctUndoBtn">Undo</button>`;
+    $("dctUndoBtn").addEventListener("click", () => {
+      if (!dctUndo) return; state.wps = dctUndo.wps; state.arr = dctUndo.arr; $("arr").value = state.arr || ""; dctUndo = null;
+      save(); renderWps(); autoRun(); m.textContent = "DCT undone.";
+    });
+    flash.routeMsg = setTimeout(() => { m.textContent = ""; dctUndo = null; }, 15000);
+    const row = $("wps").children[a + 1]; if (row) { row.scrollIntoView({ block: "center" }); row.classList.add("wpflash"); }
+  });
+
   // NOW: scroll the waypoint list to the next fix at the time now (the Solat tab's clock)
   $("wpNow").addEventListener("click", () => {
     if (!result) { flash("routeMsg", "Press Calculate first."); return; }
@@ -1358,6 +1434,7 @@ textarea{font-size:1rem;padding:8px}
     $("evTbl").hidden = false;
     setupGlobe();
     nowCalc();
+    markPassed();
   }
 
   // ---------- qibla dial ----------

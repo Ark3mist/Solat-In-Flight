@@ -20,6 +20,8 @@ What it does:
 2. **Route** runs from departure to arrival, and you can add waypoints with optional ETAs (HHMM UTC). Fixes without an ETA are timed by distance.
    - **Off-block + taxi = airborne** (taxi defaults to 20 min). Landing = airborne + flight time.
    - Changing off-block, taxi, airborne or any waypoint ETA moves every later ETA and the landing time by the same amount (moved fields are highlighted) and recalculates the prayer times at once.
+   - **DCT:** pick a waypoint and a later one to fly direct to; the fixes between are removed, and the target and every later ETA move by the time saved (old path time × direct ÷ path distance). Undo is offered for 15 s. SETP/ETP points are not offered as DCT targets.
+   - **Passed waypoints** (by the Solat tab's clock) are greyed and drawn smaller; they stay editable.
    - **FL per fix:** the cruise level from that fix on (blank = unchanged). The initial FL and step climbs in the vertical profile are built from these, with each change starting at the fix before. Changing an FL replaces the rest of that level segment (up to the next planned level change) and recalculates. The OFP import fills them from the nav log.
    - **Clear** (with a confirmation) removes every waypoint and keeps only DEP and ARR.
    - **Lat/Long** columns are hidden by default; the *Lat/Long* button shows them, in compact fixed widths so FL and ETA stay readable (*+ Add* opens them for the new fix).
@@ -88,7 +90,7 @@ For a review of the original Excel workbook (v3.7) and the reasons for this desi
 - **Flight:** flight times, Route (OFP import, FLs, ETAs, Clear, saved routes) and Calculate.
 - **Solat:** the Solat box (current prayer, qibla and sun from the nose, a one-line flight timeline: DEP, prayer times, ARR/ETA), the Jamak planner (Taqdim / Ta'khir), then the prayer windows and the timeline tables.
 - **Globe:** the globe, slider and prayer-line chips.
-- **City:** the City-Pair (DEP and ARR ground times) and *Any city*: search a city or airport (or type coordinates) and a date to see that place's prayer times, local and UTC, daylight and qibla. Uses the offline airport list.
+- **City:** a note that calculated times may differ from the local authority's timetable; the City-Pair (DEP and ARR ground times) and *Any city*: search a city or airport (or type coordinates) and a date to see that place's prayer times, local and UTC, daylight and qibla. Uses the offline airport list.
 - **Settings:** version, magnetic-data expiry, update check and install; appearance (Device / Light / Dark) and the default taxi-out time used for OFP imports; **Advanced settings** (convention, Fajr/Isha angles, Asr, ihtiyat per prayer, local offset, dip on twilight), which recalculate at once; notes on the calculation.
 
 **Feedback** (Settings): type, message and, if you tick it, the current flight (route ends, times, convention, event times; no personal data). *Send by email* opens your mail app addressed to the LipasTerbang team; nothing is sent until you press send there.
