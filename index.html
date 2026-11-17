@@ -402,6 +402,8 @@ section#routeSec.showll .wp input[data-k=lat],section#routeSec.showll .wp input[
 #gNow[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .livetag{display:inline-block;margin-right:6px;padding:1px 6px;border-radius:4px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:11px;letter-spacing:.06em}
 .gtip{margin-top:6px}
+.wpnow{position:relative;justify-self:center;min-height:0;padding:4px 6px;border:0;border-radius:4px;background:var(--accent);color:var(--accent-ink);font:700 10px/1 var(--e-mono);letter-spacing:.06em}
+.wpnow::before{content:"";position:absolute;inset:-10px -4px}
 .wp.wpflash{animation:wpflash 1.6s ease-out}
 @keyframes wpflash{0%,40%{box-shadow:0 0 0 2px var(--accent);border-radius:8px;background:var(--soft)}100%{box-shadow:0 0 0 2px transparent}}
 /* whole-app controls: 44px touch height */
@@ -489,7 +491,7 @@ textarea{font-size:1rem;padding:8px}
           <button class="rbtn" id="addWp" type="button">+ Add</button>
           <button class="rbtn danger" id="clearRoute" type="button">Clear</button>
         </div>
-        <div class="wp wphead"><span></span><span>Ident</span><span class="ll">Lat</span><span class="ll">Long</span><span>FL</span><span>ETA</span><span></span></div>
+        <div class="wp wphead"><button type="button" id="wpNow" class="wpnow" title="Scroll to the waypoint at the time now" aria-label="Scroll to the waypoint at the time now">NOW</button><span>Ident</span><span class="ll">Lat</span><span class="ll">Long</span><span>FL</span><span>ETA</span><span></span></div>
         <div id="wps"></div>
         <div class="hint hintline">Lat/Long as <span class="mono">N0244.6</span> / <span class="mono">E10141.9</span> or decimal · ETA optional · FL = cruise level.</div>
         <div class="lib">
@@ -984,6 +986,17 @@ textarea{font-size:1rem;padding:8px}
   function setLL(on){ state.showLL = !!on; routeSec.classList.toggle("showll", !!on); $("llToggle").setAttribute("aria-pressed", String(!!on)); }
   setLL(state.showLL);
   $("llToggle").addEventListener("click", () => { setLL(!state.showLL); save(); });
+  // NOW: scroll the waypoint list to the next fix at the time now (the Solat tab's clock)
+  $("wpNow").addEventListener("click", () => {
+    if (!result) { flash("routeMsg", "Press Calculate first."); return; }
+    const W = result.route.wps, t = nowTime();
+    let i = W.findIndex((w) => w.eto > t); if (i < 0) i = W.length - 1;
+    const box = $("wps"), row = box.children[i]; if (!row) return;
+    const br = box.getBoundingClientRect(), rr = row.getBoundingClientRect();
+    box.scrollTop += rr.top - br.top - (box.clientHeight - row.offsetHeight) / 2;
+    if (br.top < 0 || br.top > innerHeight * 0.6) $("wpNow").closest(".wphead").scrollIntoView({ block: "center", behavior: "smooth" });
+    row.classList.remove("wpflash"); void row.offsetWidth; row.classList.add("wpflash");
+  });
   $("addWp").addEventListener("click", () => { setLL(true); state.wps.splice(state.wps.length - 1, 0, { id:"", lat:"", lon:"", eto:"" }); renderWps(); save(); });
 
   // In-app confirmation (the browser's own confirm() always shows the website address as its title).
