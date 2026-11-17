@@ -125,9 +125,11 @@
     // ---- pointer: drag to rotate, two fingers to pinch-zoom ----
     const ptrs = new Map();
     let gest = null;
+    let tap = null, hits = [];                                   // tap start; waypoints drawn last frame (canvas px)
     canvas.addEventListener("pointerdown", (e) => {
       canvas.setPointerCapture(e.pointerId);
       ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      tap = ptrs.size === 1 ? { x: e.clientX, y: e.clientY, t: Date.now() } : null;
       const p = [...ptrs.values()];
       gest = p.length >= 2
         ? { pinch: Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y), zoom: view.zoom }
@@ -151,7 +153,17 @@
       redraw();
     });
     const up = (e) => { ptrs.delete(e.pointerId); gest = null; };
-    canvas.addEventListener("pointerup", up); canvas.addEventListener("pointercancel", up);
+    canvas.addEventListener("pointerup", (e) => {
+      const tp = tap; tap = null; up(e);
+      // a short tap that did not drag: the nearest waypoint within reach
+      if (!tp || !opts.onWaypointTap || Date.now() - tp.t > 600 || Math.hypot(e.clientX - tp.x, e.clientY - tp.y) > 8) return;
+      const rc = canvas.getBoundingClientRect(), k = canvas.width / (rc.width || 1);
+      const x = (e.clientX - rc.left) * k, y = (e.clientY - rc.top) * k, reach = 22 * k;
+      let best = null, bd = reach;
+      for (const h of hits) { const d = Math.hypot(h.x - x, h.y - y); if (d < bd) { bd = d; best = h; } }
+      if (best) opts.onWaypointTap(best.i, best.w);
+    });
+    canvas.addEventListener("pointercancel", (e) => { tap = null; up(e); });
     canvas.addEventListener("wheel", (e) => { e.preventDefault(); setZoom(view.zoom * Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
     canvas.addEventListener("dblclick", (e) => { e.preventDefault(); setZoom(view.zoom * 2); });
 
@@ -455,8 +467,10 @@
 
       // ---- waypoints: all labelled once zoomed in ----
       const every = view.zoom >= 3 ? 1 : Math.max(1, Math.ceil(W.length / 12));
+      hits = [];
       W.forEach((w, i) => {
         const q = proj(w.lat, w.lon); if (!onScreen(q)) return;
+        if (q.x >= 0 && q.y >= 0 && q.x <= N && q.y <= N) hits.push({ i, w, x: q.x, y: q.y });
         const ends = i === 0 || i === W.length - 1;
         g.save(); g.fillStyle = colors.halo; g.strokeStyle = colors.ink; g.lineWidth = 1.5 * lw;
         g.beginPath(); g.arc(q.x, q.y, (ends ? 4.5 : W.length > 20 && view.zoom < 3 ? 2.2 : 3.4) * lw, 0, 2 * Math.PI); g.fill(); g.stroke(); g.restore();

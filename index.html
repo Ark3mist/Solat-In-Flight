@@ -266,7 +266,7 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
 .evchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .evchips button{font-size:11px;padding:3px 7px;display:inline-flex;gap:6px;align-items:center}
 .evchips i{display:inline-block;width:9px;height:9px;border-radius:50%}
-.gctl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center;margin-top:4px}
+.gctl{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;margin-top:4px}
 .gctl button{padding:3px 10px}
 .gctl input[type=range]{padding:0;accent-color:var(--accent);height:28px;background:none;border:0}
 .gtime{font-family:var(--e-mono);font-size:12px;line-height:1.4;margin-top:4px;min-height:5.6em}
@@ -398,6 +398,12 @@ section#routeSec.showll .wp input[data-k=lat],section#routeSec.showll .wp input[
   #routeSec .wp input{padding:0 6px}
   #routeSec .wp button.x{width:32px}
 }
+#gNow{font:700 13px var(--e-mono);letter-spacing:.04em;color:var(--muted)}
+#gNow[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.livetag{display:inline-block;margin-right:6px;padding:1px 6px;border-radius:4px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:11px;letter-spacing:.06em}
+.gtip{margin-top:6px}
+.wp.wpflash{animation:wpflash 1.6s ease-out}
+@keyframes wpflash{0%,40%{box-shadow:0 0 0 2px var(--accent);border-radius:8px;background:var(--soft)}100%{box-shadow:0 0 0 2px transparent}}
 /* whole-app controls: 44px touch height */
 table,.mono,.gtime,.avail{font-variant-numeric:tabular-nums}
 button.primary{min-height:46px;font-weight:700}
@@ -567,9 +573,11 @@ textarea{font-size:1rem;padding:8px}
         <div class="gctl">
           <button type="button" id="gPlay" aria-label="Play">▶</button>
           <input type="range" id="gSlider" min="0" max="100" value="0" step="1" aria-label="Time along the flight">
+          <button type="button" id="gNow" aria-pressed="true" title="Keep the aircraft at the time now">● Now</button>
         </div>
         <div class="gtime" id="gTime"></div>
         <div class="evchips" id="gEvents"></div>
+        <div class="s gtip">Tap a waypoint on the globe to edit its ETA and FL.</div>
         <div class="legend" id="gLegend"></div>
         <details><summary>How to read the globe</summary><div class="hint">Coloured lines show where the sun is at each prayer's angle at the slider time, for the aircraft's current altitude (ihtiyat is added to the time, not drawn). As the slider moves, watch the aircraft cross them. Shading: day, then twilight (to 18°), then night. The sun and moon sit over the point where each is overhead; the moon is drawn in its current phase, lit side towards the sun. An arrow on the edge means it is out of view in that direction. Drag to rotate; pinch, scroll or double-tap to zoom. Tap a prayer above to jump to the moment the aircraft crosses its line: the crossing is where the line meets the <b>aircraft</b>, not where it meets the route at other times.</div></details>
       </section>
@@ -868,7 +876,18 @@ textarea{font-size:1rem;padding:8px}
         if (k === "eto") {
           const d = deltaMin(w.eto, v); w.eto = v;
           if (d) shiftAfter(i, d);
-          save(); renderWps(i, d); autoRun(); return;
+          // An actual time earlier than a fix before it (not a midnight roll): those earlier
+          // times are out of date. Blank them so they follow distance, instead of the new time
+          // being read as tomorrow.
+          const nv = toMin(v), cleared = [];
+          if (nv !== null) for (let j = i - 1; j > 0; j--) {
+            const pj = toMin(state.wps[j].eto); if (pj === null) continue;
+            const back = ((pj - nv) % 1440 + 1440) % 1440;
+            if (back > 0 && back < 720) { state.wps[j].eto = ""; cleared.push(state.wps[j].id || "WP" + j); } else break;
+          }
+          save(); renderWps(i, d); autoRun();
+          if (cleared.length) flash("routeMsg", `${cleared.reverse().join(", ")}: ETA cleared, it was later than ${w.id || "this fix"} at ${v}. Those times now follow distance.`);
+          return;
         }
         if (k === "id") {
           if (picking) return;                     // a suggestion is being chosen
@@ -1609,6 +1628,7 @@ textarea{font-size:1rem;padding:8px}
   // ---------- globe ----------
   const globe = window.SolatGlobe.create($("globe"), {
     onFollowChange: (v) => { $("gFollow").checked = v; },
+    onWaypointTap: (i) => editWaypoint(i),
     onViewChange: (v) => { $("gZlbl").textContent = "×" + (v.zoom < 10 ? v.zoom.toFixed(1).replace(/\.0$/, "") : Math.round(v.zoom)); },
   });
   $("gZin").addEventListener("click", () => globe.zoomBy(2));
@@ -1638,12 +1658,42 @@ textarea{font-size:1rem;padding:8px}
     $("gLegend").appendChild(b);
   });
   let gRaf = 0;
+  // Live: the aircraft sits at the time now (the Solat tab's clock), and stays there as time passes
+  // and as ETAs change. Moving the slider, Play or a jump leaves live mode; "Now" returns to it.
+  let live = true, lastT = null;
+  function liveT(){ const r = result.route; return Math.max(r.start, Math.min(r.end, Math.floor(nowTime() / MIN) * MIN)); }
+  function setLive(on){ live = !!on; $("gNow").setAttribute("aria-pressed", String(live)); }
+  function syncLive(){
+    if (!live || !result) return;
+    exactT = null; exactEv = null; focusWin = null;
+    $("gSlider").value = Math.round((liveT() - result.route.start) / MIN);
+    drawGlobe();
+  }
+  $("gNow").addEventListener("click", () => { stop(); setLive(true); globe.setFollow(true); $("gFollow").checked = true; syncLive(); });
+  setInterval(() => { if (live && curTab === "globe" && !document.hidden) syncLive(); }, 20000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && curTab === "globe") syncLive(); });
+  // Globe tap on a waypoint: open it in the Route for editing (DEP/ARR times live in the Flight box)
+  function editWaypoint(i){
+    const W = state.wps, rw = result && result.route.wps[i];
+    if (rw && W[i] && (W[i].id || "") !== rw.name && !/^(DEP|ARR|WP\d+)$/.test(rw.name)) { const j = W.findIndex((w) => w.id === rw.name); if (j >= 0) i = j; }
+    if (!W[i]) return;
+    showTab("flight");
+    const first = i === 0, last = i === W.length - 1;
+    const sec = first || last ? $("flightSec") : $("routeSec");
+    if (sec.classList.contains("min")) sec.querySelector(".minbtn").click();
+    if ($("routeSec").classList.contains("min")) $("routeSec").querySelector(".minbtn").click();
+    const row = $("wps").children[i];
+    if (row) { row.classList.remove("wpflash"); void row.offsetWidth; row.classList.add("wpflash"); }
+    const inp = first ? $("dep") : last ? $("arr") : row && row.querySelector("input[data-k=eto]");
+    (first || last ? $("flightSec") : row || sec).scrollIntoView({ block: "center" });
+    if (inp) { inp.focus({ preventScroll: true }); try { inp.select(); } catch (e) {} }
+  }
   function sliderTime(){ return result ? (exactT !== null ? exactT : result.route.start + (+$("gSlider").value) * MIN) : null; }
   function drawGlobe(){
     if (!result) return;
     cancelAnimationFrame(gRaf);
     gRaf = requestAnimationFrame(() => {
-      const t = sliderTime(), { route, conv, events, windows } = result;
+      const t = sliderTime(), { route, conv, events, windows } = result; lastT = t;
       // lines show the sun angle itself (no ihtiyat), so a line meets the aircraft at the physical crossing
       globe.draw({ route, t, conv: { ...conv, ihtiyat: {} }, events, hidden: hiddenLines,
         fmtTime: (x, name) => { const d = new Date(name === "Sunrise" ? floorMin(x) : ceilMin(x)); return pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + "Z"; },
@@ -1668,13 +1718,15 @@ textarea{font-size:1rem;padding:8px}
       $("gEvents").querySelectorAll("button").forEach((b, i) => b.classList.toggle("on", !!ev && events[i] === ev));
       const gm = magAt(s, t), grel = S.relBearing(gm.q, gm.trk);
       const qib = `Qibla <b>${S.clockCode(grel)} o'clock</b> from the nose (${sideTxt(grel)}) · TRK ${fmtDeg(gm.trk)}M`;
-      $("gTime").innerHTML = evLine + `${fmtZ(t, floorMin)} · ${fmtT(t - route.start)} · ${fmtFL(s.alt)} · ${S.fmtPos(s.lat, s.lon)} · ${esc(S.fixRef(s))}<br>${qib}<br>${pr}${nx}<br><span class="sub">${sky}</span>`;
+      const realNow = Date.now();
+      const liveTag = live ? `<span class="livetag">● NOW</span>${nowMapped ? `<span class="sub">device clock on the flight's day · </span>` : realNow < route.start ? `<span class="sub">before take-off · </span>` : realNow > route.end ? `<span class="sub">after landing · </span>` : ""}` : "";
+      $("gTime").innerHTML = evLine + liveTag + `${fmtZ(t, floorMin)} · ${fmtT(t - route.start)} · ${fmtFL(s.alt)} · ${S.fmtPos(s.lat, s.lon)} · ${esc(S.fixRef(s))}<br>${qib}<br>${pr}${nx}<br><span class="sub">${sky}</span>`;
     });
   }
-  $("gSlider").addEventListener("input", () => { exactT = null; focusWin = null; drawGlobe(); });
+  $("gSlider").addEventListener("input", () => { setLive(false); exactT = null; focusWin = null; drawGlobe(); });
   // jump to a moment and zoom onto the aircraft
   function jumpTo(t, ev, win){
-    stop(); exactT = t; exactEv = ev || null; focusWin = win || null;
+    stop(); setLive(false); exactT = t; exactEv = ev || null; focusWin = win || null;
     $("gSlider").value = Math.round((t - result.route.start) / MIN);
     globe.setFollow(true); $("gFollow").checked = true; globe.setZoom(14);
     drawGlobe();
@@ -1698,8 +1750,7 @@ textarea{font-size:1rem;padding:8px}
     if (cell && cell.dataset.ft === "dep") return jumpTo(route.start);
     if (cell && cell.dataset.ft === "arr") return jumpTo(route.end);
     if (cell) { const e = events[+cell.dataset.ft]; if (e) return jumpTo(e.raw, e); }
-    const t = Math.floor(nowTime() / MIN) * MIN;
-    jumpTo(Math.max(route.start, Math.min(route.end, t)));
+    jumpTo(liveT()); setLive(true); drawGlobe();
   }
   $("nowRes").addEventListener("click", (ev) => { if (ev.target.closest(".ftclick")) flightLineJump(ev.target); });
   $("nowRes").addEventListener("keydown", (ev) => { if (ev.target.closest(".ftclick") && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); flightLineJump(ev.target); } });
@@ -1712,6 +1763,7 @@ textarea{font-size:1rem;padding:8px}
     if (playing) return stop();
     const sl = $("gSlider");
     if (+sl.value >= +sl.max) sl.value = 0;
+    setLive(false);
     $("gPlay").textContent = "❚❚"; $("gPlay").setAttribute("aria-label", "Pause");
     const stepMin = Math.max(1, Math.round(+sl.max / 400));   // whole flight in ~13 s
     playing = setInterval(() => {
@@ -1723,9 +1775,10 @@ textarea{font-size:1rem;padding:8px}
   window.addEventListener("resize", drawGlobe);
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawGlobe);
   function setupGlobe(){
-    const sl = $("gSlider"), old = +sl.max > 0 ? +sl.value / +sl.max : 0;
-    const total = Math.round((result.route.end - result.route.start) / MIN);
-    sl.max = total; sl.value = Math.round(old * total); exactT = null;
+    const sl = $("gSlider"), r = result.route;
+    const total = Math.round((r.end - r.start) / MIN);
+    const keep = live ? liveT() : Math.max(r.start, Math.min(r.end, lastT ?? r.start));
+    sl.max = total; sl.value = Math.round((keep - r.start) / MIN); exactT = null;
     // one chip per prayer event: jump to the crossing and zoom onto the aircraft
     const box = $("gEvents"); box.innerHTML = "";
     for (const e of result.events) {
@@ -2020,7 +2073,7 @@ textarea{font-size:1rem;padding:8px}
     try { history.replaceState(null, "", "#" + name); } catch (e) {}
     if (!keepScroll) window.scrollTo(0, tabScroll[name] || 0);
     // canvases measure themselves when visible: redraw the globe on arrival
-    if (name === "globe") window.dispatchEvent(new Event("resize"));
+    if (name === "globe") { window.dispatchEvent(new Event("resize")); syncLive(); }
     if (name === "now") nowCalc();
   }
   document.querySelectorAll("#tabbar button").forEach((b) => b.addEventListener("click", () => {

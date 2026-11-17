@@ -41,6 +41,8 @@ What it does:
    - day, twilight and night shading from the sun's true position;
    - **prayer lines** for Fajr, Sunrise, Zuhr, Asr, Maghrib and Isha: the places where each prayer is starting at the slider time, so you can watch the aircraft cross them;
    - **▶** plays the flight. The readout under the slider gives the time, position, magnetic track, qibla °M, the window open and the next prayer.
+   - **● Now** (on by default) keeps the aircraft at the time now, also after ETAs change; moving the slider, ▶ or a jump leaves it, tapping Now returns to it.
+   - **Tap a waypoint** on the globe to open it in the Route with its ETA selected (DEP/ARR open the Airborne/Landing time).
    - **Zoom** from 1× to 80× (wheel, pinch, double-tap, or + / −). The display renders at the screen's native resolution. Zoomed in, the coastline switches to Natural Earth 1:50m and every fix is labelled with its ETA. There is a scale bar in nm.
    - **Prayer chips** jump to the moment the aircraft physically crosses each prayer line and zoom onto it. Each crossing is given relative to the nearest fix, e.g. `Isha 1526Z · VLADA +13 nm`, together with the crossing time and the prayer time (crossing plus ihtiyat).
    - Lines are drawn from the sun angle alone: ihtiyat is added to the time, not drawn on the map.
