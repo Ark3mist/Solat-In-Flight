@@ -20,6 +20,8 @@ What it does:
 2. **Route** runs from departure to arrival, and you can add waypoints with optional ETAs (HHMM UTC). Fixes without an ETA are timed by distance.
    - **Off-block + taxi = airborne** (taxi defaults to 20 min). Landing = airborne + flight time.
    - Changing off-block, taxi, airborne or any waypoint ETA moves every later ETA and the landing time by the same amount (moved fields are highlighted) and recalculates the prayer times at once.
+   - **DCT:** pick a waypoint and a later one to fly direct to; the fixes between are removed, and the target and every later ETA move by the time saved (old path time × direct ÷ path distance). Undo is offered for 15 s. SETP/ETP points are not offered as DCT targets.
+   - **Passed waypoints** (by the Solat tab's clock) are greyed and drawn smaller; they stay editable.
    - **FL per fix:** the cruise level from that fix on (blank = unchanged). The initial FL and step climbs in the vertical profile are built from these, with each change starting at the fix before. Changing an FL replaces the rest of that level segment (up to the next planned level change) and recalculates. The OFP import fills them from the nav log.
    - **Clear** (with a confirmation) removes every waypoint and keeps only DEP and ARR.
    - **Lat/Long** columns are hidden by default; the *Lat/Long* button shows them, in compact fixed widths so FL and ETA stay readable (*+ Add* opens them for the new fix).
@@ -41,6 +43,8 @@ What it does:
    - day, twilight and night shading from the sun's true position;
    - **prayer lines** for Fajr, Sunrise, Zuhr, Asr, Maghrib and Isha: the places where each prayer is starting at the slider time, so you can watch the aircraft cross them;
    - **▶** plays the flight. The readout under the slider gives the time, position, magnetic track, qibla °M, the window open and the next prayer.
+   - **● Now** (on by default) keeps the aircraft at the time now, also after ETAs change; moving the slider, ▶ or a jump leaves it, tapping Now returns to it.
+   - **Tap a waypoint** on the globe to open it in the Route with its ETA selected (DEP/ARR open the Airborne/Landing time).
    - **Zoom** from 1× to 80× (wheel, pinch, double-tap, or + / −). The display renders at the screen's native resolution. Zoomed in, the coastline switches to Natural Earth 1:50m and every fix is labelled with its ETA. There is a scale bar in nm.
    - **Prayer chips** jump to the moment the aircraft physically crosses each prayer line and zoom onto it. Each crossing is given relative to the nearest fix, e.g. `Isha 1526Z · VLADA +13 nm`, together with the crossing time and the prayer time (crossing plus ihtiyat).
    - Lines are drawn from the sun angle alone: ihtiyat is added to the time, not drawn on the map.
@@ -49,6 +53,8 @@ What it does:
 
 9. **Import OFP:** load the briefing package as a PDF, or paste its text.
    - It reads the COORDINATES INFORMATION list, the nav log (ELTM and FL per fix) and the header (date, STD, taxi, flight time). The reclearance log is skipped.
+   - It also reads the WIND INFORMATION table (wind and temperature at each level per cruise fix) and the planned TAS. When you change an FL, each leg flown at the new level is re-timed from that level's wind and temperature at constant Mach, and every later ETA (and landing) moves by the difference. Checked against the OFP: the model gives the planned cruise time within about 1%. Routes without the table (typed, route string, older saves) keep the old behaviour.
+   - SETP / ETP / T-O-C / T-O-D points are added to the route by default (untick to leave them out).
    - From these it sets off-block (STD), airborne (off-block + the taxi setting, 20 min by default, not the OFP's planned taxi), landing (airborne + FLT time), every waypoint with its ETA, the initial FL and step climbs, and the climb and descent rates (from T-O-C and T-O-D).
    - The file is read **on the device**. Nothing is uploaded, and it works offline.
    - PDF reading uses [pdf.js](https://github.com/mozilla/pdf.js) 3.11.174 (Apache-2.0, bundled in `vendor/pdfjs`), loaded only when you choose a PDF.
@@ -84,7 +90,7 @@ For a review of the original Excel workbook (v3.7) and the reasons for this desi
 - **Flight:** flight times, Route (OFP import, FLs, ETAs, Clear, saved routes) and Calculate.
 - **Solat:** the Solat box (current prayer, qibla and sun from the nose, a one-line flight timeline: DEP, prayer times, ARR/ETA), the Jamak planner (Taqdim / Ta'khir), then the prayer windows and the timeline tables.
 - **Globe:** the globe, slider and prayer-line chips.
-- **City:** the City-Pair (DEP and ARR ground times) and *Any city*: search a city or airport (or type coordinates) and a date to see that place's prayer times, local and UTC, daylight and qibla. Uses the offline airport list.
+- **City:** a note that calculated times may differ from the local authority's timetable; the City-Pair (DEP and ARR ground times) and *Any city*: search a city or airport (or type coordinates) and a date to see that place's prayer times, local and UTC, daylight and qibla. Uses the offline airport list.
 - **Settings:** version, magnetic-data expiry, update check and install; appearance (Device / Light / Dark) and the default taxi-out time used for OFP imports; **Advanced settings** (convention, Fajr/Isha angles, Asr, ihtiyat per prayer, local offset, dip on twilight), which recalculate at once; notes on the calculation.
 
 **Feedback** (Settings): type, message and, if you tick it, the current flight (route ends, times, convention, event times; no personal data). *Send by email* opens your mail app addressed to the LipasTerbang team; nothing is sent until you press send there.

@@ -6,7 +6,9 @@
  *     ground/air distance and EET (for the average ground speed)
  *   - COORDINATES INFORMATION: waypoint names with lat/long
  *   - nav log (WPT | FL | ... | TIME ELTM): flight level + elapsed time per point
- *     (the RECLEARANCE FLIGHT LOG is skipped)
+ *     (the RECLEARANCE FLIGHT LOG is skipped), and the planned TAS where shown
+ *   - WIND INFORMATION: wind and temperature at several levels per fix, so a
+ *     level change in flight can re-time the later fixes
  * and turns it into: airborne/landing time, waypoints with ETAs, initial FL,
  * step climbs, and climb/descent rates from T-O-C / T-O-D. */
 (function (root) {
@@ -20,6 +22,13 @@
   const dm = (h, d, m) => { const v = +d + +m / 60; return h === "S" || h === "W" ? -v : v; };
   const hm = (s) => +s.slice(0, s.length - 2) * 60 + +s.slice(-2);   // "1156" -> minutes
 
+  // Planned TAS on a nav-log row: "MATUG 370 299/096 488 102 3 | ..." (TAS, MTK, WS after the wind)
+  function tasOf(line) {
+    const t = line.split("|")[0].trim().split(/\s+/), k = t.findIndex((x) => /^\d{3}\/\d{3}$/.test(x));
+    const nums = k < 0 ? [] : t.slice(k + 1).filter((x) => /^\d{1,3}$/.test(x));
+    const v = nums.length >= 3 ? +nums[0] : null;
+    return v >= 150 && v <= 650 ? v : null;
+  }
   function parse(text) {
     const lines = String(text || "").replace(/\r/g, "").split("\n");
     const out = { warnings: [], points: [] };
@@ -83,11 +92,45 @@
       }
       if (!inLog) continue;
       let r = ROW.exec(l);
-      if (r) { log.push({ name: r[1], fl: r[2], eltm: hm(r[3]) }); continue; }
+      if (r) { log.push({ name: r[1], fl: r[2], eltm: hm(r[3]), tas: tasOf(l) }); continue; }
       // airport line on its own ("EGLL/27R/DET2F") followed by its data line
       const a = /^([A-Z]{4})\/\S+\s*$/.exec(l);
       if (a && lines[i + 1] && (r = CONT.exec(lines[i + 1]))) { log.push({ name: a[1], fl: r[1], eltm: hm(r[2]) }); i++; }
     }
+    // ---- wind information: per fix, wind and temperature at several levels ----
+    // Columns are found from the name header above each block (positions in the line);
+    // "NO WX DATA" holds a column. Page headers and footers inside the section are skipped.
+    const winds = {};
+    const wi = lines.findIndex((l) => /WIND\s+INFORMATION/i.test(l));
+    if (wi >= 0) {
+      const G = /(\*?)(\d{3})\s+(\d{3})\/(\d{3})\s+([PM])(\d{2})|NO WX DATA/g;
+      const NAME = /^[A-Z0-9][A-Z0-9-]{1,11}$/;
+      let cols = null;
+      for (let i = wi + 1; i < lines.length; i++) {
+        const l = lines[i];
+        if (!l.trim() || /^\s*(PAGE\s+\d+\s*\/|Page\s+\d+\s+of)/i.test(l) || /\/\d{2}[A-Za-z]{3}\d{2}\/\d{4}\//.test(l)) continue;
+        const ms = [...l.matchAll(G)];
+        if (ms.length) {
+          if (!cols) continue;
+          for (const m of ms) {
+            let c = cols[0];
+            for (const k of cols) if (Math.abs(k.at - m.index) < Math.abs(c.at - m.index)) c = k;
+            if (!m[2] || !c.name) continue;
+            const L = winds[c.name] || (winds[c.name] = []), fl = +m[2];
+            if (!L.some((x) => x.fl === fl)) L.push({ fl, dir: +m[3], spd: +m[4], temp: (m[5] === "M" ? -1 : 1) * +m[6], plan: m[1] === "*" });
+          }
+          continue;
+        }
+        const toks = [...l.matchAll(/\S+/g)];
+        if (toks.length && toks.length <= 8 && toks.every((t) => NAME.test(t[0]))) {
+          cols = toks.map((t) => ({ name: /^(CLIMB|DESCENT)$/.test(t[0]) ? null : t[0], at: t.index }));
+          continue;
+        }
+        break;                                   // the next section
+      }
+    }
+    out.winds = winds;
+
     // keep the first occurrence of each name
     const byName = {};
     for (const e of log) if (!(e.name in byName)) byName[e.name] = e;
@@ -100,7 +143,8 @@
     for (const n of names) {
       const e = byName[n];
       if (!e) missing++;
-      out.points.push({ name: n, lat: coords[n].lat, lon: coords[n].lon, eltm: e ? e.eltm : null, fl: e ? e.fl : null, pseudo: PSEUDO.test(n) });
+      out.points.push({ name: n, lat: coords[n].lat, lon: coords[n].lon, eltm: e ? e.eltm : null, fl: e ? e.fl : null, pseudo: PSEUDO.test(n),
+        tas: e ? e.tas : null, wx: winds[n] || null });
     }
     if (log.length && missing) out.warnings.push(`${missing} point(s) have coordinates but no nav-log time.`);
 
