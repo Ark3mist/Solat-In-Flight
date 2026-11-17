@@ -175,12 +175,58 @@
       return px;
     }
 
+    // ---- aircraft marker: top-down widebody twin, nose up (-y) in a 32 x 32 box centred on 0,0 ----
+    // Drawn at a fixed 30 CSS px, rotated to the track, anchored on its centre.
+    const AIRFRAME = new Path2D(
+      "M0,-15.5 C1.1,-15.5 1.8,-13.6 1.8,-11.5 L1.8,-2.5 L14.6,5 L15.3,5.2 L15.1,6.4 L14.2,6.6 L6,4.4 L1.8,4 " +
+      "L1.5,9.6 L6.4,12.9 L6.4,14 L1,12.9 L0.5,15 L0,15.6 L-0.5,15 L-1,12.9 L-6.4,14 L-6.4,12.9 L-1.5,9.6 " +
+      "L-1.8,4 L-6,4.4 L-14.2,6.6 L-15.1,6.4 L-15.3,5.2 L-14.6,5 L-1.8,-2.5 L-1.8,-11.5 C-1.8,-13.6 -1.1,-15.5 0,-15.5 Z");
+    const FUSE = new Path2D("M0,-15.5 C1.1,-15.5 1.8,-13.6 1.8,-11.5 L1.5,9.6 L0.5,15 L0,15.6 L-0.5,15 L-1.5,9.6 L-1.8,-11.5 C-1.8,-13.6 -1.1,-15.5 0,-15.5 Z");
+    const ROOTS = new Path2D("M1.8,-2.5 L5.5,-0.3 L5,4.3 L1.8,4 Z M-1.8,-2.5 L-5.5,-0.3 L-5,4.3 L-1.8,4 Z");
+    const WINDSHIELD = new Path2D("M-1.35,-12.5 Q0,-14.3 1.35,-12.5 L1.15,-11.85 Q0,-13.15 -1.15,-11.85 Z");
+    const FIN_SHADOW = new Path2D("M0.15,8.6 L1.4,14.9 L0.35,15.2 Z");
+    const PANELS = new Path2D("M2.4,1.6 L13.6,5.9 M-2.4,1.6 L-13.6,5.9 M-1.2,-9.5 L1.2,-9.5");
+    function drawAirliner(x, y, ang, px) {
+      const k = px * 30 / 32;                                     // 32 design units -> 30 CSS px
+      g.save(); g.translate(x, y); g.rotate(ang); g.scale(k, k);
+      g.lineJoin = "round";
+      // engines first: the wing covers their rear half, the nacelle and intake show ahead of it
+      for (const sx of [-6.3, 6.3]) {
+        g.save(); g.translate(sx, 0.3);
+        const ng = g.createLinearGradient(-1.3, 0, 1.3, 0);
+        ng.addColorStop(0, "#94A3B8"); ng.addColorStop(0.5, "#F1F5F9"); ng.addColorStop(1, "#94A3B8");
+        g.beginPath(); g.ellipse(0, 0, 1.3, 2.7, 0, 0, 2 * Math.PI);
+        g.fillStyle = ng; g.fill(); g.lineWidth = 0.6; g.strokeStyle = "#090D14"; g.stroke();
+        g.beginPath(); g.ellipse(0, -2.35, 0.95, 0.42, 0, 0, 2 * Math.PI); g.fillStyle = "#334155"; g.fill();
+        g.restore();
+      }
+      // airframe: soft drop shadow (screen space, so always below), metallic pearl to silver
+      g.save();
+      g.shadowColor = "rgba(0,0,0,0.65)"; g.shadowBlur = 5 * px; g.shadowOffsetX = 0; g.shadowOffsetY = 3 * px;
+      const mg = g.createLinearGradient(-16, 0, 16, 0);
+      mg.addColorStop(0, "#CBD5E1"); mg.addColorStop(0.42, "#FFFFFF"); mg.addColorStop(0.58, "#FFFFFF"); mg.addColorStop(1, "#CBD5E1");
+      g.fillStyle = mg; g.fill(AIRFRAME);
+      g.restore();
+      // wing-root shading and the fuselage as a lit tube
+      g.save(); g.globalAlpha = 0.45; g.fillStyle = "#94A3B8"; g.fill(ROOTS); g.restore();
+      const fg = g.createLinearGradient(-1.8, 0, 1.8, 0);
+      fg.addColorStop(0, "#CBD5E1"); fg.addColorStop(0.45, "#FFFFFF"); fg.addColorStop(1, "#B6C2D1");
+      g.fillStyle = fg; g.fill(FUSE);
+      g.lineWidth = 0.3; g.strokeStyle = "#94A3B8"; g.stroke(PANELS);
+      g.fillStyle = "rgba(9,13,20,0.38)"; g.fill(FIN_SHADOW);   // vertical stabiliser's shadow
+      g.lineWidth = 0.7; g.strokeStyle = "#94A3B8"; g.beginPath(); g.moveTo(0, 8.8); g.lineTo(0, 15.2); g.stroke();
+      g.fillStyle = "#0F172A"; g.fill(WINDSHIELD);
+      g.lineWidth = 0.8; g.strokeStyle = "#090D14"; g.stroke(AIRFRAME);
+      g.restore();
+    }
+
     function draw(p) {
       last = p;
       const { route, t, conv, events, colors } = p;
       const N = size(), cx = N / 2, cy = N / 2;
       const R = (N / 2 - Math.max(6, N * 0.03)) * view.zoom;
       const lw = N / 450;                                        // constant on-screen sizes
+      const cssk = N / (canvas.clientWidth || N);                // canvas pixels per CSS pixel
       const here = route.state(t);
       if (view.follow) { view.lat = Math.max(-75, Math.min(75, here.lat)); view.lon = here.lon; }
 
@@ -500,15 +546,11 @@
         const ahead = S.gcInterp(here, { lat: here.lat + Math.cos(here.track * D2R), lon: here.lon + Math.sin(here.track * D2R) / Math.max(0.2, Math.cos(here.lat * D2R)) }, 0.05);
         const b = proj(ahead.lat, ahead.lon);
         const ang = Math.atan2(b.y - a.y, b.x - a.x) + Math.PI / 2;
-        g.save(); g.translate(a.x, a.y); g.rotate(ang); g.scale(lw * 1.05, lw * 1.05);
-        g.beginPath();
-        g.moveTo(0, -13); g.lineTo(2.2, -6); g.lineTo(12, 1); g.lineTo(12, 4); g.lineTo(2.2, 1); g.lineTo(1.6, 8);
-        g.lineTo(5, 11); g.lineTo(5, 13); g.lineTo(0, 11.5); g.lineTo(-5, 13); g.lineTo(-5, 11); g.lineTo(-1.6, 8);
-        g.lineTo(-2.2, 1); g.lineTo(-12, 4); g.lineTo(-12, 1); g.lineTo(-2.2, -6); g.closePath();
-        g.lineWidth = 3; g.strokeStyle = colors.halo; g.stroke(); g.fillStyle = colors.ink; g.fill();
-        g.restore();
+        drawAirliner(a.x, a.y, ang, cssk);
       }
-      flushLabels((a.z > 0 ? [[a.x - 16 * lw, a.y - 16 * lw, a.x + 16 * lw, a.y + 16 * lw]] : []).concat(bodies));
+      // keep labels clear of the aircraft: a 40 x 40 CSS px box around its centre (>= 20 px each way)
+      const rk = 20 * cssk;
+      flushLabels((a.z > 0 ? [[a.x - rk, a.y - rk, a.x + rk, a.y + rk]] : []).concat(bodies));
 
       // ---- rim + scale bar ----
       g.save(); g.beginPath(); g.arc(cx, cy, R, 0, 2 * Math.PI); g.strokeStyle = colors.grid; g.lineWidth = 1.5 * lw; g.stroke(); g.restore();
