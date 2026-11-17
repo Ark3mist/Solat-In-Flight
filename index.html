@@ -5,31 +5,55 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SolAir · Solat in the air</title>
 <meta name="description" content="Prayer times, prayer windows and qibla along a flight route, computed offline from the sun's position.">
-<meta name="theme-color" content="#0f1720">
+<meta name="theme-color" content="#0B132B">
 <script>try{var t=JSON.parse(localStorage.getItem("solat.theme"));if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="SolAir">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" href="favicon-32x32.png" type="image/png" sizes="32x32">
+<link rel="icon" href="favicon-16x16.png" type="image/png" sizes="16x16">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <style>
 :root{
-  --bg:#f5f6f8; --panel:#fff; --ink:#111827; --muted:#5b6472; --line:#dde1e6; --field:#f8f9fb;
+  --bg:#f5f6f8; --panel:#fff; --ink:#111827; --muted:#475569; --line:#dde1e6; --field:#f8f9fb;
   --pteal:#00A19C; --pteal-soft:rgba(0,161,156,.11);
   --accent:#0f766e; --accent-ink:#fff; --soft:#e7f3f1; --warn:#b45309; --err:#b91c1c; --qibla:#0f766e; --plane:#111827;
   --ocean:#cfe2ee; --land:#ece6d3; --night-ocean:#1d2c45; --night-land:#323a49; --grid:rgba(17,24,39,.14); --halo:#ffffff; --route:#334155; --coast:#a39a80; --night:#0d1830;
+  --e-mono:'JetBrains Mono','Fira Code','SF Mono',ui-monospace,Menlo,Consolas,monospace;
+  --e-card:#fff; --e-card-line:#cfd6df; --e-hi:rgba(255,255,255,.9);
+  --e-in-bg:#fff; --e-in-line:#94a3b8; --e-in-ink:#0f172a; --e-ph:#94a3b8; --e-focus:#0f766e; --e-ring:rgba(15,118,110,.25);
+  --e-auto-bg:#eef2f7; --e-auto-line:#b6c2d1; --e-auto-ink:#0369a1;
+  --e-label:#475569; --e-head:#0f172a; --e-bar:#0f766e; --e-pill-bg:#e2e8f0; --e-pill-ink:#334155;
+  --e-btn-bg:#f1f5f9; --e-btn-line:#94a3b8; --e-btn-ink:#0f172a;
+  --e-dng-bg:rgba(185,28,28,.07); --e-dng-line:rgba(185,28,28,.45); --e-dng-ink:#b91c1c;
+  --e-adv:#334155; --e-metric-bg:#e2e8f0; --e-metric-ink:#0f172a;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --bg:#0b1016; --panel:#121a23; --ink:#e6e9ee; --muted:#8c97a7; --line:#243142; --field:#0e151d;
-  --accent:#2dd4bf; --accent-ink:#06201d; --soft:#123330; --warn:#f59e0b; --err:#f87171; --qibla:#2dd4bf; --plane:#e6e9ee;
+  --bg:#080B10; --panel:#111722; --ink:#F1F5F9; --muted:#94A3B8; --line:#263244; --field:#090D14;
+  --accent:#2dd4bf; --accent-ink:#042F2E; --soft:#123330; --warn:#f59e0b; --err:#f87171; --qibla:#2dd4bf; --plane:#e6e9ee;
   --ocean:#173a54; --land:#46553f; --night-ocean:#050b14; --night-land:#111923; --grid:rgba(230,233,238,.14); --halo:#0b1016; --route:#cbd5e1; --coast:#7d8c74; --night:#02060d;
+  --e-card:#111722; --e-card-line:#263244; --e-hi:rgba(255,255,255,.06);
+  --e-in-bg:#090D14; --e-in-line:#334155; --e-in-ink:#F8FAFC; --e-ph:#64748B; --e-focus:#10B981; --e-ring:rgba(16,185,129,.25);
+  --e-auto-bg:#161F2E; --e-auto-line:#2D3B4E; --e-auto-ink:#38BDF8;
+  --e-label:#94A3B8; --e-head:#E2E8F0; --e-bar:#2DD4BF; --e-pill-bg:#1E293B; --e-pill-ink:#CBD5E1;
+  --e-btn-bg:#1A2332; --e-btn-line:#334155; --e-btn-ink:#E2E8F0;
+  --e-dng-bg:rgba(239,68,68,.08); --e-dng-line:rgba(239,68,68,.4); --e-dng-ink:#F87171;
+  --e-adv:#CBD5E1; --e-metric-bg:#1E293B; --e-metric-ink:#F8FAFC;
 }}
 :root[data-theme="dark"]{
-  --bg:#0b1016; --panel:#121a23; --ink:#e6e9ee; --muted:#8c97a7; --line:#243142; --field:#0e151d;
-  --accent:#2dd4bf; --accent-ink:#06201d; --soft:#123330; --warn:#f59e0b; --err:#f87171; --qibla:#2dd4bf; --plane:#e6e9ee;
+  --bg:#080B10; --panel:#111722; --ink:#F1F5F9; --muted:#94A3B8; --line:#263244; --field:#090D14;
+  --accent:#2dd4bf; --accent-ink:#042F2E; --soft:#123330; --warn:#f59e0b; --err:#f87171; --qibla:#2dd4bf; --plane:#e6e9ee;
   --ocean:#173a54; --land:#46553f; --night-ocean:#050b14; --night-land:#111923; --grid:rgba(230,233,238,.14); --halo:#0b1016; --route:#cbd5e1; --coast:#7d8c74; --night:#02060d;
+  --e-card:#111722; --e-card-line:#263244; --e-hi:rgba(255,255,255,.06);
+  --e-in-bg:#090D14; --e-in-line:#334155; --e-in-ink:#F8FAFC; --e-ph:#64748B; --e-focus:#10B981; --e-ring:rgba(16,185,129,.25);
+  --e-auto-bg:#161F2E; --e-auto-line:#2D3B4E; --e-auto-ink:#38BDF8;
+  --e-label:#94A3B8; --e-head:#E2E8F0; --e-bar:#2DD4BF; --e-pill-bg:#1E293B; --e-pill-ink:#CBD5E1;
+  --e-btn-bg:#1A2332; --e-btn-line:#334155; --e-btn-ink:#E2E8F0;
+  --e-dng-bg:rgba(239,68,68,.08); --e-dng-line:rgba(239,68,68,.4); --e-dng-ink:#F87171;
+  --e-adv:#CBD5E1; --e-metric-bg:#1E293B; --e-metric-ink:#F8FAFC;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -80,7 +104,7 @@ section.min>h2{margin-bottom:0}
 h2{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
 input,select{width:100%;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:7px 8px;min-width:0}
-input.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;text-transform:uppercase}
+input.mono{font-family:var(--e-mono);text-transform:uppercase}
 .r2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .r3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .r3.r3d{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,.75fr)}
@@ -115,7 +139,7 @@ button.link[aria-pressed=true]{text-decoration:underline}
 .sug button{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;padding:7px 9px;color:var(--fg);font-weight:400}
 .sug button:last-child{border-bottom:0}
 .sug button:hover,.sug button:focus{background:var(--soft)}
-.sug b{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+.sug b{font-family:var(--e-mono);font-size:13px}
 .sug span{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sug small{grid-column:2;color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #wps{max-height:min(62vh,560px);overflow-y:auto;overscroll-behavior:contain;padding-right:2px}
@@ -131,7 +155,7 @@ summary{cursor:pointer;color:var(--muted);font-size:13px}
 table{width:100%;border-collapse:collapse;font-size:14px}
 th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
 th{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
-.mono,td.t{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.mono,td.t{font-family:var(--e-mono)}
 td.t{font-weight:700;white-space:nowrap}
 td.s{font-size:12px;color:var(--muted)}
 .tablewrap{overflow-x:auto}
@@ -151,7 +175,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .librow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center;margin-top:6px}
 .fixrow{display:grid;grid-template-columns:80px minmax(0,1fr) minmax(0,1fr) auto;gap:6px;align-items:center;margin-top:6px}
 .fixlist{max-height:220px;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:6px}
-.fixlist div{display:grid;grid-template-columns:80px minmax(0,1fr) 30px;gap:6px;align-items:center;padding:4px 8px;border-bottom:1px solid var(--line);font-family:ui-monospace,Menlo,monospace;font-size:13px}
+.fixlist div{display:grid;grid-template-columns:80px minmax(0,1fr) 30px;gap:6px;align-items:center;padding:4px 8px;border-bottom:1px solid var(--line);font-family:var(--e-mono);font-size:13px}
 .fixlist div:last-child{border-bottom:0}
 .btnrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .ok{color:var(--accent);font-size:12px;margin-top:6px;min-height:1em}
@@ -165,20 +189,25 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .nowpray .big{font-size:22px;font-weight:700;color:var(--accent)}
 .nowpray .cur{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:4px 0 6px}
 .nowpray .cur .pname{font-size:24px}
-.ptb{font-family:ui-monospace,Menlo,monospace;font-size:20px;font-weight:800;background:var(--pteal);color:#fff;padding:1px 8px;border-radius:7px}
+.ptb{font-family:var(--e-mono);font-size:20px;font-weight:800;background:var(--pteal);color:#fff;padding:1px 8px;border-radius:7px}
 .nowpray .lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .nowkv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;font-size:13px;margin:0}
 .nowkv dt{color:var(--muted)} .nowkv dd{margin:0}
+.cityin{display:grid;grid-template-columns:minmax(0,1fr) 168px;gap:8px;align-items:end}
+#citySug .sug{margin:4px 0 4px}
+#citySug .sug small{grid-column:2}
+.cityhd{margin:10px 0 0;font-size:13px;color:var(--muted)}
+.cityhd b{color:var(--fg)}
 .cmpin{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) minmax(0,1.2fr);gap:8px;align-items:end}
 .cmparrow{padding-bottom:8px;color:var(--muted);font-size:18px}
 .cmpin input[readonly]{background:var(--panel);font-weight:700}
 .cmpout table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
 .cmpout th,.cmpout td{padding:6px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 .cmpout th{font-size:12px;color:var(--muted);font-weight:600}
-.cmpout td b{font-family:ui-monospace,Menlo,monospace;font-size:15px}
-.cmpout .utc{display:block;font-size:11px;color:var(--muted);font-family:ui-monospace,Menlo,monospace}
+.cmpout td b{font-family:var(--e-mono);font-size:15px}
+.cmpout .utc{display:block;font-size:11px;color:var(--muted);font-family:var(--e-mono)}
 .cmpout tr.cur td{background:var(--soft)}
-.cmpout .diff{font-family:ui-monospace,Menlo,monospace;font-size:13px;white-space:nowrap}
+.cmpout .diff{font-family:var(--e-mono);font-size:13px;white-space:nowrap}
 @media (max-width:560px){.cmpout .diff{font-size:11px} .cmpout th,.cmpout td{padding:6px 3px}}
 @media (max-width:560px){.cmpin{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)} .cmpin>div:last-child{grid-column:1/-1}}
 .ground{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
@@ -190,7 +219,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .ftl{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .ftl::-webkit-scrollbar{display:none}
 .ftl div{flex:1 0 auto;min-width:44px;border:1px solid var(--line);border-top:4px solid var(--pc,var(--line));border-radius:6px;padding:4px 3px;text-align:center;font-size:10px;line-height:1.25}
-.ftl b{display:block;font-family:ui-monospace,Menlo,monospace;font-size:13px}
+.ftl b{display:block;font-family:var(--e-mono);font-size:13px}
 .ftl .past{opacity:.5}
 .ftl .on{background:var(--pteal-soft);border-color:var(--pteal);border-top-color:var(--pc,var(--pteal))}
 .ftl .on span{font-weight:800}
@@ -233,22 +262,22 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
 #globe:active{cursor:grabbing}
 .zoomctl{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;align-items:center}
 .zoomctl button{width:30px;height:30px;padding:0;font-size:16px;font-weight:700;background:var(--panel);box-shadow:0 1px 3px rgba(0,0,0,.2)}
-.zoomctl span{font:600 11px ui-monospace,Menlo,monospace;color:var(--muted);background:var(--panel);border-radius:4px;padding:1px 4px}
+.zoomctl span{font:600 11px var(--e-mono);color:var(--muted);background:var(--panel);border-radius:4px;padding:1px 4px}
 .evchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .evchips button{font-size:11px;padding:3px 7px;display:inline-flex;gap:6px;align-items:center}
 .evchips i{display:inline-block;width:9px;height:9px;border-radius:50%}
 .gctl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center;margin-top:4px}
 .gctl button{padding:3px 10px}
 .gctl input[type=range]{padding:0;accent-color:var(--accent);height:28px;background:none;border:0}
-.gtime{font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.4;margin-top:4px;min-height:5.6em}
+.gtime{font-family:var(--e-mono);font-size:12px;line-height:1.4;margin-top:4px;min-height:5.6em}
 .gtime .sub{font-size:11px}
 #globeSec details{margin-top:6px}
 #globeSec summary{font-size:12px;color:var(--muted);cursor:pointer}
 .gtime b{color:var(--accent)}
 .gprayer{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin:2px 0 6px;padding:8px 11px;border-radius:10px;background:var(--pteal-soft);border-left:5px solid var(--pc,var(--pteal));font-family:system-ui,-apple-system,sans-serif}
 .gprayer .pn{font-size:24px;font-weight:800;color:var(--ink);line-height:1.1}
-.gprayer .pt{font-family:ui-monospace,Menlo,monospace;font-size:22px;font-weight:800;background:var(--pteal);color:#fff;padding:1px 8px;border-radius:7px}
-.gprayer .pd{flex-basis:100%;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted)}
+.gprayer .pt{font-family:var(--e-mono);font-size:22px;font-weight:800;background:var(--pteal);color:#fff;padding:1px 8px;border-radius:7px}
+.gprayer .pd{flex-basis:100%;font-family:var(--e-mono);font-size:12px;color:var(--muted)}
 .gprayer .pd b{color:var(--ink)}
 .evchips button.on{border-color:var(--pteal);background:var(--pteal-soft);font-weight:700}
 td.availcell{cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -264,7 +293,7 @@ td.availcell:hover,td.availcell:focus-visible{outline:2px solid var(--pteal);out
 .jk{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--pteal-soft);border-left:5px solid var(--pteal)}
 .jk .jkt{font-size:18px;font-weight:800}
 .jk .jkw{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:6px 0}
-.jk .jkw .pt{font-family:ui-monospace,Menlo,monospace;font-size:19px;font-weight:800;background:var(--pteal);color:#fff;padding:1px 8px;border-radius:7px}
+.jk .jkw .pt{font-family:var(--e-mono);font-size:19px;font-weight:800;background:var(--pteal);color:#fff;padding:1px 8px;border-radius:7px}
 .jk ol{margin:8px 0 4px;padding-left:20px;font-size:14px;line-height:1.45}
 .jk .no{color:var(--warn);font-weight:600}
 td.availcell .go{margin-top:4px;font-size:12px;font-weight:700;color:var(--pteal)}
@@ -273,11 +302,11 @@ td.availcell .go{margin-top:4px;font-size:12px;font-weight:700;color:var(--pteal
 .legend button[aria-pressed=false]{opacity:.4}
 .legend i{display:inline-block;width:16px;height:3px;border-radius:2px}
 .ofp{border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px;background:var(--field)}
-.ofp textarea{width:100%;font:13px ui-monospace,Menlo,monospace;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px;margin-top:8px}
+.ofp textarea{width:100%;font:13px var(--e-mono);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px;margin-top:8px}
 .ofp dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;font-size:13px;margin:8px 0}
-.ofp dt{color:var(--muted)} .ofp dd{margin:0;font-family:ui-monospace,Menlo,monospace}
+.ofp dt{color:var(--muted)} .ofp dd{margin:0;font-family:var(--e-mono)}
 .ofp .warn{color:var(--warn);font-size:12px}
-.avail{font-family:ui-monospace,Menlo,monospace;font-weight:800;font-size:19px;color:var(--pteal)}
+.avail{font-family:var(--e-mono);font-weight:800;font-size:19px;color:var(--pteal)}
 td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);border-radius:8px;padding:8px 10px 8px 14px !important}
 @media (max-width:560px){
   .wp{grid-template-columns:18px minmax(0,1fr) 46px 50px 20px;gap:3px}
@@ -294,6 +323,99 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   table.cards td:first-child{grid-column:1/-1}
   table.cards td:first-child::before{display:none}
 }
+
+/* ===== EFB cockpit styling, whole app (tokens --e-* are set per theme above) ===== */
+section{background:var(--e-card);border-color:var(--e-card-line);box-shadow:inset 0 1px 0 var(--e-hi)}
+section>h2{font-size:.85rem;font-weight:700;letter-spacing:.1em;color:var(--e-head);border-left:3px solid var(--e-bar);padding-left:10px;min-height:30px}
+#flightSec h2,#routeSec h2{justify-content:flex-start}
+#flightSec h2>.minbtn,#routeSec h2>.minbtn{margin-left:auto}
+label:not(.chk),.wphead{font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--e-label)}
+/* editable fields */
+input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]),select,textarea{min-height:44px;background:var(--e-in-bg);border:1.5px solid var(--e-in-line);color:var(--e-in-ink);border-radius:6px;font-size:1.05rem}
+input.mono,input[type=date],input[type=number]{font-family:var(--e-mono);font-variant-numeric:tabular-nums;font-size:1.05rem;font-weight:600;letter-spacing:.03em}
+input[type=date]{height:44px;line-height:1.2;padding:0 8px}
+input::placeholder,textarea::placeholder{color:var(--e-ph);opacity:1;font-weight:500}
+input:not([type=checkbox]):not([type=range]):focus,select:focus,textarea:focus{outline:0;border-color:var(--e-focus);box-shadow:0 0 0 2px var(--e-ring)}
+/* calculated / read-only fields: recessed, dashed, tinted */
+input.auto,input[readonly],#routeSec .wp input:disabled,#routeSec .wp input[data-k=eto]:placeholder-shown{background:var(--e-auto-bg);border:1px dashed var(--e-auto-line);color:var(--e-auto-ink);-webkit-text-fill-color:var(--e-auto-ink);opacity:1}
+input.auto::placeholder,#routeSec .wp input:disabled::placeholder,#routeSec .wp input[data-k=eto]:placeholder-shown::placeholder{color:var(--e-auto-ink);opacity:.7}
+#routeSec .wp input.moved{border:1.5px solid var(--accent);background:var(--soft);color:var(--e-in-ink);-webkit-text-fill-color:currentColor}
+.isauto>label::after,.autotag{content:"AUTO";display:inline-block;margin-left:6px;padding:2px 4px;border:1px solid currentColor;border-radius:3px;color:var(--e-auto-ink);font:700 9.5px/1 var(--e-mono);letter-spacing:.08em;vertical-align:1px}
+.autotag{margin:0 2px}
+/* help: one-line hint always visible, details behind the ? button */
+h2>.helpbtn{position:relative;flex:none;width:30px;height:30px;padding:0;margin:0 auto 0 8px;border-radius:50%;background:var(--e-btn-bg);border:1px solid var(--e-btn-line);color:var(--e-btn-ink);font:700 14px/1 var(--e-mono)}
+h2>.helpbtn::before{content:"";position:absolute;inset:-7px}
+h2>.helpbtn[aria-expanded=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+#routeSec h2>span{margin-left:0}
+.helpbody{margin:0 0 10px;padding:9px 11px;border-radius:8px;background:var(--e-auto-bg);border:1px solid var(--e-card-line);font-size:13px;line-height:1.45;color:var(--e-adv)}
+.helpbody[hidden]{display:none}
+.hintline{font-size:12px;color:var(--e-label);margin-top:8px;white-space:normal}
+/* Flight grid: six fields, three across (two across on a phone so labels never clip) */
+.fl6{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:4px 10px}
+@media (max-width:560px){.fl6{grid-template-columns:repeat(2,minmax(0,1fr))!important}.fl6>div:first-child{grid-column:auto!important}}
+/* telemetry bar */
+#flightSec .gsinfo{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--e-auto-bg);border:1px solid var(--e-card-line);border-left:3px solid var(--e-bar)}
+#flightSec .gsinfo[hidden]{display:none}
+.tele{display:flex;flex-wrap:wrap;gap:8px}
+.metric{display:inline-flex;align-items:baseline;gap:7px;padding:6px 10px;border-radius:6px;background:var(--e-metric-bg);font-family:var(--e-mono);white-space:nowrap}
+.metric i{font-style:normal;font-size:.7rem;font-weight:600;letter-spacing:.08em;color:var(--e-label)}
+.metric b{font-size:1.05rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--e-metric-ink)}
+#flightSec .gsinfo .s{color:var(--e-label);flex:1 1 100%;order:3}
+.gsinfo .adv{flex:1 1 100%;order:2;border:1px solid var(--warn);border-left-width:4px;border-radius:8px;padding:7px 10px;font-size:13px;font-weight:600;line-height:1.35;color:var(--warn)}
+/* teal CTAs: dark ink for legibility */
+.ofpbtn,.installbtn{min-height:44px;background:var(--accent);color:var(--accent-ink);border:0;font-weight:700}
+.installbtn{min-height:42px;border:1px solid var(--accent)}
+/* route action bar and buttons */
+.routebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px}
+.rbtn,.lib button:not(.primary),.ofp button:not(.primary),.btnrow button:not(.primary),#updBtn,#installBtn2,#copyUrl,#appCheckRun,.askbtns button:not(.primary):not(.danger){min-height:44px;padding:6px 12px;border-radius:6px;background:var(--e-btn-bg);border:1px solid var(--e-btn-line);color:var(--e-btn-ink);font-weight:600}
+.rbtn[aria-pressed=true]{border-color:var(--e-focus);color:var(--e-auto-ink);box-shadow:inset 0 0 0 1px var(--e-focus)}
+.rbtn.danger{margin-left:auto;background:var(--e-dng-bg);border:1px solid var(--e-dng-line);color:var(--e-dng-ink)}
+.rbtn.danger::before{content:"";display:inline-block;width:8px}
+/* waypoint grid: Ident flexible, FL 76px, ETA 88px, centred mono */
+#routeSec .wp{grid-template-columns:40px minmax(0,1fr) 76px 88px 34px;gap:4px;margin-bottom:6px}
+#routeSec .wp .tag{justify-self:center;background:var(--e-pill-bg);color:var(--e-pill-ink);font:700 .75rem/1 var(--e-mono);padding:4px 8px;border-radius:4px;letter-spacing:.02em}
+#routeSec .wp input[data-k=fl],#routeSec .wp input[data-k=eto]{text-align:center;padding:0 2px;letter-spacing:.03em}
+#routeSec .wp input{padding:0 6px}
+#routeSec .wp input[data-k=id]{text-transform:uppercase}
+#routeSec .wp button.x{min-height:44px;width:34px;padding:0;font-size:16px;color:var(--e-label);background:none;border:0}
+.wphead{margin-bottom:2px}
+.wphead span:nth-child(5),.wphead span:nth-child(6){text-align:center}
+#routeSec .wp .tag{font-size:.75rem}
+section#routeSec.showll .wp{grid-template-columns:40px minmax(70px,1fr) 112px 124px 76px 88px 34px}
+section#routeSec.showll .wp input[data-k=lat],section#routeSec.showll .wp input[data-k=lon]{font-size:.95rem;color:var(--e-in-ink);padding:0 6px;letter-spacing:.02em}
+@media (max-width:700px){
+  section#routeSec.showll .wp{grid-template-columns:40px minmax(0,1fr) 76px 88px 34px}
+  section#routeSec.showll .wp input[data-k=lat]{grid-row:2;grid-column:2/4}
+  section#routeSec.showll .wp input[data-k=lon]{grid-row:2;grid-column:4/6}
+  section#routeSec.showll .wphead .ll{display:none}
+}
+@media (max-width:389px){
+  main{padding-left:12px;padding-right:12px}
+  section{padding:10px}
+  #routeSec .wp{grid-template-columns:36px minmax(0,1fr) 76px 88px 32px;gap:4px}
+  section#routeSec.showll .wp{grid-template-columns:36px minmax(0,1fr) 76px 88px 32px}
+  #routeSec .wp .tag{padding:4px 5px}
+  #routeSec .wp input{padding:0 6px}
+  #routeSec .wp button.x{width:32px}
+}
+/* whole-app controls: 44px touch height */
+table,.mono,.gtime,.avail{font-variant-numeric:tabular-nums}
+button.primary{min-height:46px;font-weight:700}
+.seg button{min-height:44px}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+#themeSeg{grid-template-columns:repeat(3,1fr)}
+.gctl button{min-height:44px;min-width:48px;font-size:16px}
+.gctl input[type=range]{height:44px}
+.zoomctl button{width:40px;height:40px}
+.evchips{gap:6px}
+.evchips button{min-height:40px;padding:6px 10px;font:600 12.5px var(--e-mono);background:var(--e-btn-bg);border-color:var(--e-btn-line);color:var(--e-btn-ink)}
+.legend button{min-height:36px;padding:4px 9px;font-size:12px}
+button.x{min-width:40px;min-height:40px}
+button.link{min-height:44px;padding:8px 0}
+h2 .minbtn{position:relative;width:30px;height:30px;background:var(--e-btn-bg);border-color:var(--e-btn-line);color:var(--e-btn-ink)}
+h2 .minbtn::before{content:"";position:absolute;inset:-7px}
+textarea{font-size:1rem;padding:8px}
+.cmpin input[readonly]{font-weight:700}
 </style>
 </head>
 <body>
@@ -323,24 +445,24 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
 
   <div class="view" data-view="flight" hidden>
       <section id="flightSec">
-        <h2>Flight</h2>
-        <div class="r3 r3d">
+        <h2>Flight <button type="button" class="helpbtn" aria-expanded="false" aria-controls="flightHelp" aria-label="Help: how the times link together" title="Help">?</button></h2>
+        <div id="flightHelp" class="helpbody" hidden>Change any time and the later times follow. Leave Landing blank to estimate it. Fields marked <span class="autotag">AUTO</span> are calculated for you; you can still type over them.</div>
+        <div class="r3 r3d fl6">
           <div><label for="date">Date (UTC)</label><input id="date" type="date"></div>
           <div><label for="offb">Off-block UTC</label><input id="offb" class="mono" inputmode="numeric" placeholder="1025" maxlength="5"></div>
           <div><label for="taxi">Taxi-out min</label><input id="taxi" class="mono" inputmode="numeric" value="20" maxlength="3"></div>
-        </div>
-        <div class="r3">
           <div><label for="dep">Airborne UTC</label><input id="dep" class="mono" inputmode="numeric" placeholder="1530" maxlength="5"></div>
           <div><label for="arr">Landing UTC</label><input id="arr" class="mono" inputmode="numeric" placeholder="auto" maxlength="5"></div>
-          <div><label for="flt">Flight time</label><input id="flt" class="mono" inputmode="numeric" placeholder="auto" maxlength="5" title="Airborne to landing, H:MM"></div>
+          <div class="isauto"><label for="flt">Flight time</label><input id="flt" class="mono auto" inputmode="numeric" placeholder="auto" maxlength="5" title="Airborne to landing, H:MM"></div>
         </div>
-        <div class="hint">Airborne = off-block + taxi. Change any time and the later times follow. Leave Landing blank to estimate it.</div>
+        <div class="hint hintline">Airborne = off-block + taxi · later times follow any change.</div>
         <div class="gsinfo" id="gsInfo" hidden></div>
         <div class="s" id="convNote" style="margin-top:8px"></div>
       </section>
 
       <section id="routeSec">
-        <h2>Route <span><button class="ofpbtn" id="ofpOpen" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3"/></svg>Import OFP</button> <button class="link" id="llToggle" type="button" aria-pressed="false">Lat/Long</button> <button class="link" id="addWp" type="button">+ Add</button> <button class="link danger" id="clearRoute" type="button">Clear</button></span></h2>
+        <h2>Route <button type="button" class="helpbtn" aria-expanded="false" aria-controls="routeHelp" aria-label="Help: coordinate format and ETAs" title="Help">?</button> <span><button class="ofpbtn" id="ofpOpen" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3"/></svg>Import OFP</button></span></h2>
+        <div id="routeHelp" class="helpbody" hidden>Airports from the built-in list fill in automatically. ETA (HHMM UTC) is optional on waypoints; without it the time is spread by distance. Times roll past 0000Z automatically. FL is the cruise level from that fix on (blank = same as before; if no fix has an FL, FL350 is assumed). Changing an FL changes the rest of that level segment; changing an ETA moves every later ETA. Both recalculate straight away.</div>
         <div id="ofpBox" class="ofp" hidden>
           <div class="hint" style="margin-top:0">Load the briefing package (PDF) or paste its text. It is read <b>on this device only</b>: nothing is uploaded, and it works offline. The app reads the coordinates list, the nav log (ELTM and FL) and the header times. You can also paste just the <b>ATC route</b> (e.g. <span class="mono">WMKK MITOS1B MITOS M630 JUNHA … YSSY</span>): waypoints you have imported before are placed automatically.</div>
           <div class="btnrow">
@@ -356,9 +478,14 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
           <div class="ok" id="ofpMsg"></div>
           <div id="ofpPreview"></div>
         </div>
+        <div class="routebar">
+          <button class="rbtn" id="llToggle" type="button" aria-pressed="false">Lat/Long</button>
+          <button class="rbtn" id="addWp" type="button">+ Add</button>
+          <button class="rbtn danger" id="clearRoute" type="button">Clear</button>
+        </div>
         <div class="wp wphead"><span></span><span>Ident</span><span class="ll">Lat</span><span class="ll">Long</span><span>FL</span><span>ETA</span><span></span></div>
         <div id="wps"></div>
-        <div class="hint">Lat/Long as <span class="mono">N0244.6</span> / <span class="mono">E10141.9</span> or decimal. Airports from the built-in list fill in automatically. ETA (HHMM UTC) is optional on waypoints; without it the time is spread by distance. Times roll past 0000Z automatically. FL is the cruise level from that fix on (blank = same as before; if no fix has an FL, FL350 is assumed). Changing an FL changes the rest of that level segment; changing an ETA moves every later ETA. Both recalculate straight away.</div>
+        <div class="hint hintline">Lat/Long as <span class="mono">N0244.6</span> / <span class="mono">E10141.9</span> or decimal · ETA optional · FL = cruise level.</div>
         <div class="lib">
           <label for="routeSel">Saved routes</label>
           <div class="librow">
@@ -405,16 +532,24 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
         </div></details>
       </section>
 
-      <section id="cmpSec">
-        <h2>City-Pair <span class="sub" id="cmpPair"></span></h2>
-        <div class="cmpin">
-          <div><label for="cmpA">DEP</label><input id="cmpA" class="mono" readonly tabindex="-1" title="From the Route"></div>
-          <span class="cmparrow">→</span>
-          <div><label for="cmpB">ARR</label><input id="cmpB" class="mono" readonly tabindex="-1" title="From the Route"></div>
-          <div><label for="cmpDate">Date</label><input id="cmpDate" type="date"></div>
-        </div>
-        <div id="cmpOut" class="cmpout"></div>
-        <div class="hint">Ground times at the departure and arrival airports of the Route, for that local date, same convention as above. The date follows the flight date unless you change it. Local time follows each airport's time zone, including daylight saving; an airport outside the built-in list shows UTC only.</div>
+
+      <section id="winSec">
+        <h2>Prayer windows</h2>
+        <div class="gcnote" hidden role="note"></div>
+        <div class="summary" id="summary">Enter the flight and press Calculate.</div>
+        <div class="errors" id="gsWarn" style="margin:0 0 8px"></div>
+        <div class="tablewrap"><table id="winTbl" class="cards" hidden>
+          <thead><tr><th>Prayer</th><th>Opens</th><th>Closes</th><th>Prayer time available</th><th>Qibla and sun from the nose</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </section>
+
+      <section id="tlSec">
+        <h2>Timeline</h2>
+        <div class="tablewrap"><table id="evTbl" class="cards" hidden>
+          <thead><tr><th>Event</th><th>UTC</th><th>Elapsed</th><th>Position</th><th>FL</th><th>TRK °M</th><th>Qibla</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
       </section>
   </div>
 
@@ -440,24 +575,28 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
       </section>
   </div>
 
-  <div class="view" data-view="timeline" hidden>
-      <section id="winSec">
-        <h2>Prayer windows</h2>
-        <div class="gcnote" hidden role="note"></div>
-        <div class="summary" id="summary">Enter the flight and press Calculate.</div>
-        <div class="errors" id="gsWarn" style="margin:0 0 8px"></div>
-        <div class="tablewrap"><table id="winTbl" class="cards" hidden>
-          <thead><tr><th>Prayer</th><th>Opens</th><th>Closes</th><th>Prayer time available</th><th>Qibla and sun from the nose</th></tr></thead>
-          <tbody></tbody>
-        </table></div>
+  <div class="view" data-view="city" hidden>
+      <section id="cmpSec">
+        <h2>City-Pair <span class="sub" id="cmpPair"></span></h2>
+        <div class="cmpin">
+          <div><label for="cmpA">DEP</label><input id="cmpA" class="mono" readonly tabindex="-1" title="From the Route"></div>
+          <span class="cmparrow">→</span>
+          <div><label for="cmpB">ARR</label><input id="cmpB" class="mono" readonly tabindex="-1" title="From the Route"></div>
+          <div><label for="cmpDate">Date</label><input id="cmpDate" type="date"></div>
+        </div>
+        <div id="cmpOut" class="cmpout"></div>
+        <div class="hint">Ground times at the departure and arrival airports of the Route, for that local date, same convention as above. The date follows the flight date unless you change it. Local time follows each airport's time zone, including daylight saving; an airport outside the built-in list shows UTC only.</div>
       </section>
 
-      <section id="tlSec">
-        <h2>Timeline</h2>
-        <div class="tablewrap"><table id="evTbl" class="cards" hidden>
-          <thead><tr><th>Event</th><th>UTC</th><th>Elapsed</th><th>Position</th><th>FL</th><th>TRK °M</th><th>Qibla</th></tr></thead>
-          <tbody></tbody>
-        </table></div>
+      <section id="citySec">
+        <h2>Any city <span class="sub" id="cityName"></span></h2>
+        <div class="cityin">
+          <div><label for="cityQ">City or airport</label><input id="cityQ" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Jeddah, Istanbul, KUL, or 3.14 N 101.69 E" role="combobox" aria-expanded="false" aria-controls="citySug"></div>
+          <div><label for="cityDate">Date</label><input id="cityDate" type="date"></div>
+        </div>
+        <div id="citySug" role="listbox"></div>
+        <div id="cityOut" class="cmpout"><p class="s">Type a city or airport and pick it from the list.</p></div>
+        <div class="hint">Prayer times on the ground for that local date, same convention and ihtiyat as the rest of the app. Cities come from the offline airport list (about 8,000 airports), so a place with no airport is not listed: type its coordinates instead, and its times show in UTC.</div>
       </section>
   </div>
 
@@ -551,7 +690,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   <button type="button" data-tab="flight"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="currentColor"/></svg><span>Flight</span></button>
   <button type="button" data-tab="now"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 5.5l2.6 6.5-2.6 6.5-2.6-6.5z" fill="currentColor" fill-opacity=".25"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg><span>Solat</span></button>
   <button type="button" data-tab="globe" class="star"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg><span>Globe</span></button>
-  <button type="button" data-tab="timeline"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.5" fill="currentColor"/><circle cx="4.5" cy="12" r="1.5" fill="currentColor"/><circle cx="4.5" cy="18" r="1.5" fill="currentColor"/></svg><span>Timeline</span></button>
+  <button type="button" data-tab="city"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10l5-3v14M10 21V4l9 5v12M13 12h3M13 16h3"/></svg><span>City</span></button>
   <button type="button" data-tab="settings"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span></button>
 </nav>
 
@@ -769,7 +908,17 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     if (m && +m[2] < 60) return +m[1] * 60 + +m[2];
     return null;
   }
+  // AUTO badge: Airborne is calculated while Off-block is set, Landing while blank (estimated), Flight time always.
+  function syncAuto(){
+    const mark = (id, on) => { $(id).classList.toggle("auto", on); $(id).parentElement.classList.toggle("isauto", on); };
+    mark("flt", true); mark("dep", toMin($("offb").value) !== null); mark("arr", !$("arr").value.trim());
+  }
+  $("flightSec").addEventListener("input", syncAuto); $("flightSec").addEventListener("change", syncAuto);
+  document.querySelectorAll(".helpbtn").forEach((b) => b.addEventListener("click", () => {
+    const o = $(b.getAttribute("aria-controls")), open = o.hidden; o.hidden = !open; b.setAttribute("aria-expanded", String(open));
+  }));
   function showFlt(){
+    syncAuto();
     const a = toMin(state.dep), b = toMin(state.arr);
     $("flt").value = a !== null && b !== null ? fmtHM(((b - a) % 1440 + 1440) % 1440) : "";
   }
@@ -1237,6 +1386,75 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     cmpReady = true; cmpCalc();
   }
 
+  // ---------- Any city ----------
+  const cityLabel = (a) => `${a.city || a.name} (${a.iata})`;
+  function cityPlace(){
+    const v = $("cityQ").value.trim(); if (!v) return null;
+    const saved = store.get("solat.city") || {};
+    if (saved.code && saved.label === v) { const st = S.station(saved.code), a = S.airport(saved.code);
+      if (st) return { name: cityLabel(a || { iata: saved.code, city: saved.code }), lat: st.lat, lon: st.lon, tz: st.tz, apt: a }; }
+    const p = place(v);                                   // code, own waypoint or "lat lon"
+    if (p && !p.error) return Object.assign(p, { apt: S.airport(p.name.split(" ")[0]) });
+    const a = S.searchAirports(v, 1)[0];                  // typed a name and did not pick: best match
+    if (a) return { name: cityLabel(a), lat: a.lat, lon: a.lon, tz: a.tz, apt: a };
+    return { error: `"${v}" not found. Try the airport code or the coordinates.` };
+  }
+  function cityCalc(){
+    const P = cityPlace(), date = $("cityDate").value, out = $("cityOut");
+    $("cityName").textContent = P && !P.error ? P.name : "";
+    if (!P) { out.innerHTML = `<p class="s">Type a city or airport and pick it from the list.</p>`; return; }
+    if (P.error) { out.innerHTML = `<p class="errors">${esc(P.error)}</p>`; return; }
+    if (!date) { out.innerHTML = `<p class="s">Pick a date.</p>`; return; }
+    const conv = currentConv(), x = dayTimes(P, date, conv);
+    const order = [["Fajr", "Fajr"], ["Sunrise", "Syuruk"], ["Zuhr", "Zuhr"], ["Asr", "Asr"], ["Maghrib", "Maghrib"], ["Isha", "Isha"]];
+    const rnd = (n, t) => (n === "Sunrise" ? floorMin(t) : ceilMin(t));
+    const hm = (t) => { const d = new Date(t); return pad(d.getUTCHours()) + ":" + pad(d.getUTCMinutes()); };
+    const now = Date.now(), isToday = now >= x.d0 && now < x.d0 + DAY;
+    let cur = null; if (isToday) { cur = "Isha"; for (const [n] of order) if (x.ev[n] != null && x.ev[n] <= now) cur = n; }
+    const off = P.tz ? tzOffset(P.tz, x.d0 + DAY / 2) : null;
+    let missing = false;
+    const loc = off !== null;                             // coordinates have no time zone: UTC only
+    const rows = order.map(([n, lbl]) => {
+      const t = x.ev[n]; if (t == null) { missing = true; return `<tr><td>${lbl}</td>${loc ? "<td>—</td>" : ""}<td>—</td></tr>`; }
+      const tt = rnd(n, t), o = P.tz ? tzOffset(P.tz, tt) : null;
+      return `<tr class="${n === cur ? "cur" : ""}"><td>${lbl}${n === cur ? " <span class='pill'>now</span>" : ""}</td>${loc ? `<td><b>${hm(tt + (o || 0) * MIN)}</b></td>` : ""}<td><b>${hm(tt).replace(":", "")}Z</b></td></tr>`;
+    }).join("");
+    const dayLen = x.ev.Sunrise != null && x.ev.Maghrib != null ? fmtDur(x.ev.Maghrib - x.ev.Sunrise) : "—";
+    const zone = loc ? `local time, UTC${off >= 0 ? "+" : "−"}${Math.floor(Math.abs(off) / 60)}${Math.abs(off) % 60 ? ":" + pad(Math.abs(off) % 60) : ""}` : "";
+    const a = P.apt, where = a ? ` · ${esc(a.name)}, ${esc(a.country)}` : "";
+    const nowTxt = loc ? ` Now there: <b>${hm(now + off * MIN)}</b>.` : "";
+    out.innerHTML = `<p class="cityhd"><b>${esc(P.name)}</b>${where}.${nowTxt}${loc ? "" : " No time zone for coordinates: times are in UTC (Z)."}</p>
+      <table><thead><tr><th></th>${loc ? `<th>Local<span class="utc">${zone}</span></th>` : ""}<th>UTC</th></tr></thead><tbody>${rows}
+      <tr><td>Daylight</td><td colspan="${loc ? 2 : 1}">${dayLen}</td></tr>
+      <tr><td>Qibla</td><td class="mono" colspan="${loc ? 2 : 1}">${fmtDeg(S.qiblaBearing(P))}T</td></tr></tbody></table>
+      ${missing ? `<p class="s">— : the sun does not reach that angle on this date at this latitude.</p>` : ""}`;
+  }
+  {
+    const c = store.get("solat.city") || {}, q = $("cityQ"), box = $("citySug");
+    $("cityDate").value = new Date().toISOString().slice(0, 10);
+    if (c.label) q.value = c.label;
+    const hide = () => { box.innerHTML = ""; q.setAttribute("aria-expanded", "false"); };
+    const pick = (a) => { store.set("solat.city", { code: a.iata, label: cityLabel(a) }); q.value = cityLabel(a); hide(); cityCalc(); };
+    q.addEventListener("input", () => {
+      const v = q.value.trim(); hide(); store.set("solat.city", {});
+      if (v.length < 2) { cityCalc(); return; }
+      const apts = S.searchAirports(v, 6); if (!apts.length) { cityCalc(); return; }
+      const d = document.createElement("div"); d.className = "sug";
+      apts.forEach((a) => {
+        const b = document.createElement("button"); b.type = "button"; b.setAttribute("role", "option");
+        b.innerHTML = `<b>${esc(a.iata)}</b><span>${esc(a.city)}${a.city && a.country ? ", " : ""}${esc(a.country)}</span><small>${esc(a.name)}${a.icao ? " · " + esc(a.icao) : ""}</small>`;
+        b.addEventListener("pointerdown", (e) => e.preventDefault());
+        b.addEventListener("click", () => pick(a));
+        d.appendChild(b);
+      });
+      box.appendChild(d); q.setAttribute("aria-expanded", "true");
+    });
+    q.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); const f = box.querySelector("button"); if (f) f.click(); else { hide(); cityCalc(); } } if (e.key === "Escape") hide(); });
+    q.addEventListener("blur", () => setTimeout(hide, 150));
+    $("cityDate").addEventListener("change", cityCalc);
+    cityCalc();
+  }
+
   // ---------- Now ----------
   const durNow = (ms) => ms < MIN ? "under 1 min" : fmtDur(ms);
   let nowMapped = false;    // device clock placed on the loaded flight's day
@@ -1576,19 +1794,20 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   // Teal info under the Flight boxes: average ground speed and where it comes from.
   function showGsInfo(){
     const g = state.ofpGs, el = $("gsInfo"), r = result && result.route;
-    let head = "", sub = "";
+    syncAuto();
+    let head = "", sub = "", gsV = "", distV = "";
     if (g) {
-      head = `Avg ground speed <b class="mono">${g.gs} kt</b>`;
+      head = "ok"; gsV = g.gs; distV = Number(g.grd).toLocaleString("en");
       sub = `OFP: ${g.grd} nm in ${elOf(g.min)}${g.wc ? `, wind ${esc(g.wc)}` : ""}.`;
     } else if (r) {
       const gs = Math.round(r.distNm / ((r.end - r.start) / HOUR));
-      head = `Avg ground speed <b class="mono">${gs} kt</b>`;
+      head = "ok"; gsV = gs; distV = Math.round(r.distNm).toLocaleString("en");
       sub = result.estimated ? `Landing estimated at ${state.gs} kt over ${Math.round(r.distNm)} nm.` : `${Math.round(r.distNm)} nm in ${fmtDur(r.end - r.start)}.`;
     }
     el.hidden = !head;
     if (!head) return;
-    el.innerHTML = `<div class="big">${head}</div><div class="s">${sub}</div>` +
-      `<div style="margin-top:4px">For the best prayer times, update ETAs to actual times (ATO) and FLs in flight.</div>`;
+    el.innerHTML = `<div class="tele"><span class="metric"><i>AVG GS</i><b>${gsV} KT</b></span><span class="metric"><i>DIST</i><b>${distV} NM</b></span></div>` +
+      `<div class="s">${sub}</div><div class="adv" role="note">Update ETA and FL in-flight for accurate prayer times.</div>`;
   }
   function showOfp(o){
     ofpData = o;
@@ -1753,7 +1972,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     store.set("solat.theme", t);
     document.querySelectorAll("#themeSeg button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.theme === t)));
     const dark = t === "dark" || (t === "device" && matchMedia("(prefers-color-scheme: dark)").matches);
-    document.querySelector('meta[name="theme-color"]').setAttribute("content", dark ? "#0f1720" : "#f5f6f8");
+    document.querySelector('meta[name="theme-color"]').setAttribute("content", dark ? "#0B132B" : "#f5f6f8");
     if (typeof drawGlobe === "function") drawGlobe();
     if (typeof nowCalc === "function") nowCalc();
   }
@@ -1761,8 +1980,8 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   setTheme(store.get("solat.theme") || "device");
   // convention / angles / ihtiyat / dip: save and recalculate at once
   function convNote(){ const c = S.CONVENTIONS[$("conv").value]; $("convNote").innerHTML = `Convention: <b>${esc(c ? c.name : "custom")}</b> · change it in Settings`; }
-  ["fajr", "isha", "asr", "ihF", "ihZ", "ihA", "ihM", "ihI", "tz", "dipTw"].forEach((k) => $(k).addEventListener("change", () => { save(); autoRun(); cmpCalc(); }));
-  $("conv").addEventListener("change", () => { convNote(); autoRun(); cmpCalc(); });
+  ["fajr", "isha", "asr", "ihF", "ihZ", "ihA", "ihM", "ihI", "tz", "dipTw"].forEach((k) => $(k).addEventListener("change", () => { save(); autoRun(); cmpCalc(); cityCalc(); }));
+  $("conv").addEventListener("change", () => { convNote(); autoRun(); cmpCalc(); cityCalc(); });
   convNote();
 
   // ---------- feedback (by email) ----------
@@ -1786,10 +2005,12 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   });
 
   // ---------- tabs (bottom bar) ----------
-  const TABS = { flight: "Flight", now: "Solat", globe: "Globe", timeline: "Timeline", settings: "Settings" };
+  const TABS = { flight: "Flight", now: "Solat", globe: "Globe", city: "City", settings: "Settings" };
   const tabScroll = {};
   let curTab = null;
+  const TAB_ALIAS = { timeline: "now" };    // the old Timeline tab now lives under Solat
   function showTab(name, keepScroll){
+    name = TAB_ALIAS[name] || name;
     if (!TABS[name]) name = "flight";
     if (curTab) tabScroll[curTab] = window.scrollY;
     document.querySelectorAll(".view").forEach((v) => v.hidden = v.dataset.view !== name);
@@ -1806,7 +2027,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     if (b.dataset.tab === curTab) window.scrollTo({ top: 0, behavior: "smooth" }); else showTab(b.dataset.tab);
   }));
   document.querySelectorAll("[data-goto]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.goto)));
-  window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (TABS[h] && h !== curTab) showTab(h); });
+  window.addEventListener("hashchange", () => { const h = TAB_ALIAS[location.hash.slice(1)] || location.hash.slice(1); if (TABS[h] && h !== curTab) showTab(h); });
   showTab("globe", true);          // the app always opens on the globe
   $("updBadge").addEventListener("click", () => showTab("settings"));
 
@@ -1819,7 +2040,7 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
     $("hereOk").innerHTML = ok ? '<span style="color:var(--accent)">✓ official</span>' : '<span style="color:var(--err)">⚠ not the official address</span>';
   })();
   // Version MAJOR-HOTFIX-YY: MAJOR = major change, HOTFIX = 01, 02, 03… (back to 01 after a major change), YY = year of the update.
-  const APP_VERSION = "1-11-26", APP_DATE = Date.UTC(2026, 10, 8);
+  const APP_VERSION = "1-12-26", APP_DATE = Date.UTC(2026, 10, 17);
   const MAG_EXPIRES = Date.UTC(2029, 11, 31);        // WMM2025 is valid to 2030.0
   const dFmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   function showVersion(){
