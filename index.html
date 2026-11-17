@@ -18,7 +18,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <style>
 :root{
-  --bg:#f5f6f8; --panel:#fff; --ink:#111827; --muted:#5b6472; --line:#dde1e6; --field:#f8f9fb;
+  --bg:#f5f6f8; --panel:#fff; --ink:#111827; --muted:#475569; --line:#dde1e6; --field:#f8f9fb;
   --pteal:#00A19C; --pteal-soft:rgba(0,161,156,.11);
   --accent:#0f766e; --accent-ink:#fff; --soft:#e7f3f1; --warn:#b45309; --err:#b91c1c; --qibla:#0f766e; --plane:#111827;
   --ocean:#cfe2ee; --land:#ece6d3; --night-ocean:#1d2c45; --night-land:#323a49; --grid:rgba(17,24,39,.14); --halo:#ffffff; --route:#334155; --coast:#a39a80; --night:#0d1830;
@@ -32,7 +32,7 @@
   --e-adv:#334155; --e-metric-bg:#e2e8f0; --e-metric-ink:#0f172a;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --bg:#080B10; --panel:#121a23; --ink:#e6e9ee; --muted:#8c97a7; --line:#243142; --field:#0e151d;
+  --bg:#080B10; --panel:#111722; --ink:#F1F5F9; --muted:#94A3B8; --line:#263244; --field:#090D14;
   --accent:#2dd4bf; --accent-ink:#042F2E; --soft:#123330; --warn:#f59e0b; --err:#f87171; --qibla:#2dd4bf; --plane:#e6e9ee;
   --ocean:#173a54; --land:#46553f; --night-ocean:#050b14; --night-land:#111923; --grid:rgba(230,233,238,.14); --halo:#0b1016; --route:#cbd5e1; --coast:#7d8c74; --night:#02060d;
   --e-card:#111722; --e-card-line:#263244; --e-hi:rgba(255,255,255,.06);
@@ -44,7 +44,7 @@
   --e-adv:#CBD5E1; --e-metric-bg:#1E293B; --e-metric-ink:#F8FAFC;
 }}
 :root[data-theme="dark"]{
-  --bg:#080B10; --panel:#121a23; --ink:#e6e9ee; --muted:#8c97a7; --line:#243142; --field:#0e151d;
+  --bg:#080B10; --panel:#111722; --ink:#F1F5F9; --muted:#94A3B8; --line:#263244; --field:#090D14;
   --accent:#2dd4bf; --accent-ink:#042F2E; --soft:#123330; --warn:#f59e0b; --err:#f87171; --qibla:#2dd4bf; --plane:#e6e9ee;
   --ocean:#173a54; --land:#46553f; --night-ocean:#050b14; --night-land:#111923; --grid:rgba(230,233,238,.14); --halo:#0b1016; --route:#cbd5e1; --coast:#7d8c74; --night:#02060d;
   --e-card:#111722; --e-card-line:#263244; --e-hi:rgba(255,255,255,.06);
@@ -104,7 +104,7 @@ section.min>h2{margin-bottom:0}
 h2{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
 input,select{width:100%;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:7px 8px;min-width:0}
-input.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;text-transform:uppercase}
+input.mono{font-family:var(--e-mono);text-transform:uppercase}
 .r2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .r3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .r3.r3d{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,.75fr)}
@@ -139,7 +139,7 @@ button.link[aria-pressed=true]{text-decoration:underline}
 .sug button{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;padding:7px 9px;color:var(--fg);font-weight:400}
 .sug button:last-child{border-bottom:0}
 .sug button:hover,.sug button:focus{background:var(--soft)}
-.sug b{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+.sug b{font-family:var(--e-mono);font-size:13px}
 .sug span{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sug small{grid-column:2;color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #wps{max-height:min(62vh,560px);overflow-y:auto;overscroll-behavior:contain;padding-right:2px}
@@ -155,7 +155,7 @@ summary{cursor:pointer;color:var(--muted);font-size:13px}
 table{width:100%;border-collapse:collapse;font-size:14px}
 th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
 th{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
-.mono,td.t{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.mono,td.t{font-family:var(--e-mono)}
 td.t{font-weight:700;white-space:nowrap}
 td.s{font-size:12px;color:var(--muted)}
 .tablewrap{overflow-x:auto}
@@ -175,7 +175,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .librow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center;margin-top:6px}
 .fixrow{display:grid;grid-template-columns:80px minmax(0,1fr) minmax(0,1fr) auto;gap:6px;align-items:center;margin-top:6px}
 .fixlist{max-height:220px;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:6px}
-.fixlist div{display:grid;grid-template-columns:80px minmax(0,1fr) 30px;gap:6px;align-items:center;padding:4px 8px;border-bottom:1px solid var(--line);font-family:ui-monospace,Menlo,monospace;font-size:13px}
+.fixlist div{display:grid;grid-template-columns:80px minmax(0,1fr) 30px;gap:6px;align-items:center;padding:4px 8px;border-bottom:1px solid var(--line);font-family:var(--e-mono);font-size:13px}
 .fixlist div:last-child{border-bottom:0}
 .btnrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .ok{color:var(--accent);font-size:12px;margin-top:6px;min-height:1em}
@@ -189,11 +189,11 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .nowpray .big{font-size:22px;font-weight:700;color:var(--accent)}
 .nowpray .cur{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:4px 0 6px}
 .nowpray .cur .pname{font-size:24px}
-.ptb{font-family:ui-monospace,Menlo,monospace;font-size:20px;font-weight:800;background:var(--pteal);color:#fff;padding:1px 8px;border-radius:7px}
+.ptb{font-family:var(--e-mono);font-size:20px;font-weight:800;background:var(--pteal);color:#fff;padding:1px 8px;border-radius:7px}
 .nowpray .lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .nowkv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;font-size:13px;margin:0}
 .nowkv dt{color:var(--muted)} .nowkv dd{margin:0}
-.cityin{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(0,1fr);gap:8px;align-items:end}
+.cityin{display:grid;grid-template-columns:minmax(0,1fr) 168px;gap:8px;align-items:end}
 #citySug .sug{margin:4px 0 4px}
 #citySug .sug small{grid-column:2}
 .cityhd{margin:10px 0 0;font-size:13px;color:var(--muted)}
@@ -204,10 +204,10 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .cmpout table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
 .cmpout th,.cmpout td{padding:6px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 .cmpout th{font-size:12px;color:var(--muted);font-weight:600}
-.cmpout td b{font-family:ui-monospace,Menlo,monospace;font-size:15px}
-.cmpout .utc{display:block;font-size:11px;color:var(--muted);font-family:ui-monospace,Menlo,monospace}
+.cmpout td b{font-family:var(--e-mono);font-size:15px}
+.cmpout .utc{display:block;font-size:11px;color:var(--muted);font-family:var(--e-mono)}
 .cmpout tr.cur td{background:var(--soft)}
-.cmpout .diff{font-family:ui-monospace,Menlo,monospace;font-size:13px;white-space:nowrap}
+.cmpout .diff{font-family:var(--e-mono);font-size:13px;white-space:nowrap}
 @media (max-width:560px){.cmpout .diff{font-size:11px} .cmpout th,.cmpout td{padding:6px 3px}}
 @media (max-width:560px){.cmpin{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)} .cmpin>div:last-child{grid-column:1/-1}}
 .ground{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
@@ -219,7 +219,7 @@ footer{margin-top:16px;font-size:12px;color:var(--muted)}
 .ftl{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .ftl::-webkit-scrollbar{display:none}
 .ftl div{flex:1 0 auto;min-width:44px;border:1px solid var(--line);border-top:4px solid var(--pc,var(--line));border-radius:6px;padding:4px 3px;text-align:center;font-size:10px;line-height:1.25}
-.ftl b{display:block;font-family:ui-monospace,Menlo,monospace;font-size:13px}
+.ftl b{display:block;font-family:var(--e-mono);font-size:13px}
 .ftl .past{opacity:.5}
 .ftl .on{background:var(--pteal-soft);border-color:var(--pteal);border-top-color:var(--pc,var(--pteal))}
 .ftl .on span{font-weight:800}
@@ -262,22 +262,22 @@ dialog#installDlg::backdrop{background:rgba(0,0,0,.55)}
 #globe:active{cursor:grabbing}
 .zoomctl{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;align-items:center}
 .zoomctl button{width:30px;height:30px;padding:0;font-size:16px;font-weight:700;background:var(--panel);box-shadow:0 1px 3px rgba(0,0,0,.2)}
-.zoomctl span{font:600 11px ui-monospace,Menlo,monospace;color:var(--muted);background:var(--panel);border-radius:4px;padding:1px 4px}
+.zoomctl span{font:600 11px var(--e-mono);color:var(--muted);background:var(--panel);border-radius:4px;padding:1px 4px}
 .evchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .evchips button{font-size:11px;padding:3px 7px;display:inline-flex;gap:6px;align-items:center}
 .evchips i{display:inline-block;width:9px;height:9px;border-radius:50%}
 .gctl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center;margin-top:4px}
 .gctl button{padding:3px 10px}
 .gctl input[type=range]{padding:0;accent-color:var(--accent);height:28px;background:none;border:0}
-.gtime{font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.4;margin-top:4px;min-height:5.6em}
+.gtime{font-family:var(--e-mono);font-size:12px;line-height:1.4;margin-top:4px;min-height:5.6em}
 .gtime .sub{font-size:11px}
 #globeSec details{margin-top:6px}
 #globeSec summary{font-size:12px;color:var(--muted);cursor:pointer}
 .gtime b{color:var(--accent)}
 .gprayer{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin:2px 0 6px;padding:8px 11px;border-radius:10px;background:var(--pteal-soft);border-left:5px solid var(--pc,var(--pteal));font-family:system-ui,-apple-system,sans-serif}
 .gprayer .pn{font-size:24px;font-weight:800;color:var(--ink);line-height:1.1}
-.gprayer .pt{font-family:ui-monospace,Menlo,monospace;font-size:22px;font-weight:800;background:var(--pteal);color:#fff;padding:1px 8px;border-radius:7px}
-.gprayer .pd{flex-basis:100%;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted)}
+.gprayer .pt{font-family:var(--e-mono);font-size:22px;font-weight:800;background:var(--pteal);color:#fff;padding:1px 8px;border-radius:7px}
+.gprayer .pd{flex-basis:100%;font-family:var(--e-mono);font-size:12px;color:var(--muted)}
 .gprayer .pd b{color:var(--ink)}
 .evchips button.on{border-color:var(--pteal);background:var(--pteal-soft);font-weight:700}
 td.availcell{cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -293,7 +293,7 @@ td.availcell:hover,td.availcell:focus-visible{outline:2px solid var(--pteal);out
 .jk{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--pteal-soft);border-left:5px solid var(--pteal)}
 .jk .jkt{font-size:18px;font-weight:800}
 .jk .jkw{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:6px 0}
-.jk .jkw .pt{font-family:ui-monospace,Menlo,monospace;font-size:19px;font-weight:800;background:var(--pteal);color:#fff;padding:1px 8px;border-radius:7px}
+.jk .jkw .pt{font-family:var(--e-mono);font-size:19px;font-weight:800;background:var(--pteal);color:#fff;padding:1px 8px;border-radius:7px}
 .jk ol{margin:8px 0 4px;padding-left:20px;font-size:14px;line-height:1.45}
 .jk .no{color:var(--warn);font-weight:600}
 td.availcell .go{margin-top:4px;font-size:12px;font-weight:700;color:var(--pteal)}
@@ -302,11 +302,11 @@ td.availcell .go{margin-top:4px;font-size:12px;font-weight:700;color:var(--pteal
 .legend button[aria-pressed=false]{opacity:.4}
 .legend i{display:inline-block;width:16px;height:3px;border-radius:2px}
 .ofp{border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px;background:var(--field)}
-.ofp textarea{width:100%;font:13px ui-monospace,Menlo,monospace;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px;margin-top:8px}
+.ofp textarea{width:100%;font:13px var(--e-mono);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px;margin-top:8px}
 .ofp dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;font-size:13px;margin:8px 0}
-.ofp dt{color:var(--muted)} .ofp dd{margin:0;font-family:ui-monospace,Menlo,monospace}
+.ofp dt{color:var(--muted)} .ofp dd{margin:0;font-family:var(--e-mono)}
 .ofp .warn{color:var(--warn);font-size:12px}
-.avail{font-family:ui-monospace,Menlo,monospace;font-weight:800;font-size:19px;color:var(--pteal)}
+.avail{font-family:var(--e-mono);font-weight:800;font-size:19px;color:var(--pteal)}
 td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);border-radius:8px;padding:8px 10px 8px 14px !important}
 @media (max-width:560px){
   .wp{grid-template-columns:18px minmax(0,1fr) 46px 50px 20px;gap:3px}
@@ -324,20 +324,21 @@ td.availcell{background:var(--pteal-soft);box-shadow:inset 4px 0 0 var(--pteal);
   table.cards td:first-child::before{display:none}
 }
 
-/* ===== EFB cockpit styling: Flight and Route cards (tokens --e-* are set per theme above) ===== */
-#flightSec,#routeSec{background:var(--e-card);border-color:var(--e-card-line);box-shadow:inset 0 1px 0 var(--e-hi)}
-#flightSec h2,#routeSec h2{font-size:.85rem;font-weight:700;letter-spacing:.1em;color:var(--e-head);border-left:3px solid var(--e-bar);padding-left:10px;min-height:30px;justify-content:flex-start}
+/* ===== EFB cockpit styling, whole app (tokens --e-* are set per theme above) ===== */
+section{background:var(--e-card);border-color:var(--e-card-line);box-shadow:inset 0 1px 0 var(--e-hi)}
+section>h2{font-size:.85rem;font-weight:700;letter-spacing:.1em;color:var(--e-head);border-left:3px solid var(--e-bar);padding-left:10px;min-height:30px}
+#flightSec h2,#routeSec h2{justify-content:flex-start}
 #flightSec h2>.minbtn,#routeSec h2>.minbtn{margin-left:auto}
-#flightSec label:not(.chk),#routeSec label:not(.chk),.wphead{font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--e-label)}
+label:not(.chk),.wphead{font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--e-label)}
 /* editable fields */
-#flightSec input:not([type=checkbox]):not([type=file]),#routeSec input:not([type=checkbox]):not([type=file]),#routeSec select{min-height:44px;background:var(--e-in-bg);border:1.5px solid var(--e-in-line);color:var(--e-in-ink);border-radius:6px;font-size:1.05rem}
-#flightSec input.mono,#flightSec input[type=date],#routeSec input.mono{font-family:var(--e-mono);font-variant-numeric:tabular-nums;font-size:1.05rem;font-weight:600;letter-spacing:.03em}
-#flightSec input[type=date]{height:44px;line-height:1.2;padding:0 8px}
-#flightSec input::placeholder,#routeSec input::placeholder{color:var(--e-ph);opacity:1;font-weight:500}
-#flightSec input:focus,#routeSec input:focus,#routeSec select:focus{outline:0;border-color:var(--e-focus);box-shadow:0 0 0 2px var(--e-ring)}
+input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]),select,textarea{min-height:44px;background:var(--e-in-bg);border:1.5px solid var(--e-in-line);color:var(--e-in-ink);border-radius:6px;font-size:1.05rem}
+input.mono,input[type=date],input[type=number]{font-family:var(--e-mono);font-variant-numeric:tabular-nums;font-size:1.05rem;font-weight:600;letter-spacing:.03em}
+input[type=date]{height:44px;line-height:1.2;padding:0 8px}
+input::placeholder,textarea::placeholder{color:var(--e-ph);opacity:1;font-weight:500}
+input:not([type=checkbox]):not([type=range]):focus,select:focus,textarea:focus{outline:0;border-color:var(--e-focus);box-shadow:0 0 0 2px var(--e-ring)}
 /* calculated / read-only fields: recessed, dashed, tinted */
-#flightSec input.auto,#routeSec .wp input:disabled,#routeSec .wp input[data-k=eto]:placeholder-shown{background:var(--e-auto-bg);border:1px dashed var(--e-auto-line);color:var(--e-auto-ink);-webkit-text-fill-color:var(--e-auto-ink);opacity:1}
-#flightSec input.auto::placeholder,#routeSec .wp input:disabled::placeholder,#routeSec .wp input[data-k=eto]:placeholder-shown::placeholder{color:var(--e-auto-ink);opacity:.7}
+input.auto,input[readonly],#routeSec .wp input:disabled,#routeSec .wp input[data-k=eto]:placeholder-shown{background:var(--e-auto-bg);border:1px dashed var(--e-auto-line);color:var(--e-auto-ink);-webkit-text-fill-color:var(--e-auto-ink);opacity:1}
+input.auto::placeholder,#routeSec .wp input:disabled::placeholder,#routeSec .wp input[data-k=eto]:placeholder-shown::placeholder{color:var(--e-auto-ink);opacity:.7}
 #routeSec .wp input.moved{border:1.5px solid var(--accent);background:var(--soft);color:var(--e-in-ink);-webkit-text-fill-color:currentColor}
 .isauto>label::after,.autotag{content:"AUTO";display:inline-block;margin-left:6px;padding:2px 4px;border:1px solid currentColor;border-radius:3px;color:var(--e-auto-ink);font:700 9.5px/1 var(--e-mono);letter-spacing:.08em;vertical-align:1px}
 .autotag{margin:0 2px}
@@ -360,14 +361,13 @@ h2>.helpbtn[aria-expanded=true]{background:var(--accent);color:var(--accent-ink)
 .metric i{font-style:normal;font-size:.7rem;font-weight:600;letter-spacing:.08em;color:var(--e-label)}
 .metric b{font-size:1.05rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--e-metric-ink)}
 #flightSec .gsinfo .s{color:var(--e-label);flex:1 1 100%;order:3}
-.gsinfo .adv{flex:1 1 200px;margin-left:auto;text-align:right;font-size:13px;line-height:1.35;color:var(--e-adv)}
-@media (max-width:560px){.gsinfo .adv{text-align:left;margin-left:0}}
+.gsinfo .adv{flex:1 1 100%;order:2;border:1px solid var(--warn);border-left-width:4px;border-radius:8px;padding:7px 10px;font-size:13px;font-weight:600;line-height:1.35;color:var(--warn)}
 /* teal CTAs: dark ink for legibility */
 .ofpbtn,.installbtn{min-height:44px;background:var(--accent);color:var(--accent-ink);border:0;font-weight:700}
 .installbtn{min-height:42px;border:1px solid var(--accent)}
 /* route action bar and buttons */
 .routebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px}
-.rbtn,#routeSec .lib button:not(.primary),#routeSec .ofp button:not(.primary){min-height:44px;padding:6px 12px;border-radius:6px;background:var(--e-btn-bg);border:1px solid var(--e-btn-line);color:var(--e-btn-ink);font-weight:600}
+.rbtn,.lib button:not(.primary),.ofp button:not(.primary),.btnrow button:not(.primary),#updBtn,#installBtn2,#copyUrl,#appCheckRun,.askbtns button:not(.primary):not(.danger){min-height:44px;padding:6px 12px;border-radius:6px;background:var(--e-btn-bg);border:1px solid var(--e-btn-line);color:var(--e-btn-ink);font-weight:600}
 .rbtn[aria-pressed=true]{border-color:var(--e-focus);color:var(--e-auto-ink);box-shadow:inset 0 0 0 1px var(--e-focus)}
 .rbtn.danger{margin-left:auto;background:var(--e-dng-bg);border:1px solid var(--e-dng-line);color:var(--e-dng-ink)}
 .rbtn.danger::before{content:"";display:inline-block;width:8px}
@@ -391,13 +391,31 @@ section#routeSec.showll .wp input[data-k=lat],section#routeSec.showll .wp input[
 }
 @media (max-width:389px){
   main{padding-left:12px;padding-right:12px}
-  #flightSec,#routeSec{padding:10px}
+  section{padding:10px}
   #routeSec .wp{grid-template-columns:36px minmax(0,1fr) 76px 88px 32px;gap:4px}
   section#routeSec.showll .wp{grid-template-columns:36px minmax(0,1fr) 76px 88px 32px}
   #routeSec .wp .tag{padding:4px 5px}
   #routeSec .wp input{padding:0 6px}
   #routeSec .wp button.x{width:32px}
 }
+/* whole-app controls: 44px touch height */
+table,.mono,.gtime,.avail{font-variant-numeric:tabular-nums}
+button.primary{min-height:46px;font-weight:700}
+.seg button{min-height:44px}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+#themeSeg{grid-template-columns:repeat(3,1fr)}
+.gctl button{min-height:44px;min-width:48px;font-size:16px}
+.gctl input[type=range]{height:44px}
+.zoomctl button{width:40px;height:40px}
+.evchips{gap:6px}
+.evchips button{min-height:40px;padding:6px 10px;font:600 12.5px var(--e-mono);background:var(--e-btn-bg);border-color:var(--e-btn-line);color:var(--e-btn-ink)}
+.legend button{min-height:36px;padding:4px 9px;font-size:12px}
+button.x{min-width:40px;min-height:40px}
+button.link{min-height:44px;padding:8px 0}
+h2 .minbtn{position:relative;width:30px;height:30px;background:var(--e-btn-bg);border-color:var(--e-btn-line);color:var(--e-btn-ink)}
+h2 .minbtn::before{content:"";position:absolute;inset:-7px}
+textarea{font-size:1rem;padding:8px}
+.cmpin input[readonly]{font-weight:700}
 </style>
 </head>
 <body>
@@ -1789,7 +1807,7 @@ section#routeSec.showll .wp input[data-k=lat],section#routeSec.showll .wp input[
     el.hidden = !head;
     if (!head) return;
     el.innerHTML = `<div class="tele"><span class="metric"><i>AVG GS</i><b>${gsV} KT</b></span><span class="metric"><i>DIST</i><b>${distV} NM</b></span></div>` +
-      `<div class="s">${sub}</div><div class="adv">Update ETAs to ATO and FLs in flight for the best prayer times.</div>`;
+      `<div class="s">${sub}</div><div class="adv" role="note">Update ETA and FL in-flight for accurate prayer times.</div>`;
   }
   function showOfp(o){
     ofpData = o;
